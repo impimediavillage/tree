@@ -8,7 +8,7 @@ import { OrderStatusManagement } from "./OrderStatusManagement";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, MapPin, PackageCheck, RefreshCw, Truck, FileText, Archive, Copy, ExternalLink, CheckCircle2, MessageSquare, Package2, User, Phone, ShoppingBag, Package, Printer, Trash2, ArchiveRestore, Info, Tag } from "lucide-react";
+import { Clock, MapPin, PackageCheck, RefreshCw, Truck, FileText, Archive, Copy, ExternalLink, CheckCircle2, MessageSquare, Package2, User, Phone, ShoppingBag, Package, Printer, Trash2, ArchiveRestore, Info, Tag, Navigation } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { updateOrderStatus } from "@/lib/orders";
@@ -16,6 +16,7 @@ import { LabelGenerationDialog } from "@/components/dispensary-admin/LabelGenera
 import { useAuth } from "@/contexts/AuthContext";
 import { OrderNotes } from "./OrderNotes";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 interface OrderDetailDialogProps {
   order: Order | null;
@@ -78,6 +79,7 @@ export function OrderDetailDialog({
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { currentUser, currentDispensary } = useAuth();
+  const router = useRouter();
 
   if (!order) return null;
 
@@ -946,7 +948,11 @@ export function OrderDetailDialog({
 
 function ShipmentDetails({ shipment }: { shipment: OrderShipment }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [isCopying, setIsCopying] = useState(false);
+  
+  const isInHouseDelivery = shipment.shippingProvider === 'in_house';
+  const driverAssigned = shipment.driverId && shipment.driverName;
 
   const handleCopyTracking = async () => {
     if (!shipment.trackingNumber) return;
@@ -1072,6 +1078,36 @@ function ShipmentDetails({ shipment }: { shipment: OrderShipment }) {
                 <span className="font-mono font-bold text-blue-700 text-lg">{shipment.accessCode}</span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* In-House Delivery Tracking Button */}
+        {isInHouseDelivery && driverAssigned && (
+          <div className="space-y-2">
+            <Button
+              variant="default"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+              onClick={() => router.push(`/dispensary-admin/drivers/${shipment.driverId}`)}
+            >
+              <Navigation className="mr-2 h-4 w-4" />
+              View Driver & Delivery Tracking
+            </Button>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <Navigation className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-blue-600 font-bold uppercase">Driver Assigned</p>
+                  <p className="text-sm font-extrabold text-blue-900">{shipment.driverName}</p>
+                </div>
+                {['picked_up', 'en_route', 'nearby'].includes(shipment.status) && (
+                  <Badge className="bg-blue-500 text-white text-xs font-bold animate-pulse">
+                    En Route
+                  </Badge>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

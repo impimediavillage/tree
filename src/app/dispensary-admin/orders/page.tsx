@@ -502,6 +502,8 @@ export default function DispensaryOrdersPage() {
                 }
               }}
               showSelection={true}
+              onUpdateStatus={updateOrderStatus}
+              isDispensaryView={true}
             />
           ))
         ) : (

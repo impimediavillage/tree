@@ -158,57 +158,122 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Confirm and Pay</CardTitle>
-        <CardDescription>Review your order details and complete your purchase.</CardDescription>
+        <CardTitle className="text-2xl font-extrabold text-[#3D2E17]">Confirm and Pay</CardTitle>
+        <CardDescription className="text-[#5D4E37] font-bold">Review your order details and complete your purchase.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid md:grid-cols-2 gap-8">
 
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Order Summary</h3>
-            <div className="space-y-2 text-sm">
-              {cart.map(item => (
-                <div key={item.id} className="flex justify-between items-center">
-                  <span>{item.name} (x{item.quantity})</span>
-                  <span>R {(item.price * item.quantity).toFixed(2)}</span>
+          {/* LEFT CONTAINER - Customer Details & Free Gifts */}
+          <div className="space-y-6">
+            {/* Customer Information */}
+            <div className="space-y-4">
+              <h3 className="font-extrabold text-lg text-[#3D2E17] border-b-2 border-[#3D2E17] pb-2">Customer Details</h3>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-[#3D2E17]/20 shadow-md space-y-3">
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-[#5D4E37] uppercase tracking-wide">Full Name</p>
+                  <p className="text-base font-extrabold text-[#3D2E17]">{currentUser?.displayName || currentUser?.email || 'Customer'}</p>
                 </div>
-              ))}
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-[#5D4E37] uppercase tracking-wide">Email Address</p>
+                  <p className="text-sm font-bold text-[#3D2E17] break-all">{currentUser?.email || 'Not provided'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-[#5D4E37] uppercase tracking-wide">Telephone</p>
+                  <p className="text-sm font-bold text-[#3D2E17]">{currentUser?.phoneNumber || 'Not provided'}</p>
+                </div>
+              </div>
             </div>
-            <hr />
-            <div className="space-y-2 font-medium">
-                <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>R {subtotal.toFixed(2)}</span>
+
+            {/* Shipping Address */}
+            <div className="space-y-4">
+              <h3 className="font-extrabold text-lg text-[#3D2E17] border-b-2 border-[#3D2E17] pb-2">Delivery Address</h3>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-600/20 shadow-md">
+                <p className="text-sm font-bold text-[#3D2E17] leading-relaxed">{fullAddress}</p>
+              </div>
+            </div>
+
+            {/* Free Gifts Section - Only show if THC products exist */}
+            {cart.some(item => item.productType === 'THC') && (
+              <div className="space-y-4">
+                <h3 className="font-extrabold text-lg text-[#3D2E17] border-b-2 border-[#3D2E17] pb-2">Free Gifts Included 🎁</h3>
+                <div className="space-y-3">
+                  {cart.filter(item => item.productType === 'THC').map(item => (
+                    <div key={`gift-${item.id}`} className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-400/30 shadow-md">
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xl">🎁</span>
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <p className="text-xs font-bold text-purple-600 uppercase">Free Gift with Purchase</p>
+                          <p className="text-sm font-extrabold text-[#3D2E17]">
+                            {item.quantity} × FREE {item.unit || 'unit'} of {(item as any).originalName || item.name}
+                          </p>
+                          <p className="text-xs font-bold text-[#5D4E37]">
+                            Included with your {item.name} purchase
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between">
-                    <span>Total Shipping</span>
-                    <span>R {totalShippingCost.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xl font-bold">
-                    <span>Grand Total</span>
-                    <span>R {total.toFixed(2)}</span>
-                </div>
+              </div>
+            )}
+
+            {/* Shipping Methods */}
+            <div className="space-y-4">
+              <h3 className="font-extrabold text-lg text-[#3D2E17] border-b-2 border-[#3D2E17] pb-2">Shipping Methods</h3>
+              <div className="space-y-3">
+                {Object.entries(shippingSelections).map(([dispensaryId, rate]) => rate && (
+                  <div key={dispensaryId} className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-400/20 shadow-md">
+                    <p className="text-xs font-bold text-blue-600 uppercase mb-2">From: {groupedCart[dispensaryId]?.dispensaryName}</p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-extrabold text-[#3D2E17]">{rate.courier_name} ({rate.name})</p>
+                      <p className="text-base font-extrabold text-[#3D2E17]">R {rate.rate.toFixed(2)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Shipping Details</h3>
-              <div className='p-4 rounded-md border bg-muted/50 text-sm'>
-                  <p className='font-bold'>Deliver to:</p>
-                  <p>{fullAddress}</p>
-              </div>
-              <h3 className="font-semibold text-lg">Shipping Methods</h3>
-                <div className='space-y-2'>
-                    {Object.entries(shippingSelections).map(([dispensaryId, rate]) => rate && (
-                        <div key={dispensaryId} className='p-3 rounded-md border bg-muted/50 text-sm'>
-                            <p className='font-bold'>From: {groupedCart[dispensaryId]?.dispensaryName}</p>
-                            <div className='flex justify-between items-center'>
-                                <p>{rate.courier_name} ({rate.name})</p>
-                                <p className='font-semibold'>R {rate.rate.toFixed(2)}</p>
-                            </div>
-                        </div>
-                    ))}
+          {/* RIGHT CONTAINER - Order Summary */}
+          <div className="space-y-6">
+            <h3 className="font-extrabold text-lg text-[#3D2E17] border-b-2 border-[#3D2E17] pb-2">Order Summary</h3>
+            
+            {/* Order Items */}
+            <div className="space-y-3">
+              {cart.map(item => (
+                <div key={item.id} className="flex justify-between items-start p-3 rounded-lg bg-muted/30 border border-border/50">
+                  <div className="flex-1">
+                    <p className="font-bold text-[#3D2E17] text-sm">{item.name}</p>
+                    <p className="text-xs text-[#5D4E37] font-semibold mt-1">Qty: {item.quantity}</p>
+                    {item.productType === 'THC' && (
+                      <p className="text-xs text-green-600 font-bold mt-1 flex items-center gap-1">
+                        <span>🎁</span> +{item.quantity} FREE {item.unit || 'gift'}
+                      </p>
+                    )}
+                  </div>
+                  <p className="font-extrabold text-[#3D2E17]">R {(item.price * item.quantity).toFixed(2)}</p>
                 </div>
+              ))}
+            </div>
+
+            {/* Price Breakdown */}
+            <div className="space-y-3 p-4 rounded-xl bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-[#3D2E17]/20 shadow-lg">
+              <div className="flex justify-between items-center pb-3 border-b border-[#3D2E17]/20">
+                <span className="font-bold text-[#5D4E37]">Subtotal</span>
+                <span className="font-extrabold text-[#3D2E17]">R {subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pb-3 border-b border-[#3D2E17]/20">
+                <span className="font-bold text-[#5D4E37]">Total Shipping</span>
+                <span className="font-extrabold text-[#3D2E17]">R {totalShippingCost.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-xl font-extrabold text-[#3D2E17]">Grand Total</span>
+                <span className="text-2xl font-extrabold text-[#3D2E17]">R {total.toFixed(2)}</span>
+              </div>
+            </div>
           </div>
         </div>
 

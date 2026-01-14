@@ -74,9 +74,11 @@ interface OrderCardProps {
   onSelect?: (orderId: string) => void;
   showSelection?: boolean;
   onRateExperience?: (order: Order) => void;
+  onUpdateStatus?: (orderId: string, dispensaryId: string, newStatus: ShippingStatus) => Promise<void>;
+  isDispensaryView?: boolean;
 }
 
-export function OrderCard({ order, onClick, selected = false, onSelect, showSelection = false, onRateExperience }: OrderCardProps) {
+export function OrderCard({ order, onClick, selected = false, onSelect, showSelection = false, onRateExperience, onUpdateStatus, isDispensaryView = false }: OrderCardProps) {
   const router = useRouter();
   const [dispensaries, setDispensaries] = useState<Record<string, { name: string; type: string; storeImage?: string | null; storeIcon?: string | null; }>>({});
   const [isLoadingDispensaries, setIsLoadingDispensaries] = useState(true);
@@ -378,6 +380,8 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
             {Object.entries(order.shipments || {}).map(([dispensaryId, shipment], idx) => {
               const status = shipment.status || 'pending';
               const statusColor = statusColors[status as keyof typeof statusColors] || statusColors.pending;
+              const isInHouseDelivery = shipment.shippingProvider === 'in_house';
+              const driverAssigned = shipment.driverId && shipment.driverName;
               
               return (
                 <div key={dispensaryId} className="p-3 sm:p-4 rounded-xl bg-gradient-to-r from-muted/80 to-muted/50 border-2 border-border/50 space-y-2 shadow-md">
@@ -387,6 +391,34 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                       {status.replace('_', ' ')}
                     </Badge>
                   </div>
+                  
+                  {/* Driver Info for In-House Deliveries */}
+                  {isInHouseDelivery && driverAssigned && (
+                    <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                        <Navigation className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Driver Assigned</p>
+                        <p className="text-xs font-extrabold text-blue-900 dark:text-blue-100 truncate">{shipment.driverName}</p>
+                      </div>
+                      {['picked_up', 'en_route', 'nearby'].includes(status) && (
+                        <Badge className="bg-blue-500 text-white text-[10px] font-bold animate-pulse flex-shrink-0">
+                          En Route
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Waiting for Driver (In-House, no driver yet) */}
+                  {isInHouseDelivery && !driverAssigned && status === 'ready_for_pickup' && (
+                    <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <Truck className="h-5 w-5 text-purple-600 flex-shrink-0 animate-bounce" />
+                      <p className="text-xs font-bold text-purple-700 dark:text-purple-300">
+                        Waiting for driver to claim...
+                      </p>
+                    </div>
+                  )}
                   {shipment.trackingNumber && (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 pt-2 border-t border-border/30">
                       <span className="text-[10px] sm:text-xs text-muted-foreground font-bold">Tracking:</span>
@@ -410,6 +442,47 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
             })}
           </div>
         </div>
+
+        {/* Quick Action Buttons for Dispensary View */}
+        {isDispensaryView && onUpdateStatus && Object.entries(order.shipments || {}).some(([_, shipment]) => 
+          shipment.shippingProvider === 'in_house' && ['processing', 'ready_for_pickup', 'picked_up', 'en_route'].includes(shipment.status || '')
+        ) && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#3D2E17]">
+              <Package2 className="h-4 w-4 text-[#006B3E]" />
+              <span>Quick Actions</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(order.shipments || {}).map(([dispensaryId, shipment]) => {
+                if (shipment.shippingProvider !== 'in_house') return null;
+                
+                const status = shipment.status || 'pending';
+                const buttons = [];
+                
+                // Processing → Ready for Pickup
+                if (status === 'processing') {
+                  buttons.push(
+                    <Button
+                      key="ready"
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateStatus(order.id, dispensaryId, 'ready_for_pickup');
+                      }}
+                      className="text-xs font-bold bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-300 hover:from-indigo-100 hover:to-purple-100"
+                    >
+                      <Package2 className="mr-1 h-3 w-3" />
+                      Mark Ready for Pickup
+                    </Button>
+                  );
+                }
+                
+                return buttons.length > 0 ? buttons : null;
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t-2 border-border/50">
