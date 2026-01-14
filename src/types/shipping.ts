@@ -31,6 +31,9 @@ export interface OrderShipment {
   destinationLocker?: PudoLocker;
   lastStatusUpdate?: Timestamp;
   accessCode?: string;
+  // In-house delivery driver info (only populated when shippingProvider === 'in_house')
+  driverId?: string;
+  driverName?: string;
   statusHistory: Array<{
     status: ShippingStatus;
     timestamp: Timestamp;
