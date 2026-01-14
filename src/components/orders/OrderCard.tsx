@@ -42,6 +42,11 @@ const statusColors: Record<OrderStatus | ShippingStatus, string> = {
   shipped: "text-indigo-500",
   in_transit: "text-indigo-500",
   out_for_delivery: "text-purple-500",
+  // In-house delivery statuses
+  claimed_by_driver: "text-blue-500",
+  en_route: "text-purple-500",
+  nearby: "text-orange-500",
+  arrived: "text-green-500",
   delivered: "text-green-500",
   cancelled: "text-red-500",
   failed: "text-red-500",
@@ -61,6 +66,11 @@ const statusDescriptions: Record<OrderStatus | ShippingStatus, string> = {
   shipped: "Shipped",
   in_transit: "In transit",
   out_for_delivery: "Out for delivery",
+  // In-house delivery statuses
+  claimed_by_driver: "Driver assigned",
+  en_route: "Driver on the way",
+  nearby: "Driver nearby",
+  arrived: "Driver arrived",
   delivered: "Delivered",
   cancelled: "Cancelled",
   failed: "Failed",
