@@ -320,11 +320,15 @@ As admin:
 - Requests: Wednesday only
 - Processing: 3-5 business days
 - Minimum: R50 (configurable)
-- Fee: None (100% to driver currently)
+- Fee: None (100% to driver)
 
-### **Earnings Split**
-- Driver: 80% of delivery fee
-- Platform: 20% of delivery fee
+### **Earnings Model**
+- Driver receives: **100% of the delivery fee**
+- Delivery fee is set by dispensary:
+  * Fixed rate: `inHouseDeliveryFee` (if > 0)
+  * Per km rate: `pricePerKm × distance` (if `pricePerKm` is set)
+- No platform commission on driver earnings
+- Dispensary pays driver directly
 
 ### **Delivery Claiming**
 - First-come-first-served

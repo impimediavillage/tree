@@ -175,8 +175,7 @@ export async function createDelivery(
       }],
       createdAt: serverTimestamp() as Timestamp,
       readyForPickupAt: serverTimestamp() as Timestamp,
-      driverEarnings: (orderData.shippingCost || 50) * 0.8, // Driver gets 80%
-      platformCommission: (orderData.shippingCost || 50) * 0.2, // Platform gets 20%
+      driverEarnings: orderData.shippingCost || 50, // Driver gets 100% of delivery fee
       specialInstructions: orderData.deliveryInstructions || '',
       accessCode: orderData.accessCode || '',
       updatedAt: serverTimestamp() as Timestamp,
