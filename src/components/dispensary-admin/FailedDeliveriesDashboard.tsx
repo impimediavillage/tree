@@ -83,7 +83,7 @@ export default function FailedDeliveriesDashboard({ dispensaryId }: FailedDelive
     return true;
   });
 
-  const uniqueDrivers = Array.from(new Set(failedDeliveries.map((d) => d.driverName)));
+  const uniqueDrivers = Array.from(new Set(failedDeliveries.map((d) => d.driverName).filter((name): name is string => !!name)));
 
   const totalPaidDespiteFailure = failedDeliveries
     .filter((d) => d.driverPaidDespiteFailure)
