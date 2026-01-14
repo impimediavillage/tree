@@ -294,6 +294,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
           userId: firebaseUser.uid,
           dispensaryId: dispensaryId,
           crewMemberType: 'Driver',
+          displayName: data.displayName, // Driver's display name
           phoneNumber: driverPhone,
           dialCode: driverDialCode,
           vehicle: {
@@ -328,6 +329,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
             totalDeliveries: 0,
             completedDeliveries: 0,
             cancelledDeliveries: 0,
+            failedDeliveries: 0, // Track failed deliveries
             averageRating: 0,
             totalRatings: 0,
             totalEarnings: 0,
