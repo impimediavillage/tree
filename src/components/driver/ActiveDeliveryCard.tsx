@@ -28,10 +28,12 @@ import {
   Truck,
   MapPinned,
   Flag,
+  XCircle,
 } from 'lucide-react';
 import { updateDeliveryStatus, completeDelivery } from '@/lib/driver-service';
 import { startDriverLocationTracking, stopDriverLocationTracking } from '@/lib/location-service';
 import type { DriverProfile, DeliveryStatus } from '@/types/driver';
+import { FailedDeliveryDialog } from './FailedDeliveryDialog';
 
 interface ActiveDeliveryCardProps {
   driverProfile: DriverProfile;
@@ -45,6 +47,7 @@ export default function ActiveDeliveryCard({
   const { toast } = useToast();
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [showFailedDialog, setShowFailedDialog] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
   const [customerFeedback, setCustomerFeedback] = useState('');
   const [driverNotes, setDriverNotes] = useState('');
@@ -425,6 +428,22 @@ export default function ActiveDeliveryCard({
               </Button>
             )}
 
+            {/* Mark as Failed Button - Show when en_route, nearby, or arrived */}
+            {(currentDelivery.status === 'en_route' || 
+              currentDelivery.status === 'nearby' || 
+              currentDelivery.status === 'arrived') && (
+              <Button
+                onClick={() => setShowFailedDialog(true)}
+                variant="destructive"
+                size="lg"
+                className="w-full"
+                disabled={isUpdatingStatus}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Mark as Failed
+              </Button>
+            )}
+
             {nextAction && nextAction.description && (
               <p className="text-xs text-center text-muted-foreground">
                 {nextAction.description}
@@ -433,6 +452,19 @@ export default function ActiveDeliveryCard({
           </div>
         </CardContent>
       </Card>
+
+      {/* Failed Delivery Dialog */}
+      <FailedDeliveryDialog
+        open={showFailedDialog}
+        onOpenChange={setShowFailedDialog}
+        deliveryId={currentDelivery.id}
+        driverId={driverProfile.userId}
+        driverEarnings={currentDelivery.driverEarnings}
+        onSuccess={() => {
+          onComplete();
+          handleStopTracking();
+        }}
+      />
 
       {/* Complete Delivery Dialog */}
       <Dialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>

@@ -2,7 +2,24 @@ import { Timestamp } from 'firebase/firestore';
 import type { OrderItem } from './order';
 import type { OrderStatus } from './order';
 
-export type ShippingStatus = 'pending' | 'ready_for_shipping' | 'label_generated' | 'ready_for_pickup' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed' | 'cancelled' | 'returned';
+export type ShippingStatus = 
+  // General shipping statuses
+  | 'pending' 
+  | 'ready_for_shipping' 
+  | 'label_generated' 
+  | 'in_transit' 
+  | 'out_for_delivery' 
+  | 'delivered' 
+  | 'failed' 
+  | 'cancelled' 
+  | 'returned'
+  // In-house delivery specific statuses
+  | 'ready_for_pickup' // Order ready for driver to claim
+  | 'claimed_by_driver' // Driver claimed the delivery
+  | 'picked_up' // Driver picked up from dispensary
+  | 'en_route' // Driver is on the way
+  | 'nearby' // Driver within 1km
+  | 'arrived'; // Driver at customer location
 
 export interface TrackingUpdate {
     timestamp: Date;

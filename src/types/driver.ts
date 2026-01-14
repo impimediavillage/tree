@@ -72,6 +72,7 @@ export interface DriverStats {
   totalDeliveries: number;
   completedDeliveries: number;
   cancelledDeliveries: number;
+  failedDeliveries: number; // Deliveries that failed (with reason)
   averageRating: number;
   totalRatings: number;
   totalEarnings: number;
@@ -162,6 +163,69 @@ export type DeliveryStatus =
   | 'cancelled' // Delivery cancelled
   | 'failed'; // Delivery failed
 
+/**
+ * Failure reasons for unsuccessful deliveries
+ * Determines if driver still gets paid
+ */
+export type DeliveryFailureReason = 
+  // Customer-side issues (Driver GETS PAID)
+  | 'customer_no_show' // Customer not at location after waiting
+  | 'customer_not_home' // Customer didn't answer door/phone
+  | 'customer_refused' // Customer refused delivery
+  | 'customer_wrong_address' // Customer provided incorrect address
+  | 'unsafe_location' // Location deemed unsafe by driver
+  // Location issues (Driver GETS PAID)
+  | 'cannot_find_address' // Address doesn't exist/can't be located
+  | 'access_denied' // Security/gate wouldn't allow entry
+  | 'location_inaccessible' // Road closed, construction, etc.
+  // Driver-side issues (Driver DOES NOT get paid)
+  | 'driver_vehicle_issue' // Driver's vehicle broke down
+  | 'driver_emergency' // Driver had personal emergency
+  | 'driver_error' // Driver made mistake
+  // System issues (Driver GETS PAID)
+  | 'system_error' // App/system malfunction
+  | 'other'; // Other reason (requires explanation)
+
+/**
+ * Determines if driver should be paid despite failed delivery
+ */
+export function shouldPayDriverOnFailure(reason: DeliveryFailureReason): boolean {
+  const paidReasons: DeliveryFailureReason[] = [
+    'customer_no_show',
+    'customer_not_home',
+    'customer_refused',
+    'customer_wrong_address',
+    'unsafe_location',
+    'cannot_find_address',
+    'access_denied',
+    'location_inaccessible',
+    'system_error'
+  ];
+  return paidReasons.includes(reason);
+}
+
+/**
+ * Get user-friendly label for failure reason
+ */
+export function getFailureReasonLabel(reason: DeliveryFailureReason): string {
+  const labels: Record<DeliveryFailureReason, string> = {
+    customer_no_show: 'Customer No Show',
+    customer_not_home: 'Customer Not Home',
+    customer_refused: 'Customer Refused Delivery',
+    customer_wrong_address: 'Wrong Address Provided',
+    unsafe_location: 'Unsafe Location',
+    cannot_find_address: 'Cannot Find Address',
+    access_denied: 'Access Denied (Security/Gate)',
+    location_inaccessible: 'Location Inaccessible',
+    driver_vehicle_issue: 'Vehicle Issue',
+    driver_emergency: 'Personal Emergency',
+    driver_error: 'Driver Error',
+    system_error: 'System Error',
+    other: 'Other (See Notes)'
+  };
+  return labels[reason];
+}
+
 export interface DriverDelivery {
   id: string;
   orderId: string;
@@ -226,6 +290,13 @@ export interface DriverDelivery {
   arrivedAt?: Timestamp;
   deliveredAt?: Timestamp;
   cancelledAt?: Timestamp;
+  failedAt?: Timestamp;
+  
+  // Failure tracking
+  failureReason?: DeliveryFailureReason;
+  failureNote?: string; // Additional details from driver
+  failurePhotos?: string[]; // Photo evidence
+  driverPaidDespiteFailure?: boolean; // True if driver gets paid even though failed
   
   // Ratings & feedback
   rating?: number; // 1-5 stars

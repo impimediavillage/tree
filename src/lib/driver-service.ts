@@ -337,12 +337,99 @@ export async function updateDeliveryStatus(
       statusUpdate.deliveredAt = serverTimestamp();
     } else if (newStatus === 'cancelled') {
       statusUpdate.cancelledAt = serverTimestamp();
+    } else if (newStatus === 'failed') {
+      statusUpdate.failedAt = serverTimestamp();
     }
     
     await updateDoc(deliveryRef, statusUpdate);
   } catch (error) {
     console.error('Error updating delivery status:', error);
     throw error;
+  }
+}
+
+/**
+ * Mark delivery as failed with reason
+ * IMPORTANT: Determines if driver gets paid based on failure reason
+ */
+export async function markDeliveryAsFailed(
+  deliveryId: string,
+  driverId: string,
+  failureReason: string, // DeliveryFailureReason type
+  failureNote: string,
+  photoUrls?: string[]
+): Promise<{ success: boolean; message: string; driverGetsPaid: boolean }> {
+  try {
+    // Import the payment logic function
+    const { shouldPayDriverOnFailure } = await import('@/types/driver');
+    
+    const deliveryRef = doc(db, 'deliveries', deliveryId);
+    const deliverySnap = await getDoc(deliveryRef);
+    
+    if (!deliverySnap.exists()) {
+      return { success: false, message: 'Delivery not found', driverGetsPaid: false };
+    }
+    
+    const deliveryData = deliverySnap.data();
+    const driverGetsPaid = shouldPayDriverOnFailure(failureReason as any);
+    
+    // Update delivery document
+    await updateDoc(deliveryRef, {
+      status: 'failed',
+      failedAt: serverTimestamp(),
+      failureReason,
+      failureNote,
+      failurePhotos: photoUrls || [],
+      driverPaidDespiteFailure: driverGetsPaid,
+      [`statusHistory`]: arrayUnion({
+        status: 'failed',
+        timestamp: serverTimestamp(),
+        note: `Failed: ${failureReason} - ${failureNote}`
+      }),
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update driver stats and earnings
+    const driverRef = doc(db, 'driver_profiles', driverId);
+    const driverSnap = await getDoc(driverRef);
+    
+    if (driverSnap.exists()) {
+      const driverData = driverSnap.data();
+      
+      const updates: any = {
+        'stats.failedDeliveries': (driverData.stats?.failedDeliveries || 0) + 1,
+        status: 'available', // Make driver available again
+        currentDeliveryId: null,
+        lastActiveAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      
+      // If driver gets paid despite failure, add to earnings
+      if (driverGetsPaid) {
+        const earnings = deliveryData.driverEarnings || 0;
+        updates.availableEarnings = (driverData.availableEarnings || 0) + earnings;
+        updates['stats.totalEarnings'] = (driverData.stats?.totalEarnings || 0) + earnings;
+      }
+      
+      await updateDoc(driverRef, updates);
+    }
+    
+    const message = driverGetsPaid 
+      ? 'Delivery marked as failed. You will still be paid as this was not your fault.'
+      : 'Delivery marked as failed. Payment will not be processed.';
+    
+    return { 
+      success: true, 
+      message,
+      driverGetsPaid 
+    };
+  } catch (error) {
+    console.error('Error marking delivery as failed:', error);
+    return { 
+      success: false, 
+      message: 'Failed to update delivery status',
+      driverGetsPaid: false 
+    };
   }
 }
 

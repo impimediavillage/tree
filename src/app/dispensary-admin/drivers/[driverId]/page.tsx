@@ -300,6 +300,44 @@ export default function DriverDetailPage() {
         </Card>
       </div>
 
+      {/* Failed Deliveries Stats */}
+      {driver.stats.failedDeliveries && driver.stats.failedDeliveries > 0 && (
+        <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-orange-50">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-red-800 flex items-center gap-2">
+              <XCircle className="h-5 w-5" />
+              Failed Deliveries
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-2xl font-bold text-red-700">
+                  {driver.stats.failedDeliveries}
+                </p>
+                <p className="text-xs text-red-600 mt-1">Total failed</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-orange-700">
+                  {(
+                    (driver.stats.failedDeliveries /
+                      (driver.stats.completedDeliveries + driver.stats.failedDeliveries)) *
+                    100
+                  ).toFixed(1)}%
+                </p>
+                <p className="text-xs text-orange-600 mt-1">Failure rate</p>
+              </div>
+              <div className="col-span-2 md:col-span-1">
+                <p className="text-xs text-muted-foreground">
+                  View detailed failure reasons in the Deliveries tab
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
       {/* Tabs */}
       <Tabs defaultValue={defaultTab} className="space-y-4">
         <TabsList className="grid grid-cols-4 w-full max-w-2xl">

@@ -30,10 +30,12 @@ import {
   Trophy,
   Target,
   Zap,
-  CircleDot
+  CircleDot,
+  XCircle
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
+import FailedDeliveriesDashboard from '@/components/dispensary-admin/FailedDeliveriesDashboard';
 
 export default function DispensaryDriverManagementPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -208,8 +210,8 @@ export default function DispensaryDriverManagementPage() {
       )}
 
       {/* Driver List */}
-      <Tabs defaultValue="all" className="space-y-4" onValueChange={(v) => setSelectedStatus(v as any)}>
-        <TabsList className="grid grid-cols-4 w-full max-w-md">
+      <Tabs defaultValue="all" className="space-y-4">
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
           <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600">
             All ({totalDrivers})
           </TabsTrigger>
@@ -222,25 +224,26 @@ export default function DispensaryDriverManagementPage() {
           <TabsTrigger value="offline" className="data-[state=active]:bg-gray-600">
             Offline ({offlineDrivers})
           </TabsTrigger>
+          <TabsTrigger value="failed" className="data-[state=active]:bg-red-600">
+            <XCircle className="h-4 w-4 mr-1" />
+            Failed
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={selectedStatus} className="space-y-4">
-          {filteredDrivers.length === 0 ? (
+        <TabsContent value="all" className="space-y-4">
+          {drivers.length === 0 ? (
             <Card className="border-2 border-dashed">
               <CardContent className="py-12 text-center">
                 <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                 <p className="text-gray-600 text-lg font-semibold">No drivers found</p>
                 <p className="text-gray-500 text-sm mt-2">
-                  {selectedStatus === 'all' 
-                    ? 'Add your first driver to get started'
-                    : `No drivers are currently ${selectedStatus === 'available' ? 'online' : selectedStatus}`
-                  }
+                  Add your first driver to get started
                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredDrivers.map((driver) => (
+              {drivers.map((driver) => (
                 <Card 
                   key={driver.userId}
                   className="border-2 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-purple-50/30"
@@ -381,6 +384,201 @@ export default function DispensaryDriverManagementPage() {
                 </Card>
               ))}
             </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="available" className="space-y-4">
+          {drivers.filter(d => d.status === 'available').length === 0 ? (
+            <Card className="border-2 border-dashed">
+              <CardContent className="py-12 text-center">
+                <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600 text-lg font-semibold">No online drivers</p>
+                <p className="text-gray-500 text-sm mt-2">
+                  No drivers are currently online
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {drivers.filter(d => d.status === 'available').map((driver) => (
+                <Card 
+                  key={driver.userId}
+                  className="border-2 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-purple-50/30"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                          {driver.firstName.charAt(0)}{driver.lastName.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{driver.firstName} {driver.lastName}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className="bg-green-600">Online</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-2 rounded-lg bg-green-50">
+                        <p className="text-xl font-bold text-green-700">{driver.stats.completedDeliveries}</p>
+                        <p className="text-xs text-green-600">Deliveries</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-yellow-50">
+                        <p className="text-xl font-bold text-yellow-700">{driver.stats.averageRating.toFixed(1)}</p>
+                        <p className="text-xs text-yellow-600">Rating</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-purple-50">
+                        <p className="text-xl font-bold text-purple-700">R{driver.stats.totalEarnings.toFixed(0)}</p>
+                        <p className="text-xs text-purple-600">Earned</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link href={`/dispensary-admin/drivers/${driver.userId}`} className="flex-1">
+                        <Button variant="outline" className="w-full">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="on_delivery" className="space-y-4">
+          {drivers.filter(d => d.status === 'on_delivery').length === 0 ? (
+            <Card className="border-2 border-dashed">
+              <CardContent className="py-12 text-center">
+                <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600 text-lg font-semibold">No busy drivers</p>
+                <p className="text-gray-500 text-sm mt-2">
+                  No drivers are currently on delivery
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {drivers.filter(d => d.status === 'on_delivery').map((driver) => (
+                <Card 
+                  key={driver.userId}
+                  className="border-2 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-purple-50/30"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-cyan-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                          {driver.firstName.charAt(0)}{driver.lastName.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{driver.firstName} {driver.lastName}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className="bg-blue-600">On Delivery</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-2 rounded-lg bg-green-50">
+                        <p className="text-xl font-bold text-green-700">{driver.stats.completedDeliveries}</p>
+                        <p className="text-xs text-green-600">Deliveries</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-yellow-50">
+                        <p className="text-xl font-bold text-yellow-700">{driver.stats.averageRating.toFixed(1)}</p>
+                        <p className="text-xs text-yellow-600">Rating</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-purple-50">
+                        <p className="text-xl font-bold text-purple-700">R{driver.stats.totalEarnings.toFixed(0)}</p>
+                        <p className="text-xs text-purple-600">Earned</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link href={`/dispensary-admin/drivers/${driver.userId}`} className="flex-1">
+                        <Button variant="outline" className="w-full">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="offline" className="space-y-4">
+          {drivers.filter(d => d.status === 'offline').length === 0 ? (
+            <Card className="border-2 border-dashed">
+              <CardContent className="py-12 text-center">
+                <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600 text-lg font-semibold">No offline drivers</p>
+                <p className="text-gray-500 text-sm mt-2">
+                  All drivers are currently active
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {drivers.filter(d => d.status === 'offline').map((driver) => (
+                <Card 
+                  key={driver.userId}
+                  className="border-2 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-purple-50/30"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-400 to-slate-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                          {driver.firstName.charAt(0)}{driver.lastName.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{driver.firstName} {driver.lastName}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className="bg-gray-600">Offline</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-2 rounded-lg bg-green-50">
+                        <p className="text-xl font-bold text-green-700">{driver.stats.completedDeliveries}</p>
+                        <p className="text-xs text-green-600">Deliveries</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-yellow-50">
+                        <p className="text-xl font-bold text-yellow-700">{driver.stats.averageRating.toFixed(1)}</p>
+                        <p className="text-xs text-yellow-600">Rating</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-purple-50">
+                        <p className="text-xl font-bold text-purple-700">R{driver.stats.totalEarnings.toFixed(0)}</p>
+                        <p className="text-xs text-purple-600">Earned</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link href={`/dispensary-admin/drivers/${driver.userId}`} className="flex-1">
+                        <Button variant="outline" className="w-full">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="failed" className="space-y-4">
+          {currentUser?.dispensaryId && (
+            <FailedDeliveriesDashboard dispensaryId={currentUser.dispensaryId} />
           )}
         </TabsContent>
       </Tabs>
