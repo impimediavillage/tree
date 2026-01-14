@@ -469,8 +469,8 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                 const status = shipment.status || 'pending';
                 const buttons = [];
                 
-                // Processing → Ready for Pickup
-                if (status === 'processing') {
+                // When order is processing and shipment is pending/ready → allow marking as Ready for Pickup
+                if (order.status === 'processing' && (status === 'pending' || status === 'ready_for_shipping')) {
                   buttons.push(
                     <Button
                       key="ready"
