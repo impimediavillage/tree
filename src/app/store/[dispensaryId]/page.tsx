@@ -284,21 +284,7 @@ export default function DispensaryStorePage() {
           </Card>
         )}
 
-        {/* Educational Video Library */}
-        {dispensary.dispensaryType && (
-          <VideoLibraryGallery dispensaryType={dispensary.dispensaryType} />
-        )}
-
-        {/* Events Showcase */}
-        {dispensary.id && (
-          <DispensaryEventsShowcase 
-            dispensaryId={dispensary.id} 
-            dispensaryName={dispensary.dispensaryName}
-            variant="full"
-          />
-        )}
-
-        {/* Search and Category Filters */}
+        {/* Search and Category Filters */
         <Card className="mb-6 border-2 bg-muted/50 border-border/50">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -336,7 +322,7 @@ export default function DispensaryStorePage() {
             </div>
           </CardContent>
         </Card>
-
+        }
         {/* Main Content with Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content - Products */}
@@ -350,57 +336,57 @@ export default function DispensaryStorePage() {
 
             {/* Products Grid */}
             <div>
-          {filteredProducts.length > 0 ? (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">
-                  {selectedCategory === 'all' ? 'All Products' : selectedCategory}
-                </h2>
-                <p className="text-muted-foreground">
-                  {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredProducts.flatMap(product => 
-                  product.priceTiers.map((tier, tierIndex) => (
-                    <PublicProductCard
-                      key={`${product.id}-tier-${tierIndex}`}
-                      product={product}
-                      tier={tier}
-                    />
-                  ))
-                )}
-              </div>
-            </>
-          ) : (
-            <Card className="border-2 border-dashed bg-muted/50 border-border/50">
-              <CardContent className="pt-12 pb-12 text-center text-muted-foreground">
-                <Store className="mx-auto h-16 w-16 mb-4 opacity-50" />
-                <h3 className="text-xl font-semibold mb-2">
-                  {searchTerm || selectedCategory !== 'all' 
-                    ? 'No products found' 
-                    : 'No Products Yet'}
-                </h3>
-                <p className="text-sm">
-                  {searchTerm || selectedCategory !== 'all'
-                    ? 'Try adjusting your search or filter'
-                    : 'This dispensary hasn\'t listed any products yet.'}
-                </p>
-                {(searchTerm || selectedCategory !== 'all') && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedCategory('all');
-                    }}
-                    className="mt-4"
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
+              {filteredProducts.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold">
+                      {selectedCategory === 'all' ? 'All Products' : selectedCategory}
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {filteredProducts.flatMap(product => 
+                      product.priceTiers.map((tier, tierIndex) => (
+                        <PublicProductCard
+                          key={`${product.id}-tier-${tierIndex}`}
+                          product={product}
+                          tier={tier}
+                        />
+                      ))
+                    )}
+                  </div>
+                </>
+              ) : (
+                <Card className="border-2 border-dashed bg-muted/50 border-border/50">
+                  <CardContent className="pt-12 pb-12 text-center text-muted-foreground">
+                    <Store className="mx-auto h-16 w-16 mb-4 opacity-50" />
+                    <h3 className="text-xl font-semibold mb-2">
+                      {searchTerm || selectedCategory !== 'all' 
+                        ? 'No products found' 
+                        : 'No Products Yet'}
+                    </h3>
+                    <p className="text-sm">
+                      {searchTerm || selectedCategory !== 'all'
+                        ? 'Try adjusting your search or filter'
+                        : 'This dispensary hasn\'t listed any products yet.'}
+                    </p>
+                    {(searchTerm || selectedCategory !== 'all') && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSearchTerm('');
+                          setSelectedCategory('all');
+                        }}
+                        className="mt-4"
+                      >
+                        Clear Filters
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
 
@@ -413,6 +399,24 @@ export default function DispensaryStorePage() {
             />
           </div>
         </div>
+
+        {/* Educational Video Library - After Products */}
+        {dispensary.dispensaryType && (
+          <div className="mt-8">
+            <VideoLibraryGallery dispensaryType={dispensary.dispensaryType} />
+          </div>
+        )}
+
+        {/* Events Showcase - After Products */}
+        {dispensary.id && (
+          <div className="mt-8">
+            <DispensaryEventsShowcase 
+              dispensaryId={dispensary.id} 
+              dispensaryName={dispensary.dispensaryName}
+              variant="full"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

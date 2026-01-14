@@ -99,7 +99,7 @@ export function DispensaryEventsShowcase({
   }
 
   return (
-    <Card className="overflow-hidden border-2 bg-gradient-to-br from-[#006B3E]/5 to-[#3D2E17]/5 border-[#006B3E]/20 shadow-lg">
+    <Card className="overflow-hidden border-2 bg-muted/50 border-border/50 shadow-lg">
       <CardContent className="p-6 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
