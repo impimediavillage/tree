@@ -409,10 +409,10 @@ export default function DispensaryDriverManagementPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                          {driver.firstName.charAt(0)}{driver.lastName.charAt(0)}
+                          {driver.displayName.charAt(0)}
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg">{driver.firstName} {driver.lastName}</h3>
+                          <h3 className="font-bold text-lg">{driver.displayName}</h3>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge className="bg-green-600">Online</Badge>
                           </div>
@@ -472,10 +472,10 @@ export default function DispensaryDriverManagementPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-cyan-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                          {driver.firstName.charAt(0)}{driver.lastName.charAt(0)}
+                          {driver.displayName.charAt(0)}
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg">{driver.firstName} {driver.lastName}</h3>
+                          <h3 className="font-bold text-lg">{driver.displayName}</h3>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge className="bg-blue-600">On Delivery</Badge>
                           </div>
@@ -535,10 +535,10 @@ export default function DispensaryDriverManagementPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-400 to-slate-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                          {driver.firstName.charAt(0)}{driver.lastName.charAt(0)}
+                          {driver.displayName.charAt(0)}
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg">{driver.firstName} {driver.lastName}</h3>
+                          <h3 className="font-bold text-lg">{driver.displayName}</h3>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge className="bg-gray-600">Offline</Badge>
                           </div>
