@@ -333,7 +333,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
           `${currentUser.shippingAddress.streetAddress || ''}, ${currentUser.shippingAddress.suburb || ''}, ${currentUser.shippingAddress.city || ''}, ${currentUser.shippingAddress.province || ''}, ${currentUser.shippingAddress.postalCode || ''}`.replace(/, ,/g, ',').trim();
         
         form.reset({ 
-          fullName: currentUser.name || '',
+          fullName: currentUser.name || currentUser.displayName || '',
           email: currentUser.email || '',
           phoneNumber: currentUser.phoneNumber || '',
           shippingAddress: { 
@@ -350,6 +350,18 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
         });
         
         console.log("Checkout form pre-filled with user address:", fullAddress);
+      } else if (!currentUser) {
+        // Guest user - restore from localStorage if exists
+        try {
+          const savedFormData = localStorage.getItem('checkoutFormData');
+          if (savedFormData) {
+            const parsedData = JSON.parse(savedFormData);
+            form.reset(parsedData);
+            console.log("Checkout form restored from localStorage for guest");
+          }
+        } catch (error) {
+          console.error("Failed to restore checkout form from localStorage:", error);
+        }
       }
     }, [currentUser, form]);
 
@@ -367,8 +379,23 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                         // Proceed with checkout
                         console.log("User is authenticated but AuthContext not updated yet, proceeding...");
                     } else {
-                        // Email exists for a different user, block checkout
-                        toast({ title: "An account with this email already exists.", description: "Please log in to continue your purchase.", variant: "destructive", duration: 5000 });
+                        // Email exists for a different user - save data and show elegant sign-in prompt
+                        localStorage.setItem('checkoutFormData', JSON.stringify(values));
+                        toast({ 
+                          title: "Welcome back!", 
+                          description: "We found your account. Sign in to continue with your saved details.",
+                          className: "bg-[#006B3E] text-white border-[#006B3E]",
+                          action: (
+                            <Button 
+                              size="sm" 
+                              className="bg-[#3D2E17] hover:bg-[#006B3E] text-white font-bold"
+                              onClick={() => window.location.href = `/auth/signin?redirect=${encodeURIComponent('/checkout')}`}
+                            >
+                              Sign In
+                            </Button>
+                          ),
+                          duration: 8000
+                        });
                         setIsSubmitting(false);
                         return;
                     }
@@ -379,11 +406,36 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                     const userCredential = await createUserWithEmailAndPassword(auth, values.email, randomPassword);
                     const newUser = userCredential.user;
                     if (newUser) {
-                        await setDoc(doc(db, "users", newUser.uid), { uid: newUser.uid, email: values.email, name: values.fullName, phoneNumber: values.phoneNumber, role: 'approved', credits: 10, welcomeCreditsAwarded: true, signupSource: 'checkout' });
+                        await setDoc(doc(db, "users", newUser.uid), { 
+                          uid: newUser.uid, 
+                          email: values.email, 
+                          name: values.fullName, 
+                          phoneNumber: values.phoneNumber, 
+                          role: 'approved', 
+                          credits: 10, 
+                          welcomeCreditsAwarded: true, 
+                          signupSource: 'checkout',
+                          shippingAddress: {
+                            address: values.shippingAddress.address,
+                            streetAddress: values.shippingAddress.streetAddress,
+                            suburb: values.shippingAddress.suburb,
+                            city: values.shippingAddress.city,
+                            province: values.shippingAddress.province,
+                            postalCode: values.shippingAddress.postalCode,
+                            country: values.shippingAddress.country,
+                            latitude: values.shippingAddress.latitude,
+                            longitude: values.shippingAddress.longitude
+                          }
+                        });
                     } else {
                         throw new Error("Could not create user account.");
                     }
                 }
+            }
+            
+            // Save to localStorage for guest persistence
+            if (!currentUser) {
+              localStorage.setItem('checkoutFormData', JSON.stringify(values));
             }
             
             setAddressData(values);

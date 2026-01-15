@@ -122,7 +122,17 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
           const { doc, updateDoc } = await import('firebase/firestore');
           const { db } = await import('@/lib/firebase');
           await updateDoc(doc(db, 'users', currentUser.uid), {
-            shippingAddress: shippingAddress,
+            shippingAddress: {
+              address: shippingAddress.address,
+              streetAddress: shippingAddress.streetAddress,
+              suburb: shippingAddress.suburb,
+              city: shippingAddress.city,
+              province: shippingAddress.province,
+              postalCode: shippingAddress.postalCode,
+              country: shippingAddress.country,
+              latitude: shippingAddress.latitude,
+              longitude: shippingAddress.longitude
+            },
             phoneNumber: currentUser.phoneNumber || '',
             name: currentUser.displayName || currentUser.email || 'Customer'
           });
@@ -131,6 +141,14 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
           console.error('Failed to save address to user profile:', error);
           // Don't block order completion if address save fails
         }
+      }
+
+      // Clear localStorage checkout data after successful order
+      try {
+        localStorage.removeItem('checkoutFormData');
+        console.log('Checkout form data cleared from localStorage');
+      } catch (error) {
+        console.error('Failed to clear localStorage:', error);
       }
 
       toast({

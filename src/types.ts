@@ -300,6 +300,8 @@ export interface User {
   uid: string;
   email: string;
   displayName?: string | null;
+  name?: string; // Full name for checkout/orders
+  phoneNumber?: string; // Phone number for orders
   photoURL?: string | null;
   role: 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
   dispensaryId?: string | null;
@@ -313,6 +315,19 @@ export interface User {
   welcomeCreditsAwarded?: boolean;
   signupSource?: string; 
   updatedAt?: Timestamp | Date | string | null;
+  
+  // Shipping address for checkout persistence
+  shippingAddress?: {
+    streetAddress?: string;
+    suburb?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    country?: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+  };
   
   // Crew member fields (for DispensaryStaff)
   crewMemberType?: 'Vendor' | 'In-house Staff' | 'Driver'; // Added for driver feature
