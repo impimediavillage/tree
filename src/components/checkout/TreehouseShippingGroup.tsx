@@ -396,29 +396,6 @@ export const TreehouseShippingGroup = ({
 
   const shouldShowError = error && !rates.length;
   const shouldShowNoMethods = availableShippingMethods.length === 0;
-  
-  // Add a more descriptive message when no config exists
-  if (!treehouseConfig && !isLoading) {
-    return (
-      <Card className="bg-red-50/50 shadow-md border-red-200">
-        <CardHeader>
-          <CardTitle className="text-red-800 font-extrabold">Treehouse Configuration Missing</CardTitle>
-          <CardDescription className="text-red-700 font-bold">The Treehouse shipping configuration has not been set up yet.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-sm text-red-700 space-y-2">
-            <p className="font-semibold">To configure Treehouse shipping:</p>
-            <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Go to Super Admin → Treehouse Management</li>
-              <li>Select the "Origin Locker" tab</li>
-              <li>Configure the origin address and shipping methods</li>
-              <li>Save the configuration</li>
-            </ol>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="bg-muted/20 shadow-md">
@@ -437,27 +414,15 @@ export const TreehouseShippingGroup = ({
 
         <div>
           <p className="font-extrabold text-[#3D2E17] mb-3">1. Select Shipping Tier</p>
-          {shouldShowNoMethods ? (
-            <div className="p-4 bg-amber-50/80 rounded-lg border-2 border-amber-200">
-              <p className='text-sm font-semibold text-amber-800 mb-2'>⚠️ No shipping methods configured</p>
-              <p className='text-sm text-amber-700'>
-                {!treehouseConfig?.shippingMethods || treehouseConfig.shippingMethods.length === 0 
-                  ? 'The Treehouse admin needs to configure shipping methods in Super Admin → Treehouse Management → Origin Locker tab.'
-                  : !treehouseConfig?.lockerCode && treehouseConfig?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd')
-                  ? 'Locker-based shipping methods (LTL/LTD) require a Pudo locker to be configured. Please contact the Treehouse admin.'
-                  : 'No shipping methods are currently available.'}
-              </p>
-            </div>
-          ) : (
-            <RadioGroup onValueChange={handleTierSelection} value={selectedTier || ''} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {availableShippingMethods.map(methodId => (
-                <Label key={methodId} className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:bg-green-100 has-[:checked]:border-green-400 has-[:checked]:ring-2 has-[:checked]:ring-green-400 transition-all">
-                  <RadioGroupItem value={methodId} id={`treehouse-${storeId}-${methodId}`} />
-                  <span className="text-sm font-bold text-[#3D2E17]">{allShippingMethodsMap[methodId]}</span>
-                </Label>
-              ))}
-            </RadioGroup>
-          )}
+          <RadioGroup onValueChange={handleTierSelection} value={selectedTier || ''} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {availableShippingMethods.map(methodId => (
+              <Label key={methodId} className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:bg-green-100 has-[:checked]:border-green-400 has-[:checked]:ring-2 has-[:checked]:ring-green-400 transition-all">
+                <RadioGroupItem value={methodId} id={`treehouse-${storeId}-${methodId}`} />
+                <span className="text-sm font-bold text-[#3D2E17]">{allShippingMethodsMap[methodId]}</span>
+              </Label>
+            ))}
+            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>Treehouse has not configured any shipping methods{!treehouseConfig?.lockerCode && treehouseConfig?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') ? ' (Locker-based methods hidden - no origin locker configured)' : ''}.</p>}
+          </RadioGroup>
         </div>
 
         {isFetchingLockers && <div className="flex items-center p-6"><Loader2 className="h-6 w-6 animate-spin text-primary" /><p className='ml-3'>Fetching Pudo Lockers...</p></div>}
