@@ -354,20 +354,7 @@ export interface User {
     driverStatus?: 'available' | 'on_delivery' | 'offline' | 'suspended';
   };
   
-  // Checkout workflow fields (optional for backward compatibility)
-  name?: string; // Alternative to displayName for checkout forms
-  phoneNumber?: string;
-  shippingAddress?: {
-    address?: string;
-    streetAddress?: string;
-    suburb?: string;
-    city?: string;
-    province?: string;
-    postalCode?: string;
-    country?: string;
-    latitude?: number;
-    longitude?: number;
-  };
+  // Billing address (optional, separate from shipping)
   billingAddress?: {
     streetAddress?: string;
     suburb?: string;
@@ -403,6 +390,7 @@ export interface AddressValues {
   fullName: string;
   email: string;
   phoneNumber: string;
+  dialCode?: string; // Store selected dial code
   shippingAddress: {
     address: string;
     streetAddress: string;

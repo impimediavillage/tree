@@ -52,7 +52,7 @@ interface Country {
     dialCode: string;
 }
 
-const AddressStep = ({ form, onContinue, isSubmitting, currentUser }: { form: any; onContinue: (values: AddressValues) => Promise<void>; isSubmitting: boolean; currentUser: any }) => {
+const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeChange }: { form: any; onContinue: (values: AddressValues) => Promise<void>; isSubmitting: boolean; currentUser: any; onDialCodeChange?: (dialCode: string) => void; }) => {
     const locationInputRef = useRef<HTMLInputElement>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInitialized = useRef(false);
@@ -169,8 +169,12 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser }: { form: an
         if (selectedCountry) {
             const combinedPhoneNumber = `${selectedCountry.dialCode}${nationalPhoneNumber}`.replace(/\D/g, '');
             form.setValue('phoneNumber', combinedPhoneNumber, { shouldValidate: true, shouldDirty: false });
+            // Notify parent of dial code change
+            if (onDialCodeChange) {
+                onDialCodeChange(selectedCountry.dialCode);
+            }
         }
-    }, [selectedCountry, nationalPhoneNumber, form]);
+    }, [selectedCountry, nationalPhoneNumber, form, onDialCodeChange]);
     
     // Extract national phone number from full international number when user data loads
     useEffect(() => {
@@ -303,6 +307,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
     const [shippingSelections, setShippingSelections] = useState<Record<string, ShippingRate | null>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
+    const [userDialCode, setUserDialCode] = useState<string>('+27'); // Store dial code for display
 
     const form = useForm<AddressValues>({
         resolver: zodResolver(addressSchema),
@@ -356,6 +361,11 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
           const savedFormData = localStorage.getItem('checkoutFormData');
           if (savedFormData) {
             const parsedData = JSON.parse(savedFormData);
+            // Extract dialCode if present
+            if (parsedData.dialCode) {
+              setUserDialCode(parsedData.dialCode);
+              delete parsedData.dialCode; // Remove before setting form values
+            }
             form.reset(parsedData);
             console.log("Checkout form restored from localStorage for guest");
           }
@@ -380,7 +390,8 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                         console.log("User is authenticated but AuthContext not updated yet, proceeding...");
                     } else {
                         // Email exists for a different user - save data and show elegant sign-in prompt
-                        localStorage.setItem('checkoutFormData', JSON.stringify(values));
+                        const dataToSave = { ...values, dialCode: userDialCode };
+                        localStorage.setItem('checkoutFormData', JSON.stringify(dataToSave));
                         toast({ 
                           title: "Welcome back!", 
                           description: "We found your account. Sign in to continue with your saved details.",
@@ -433,9 +444,10 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                 }
             }
             
-            // Save to localStorage for guest persistence
+            // Save to localStorage for guest persistence (include dialCode)
             if (!currentUser) {
-              localStorage.setItem('checkoutFormData', JSON.stringify(values));
+              const dataToSave = { ...values, dialCode: userDialCode };
+              localStorage.setItem('checkoutFormData', JSON.stringify(dataToSave));
             }
             
             setAddressData(values);
@@ -474,7 +486,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
 
         switch(step) {
             case 1: 
-                return <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} currentUser={currentUser} />;
+                return <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} currentUser={currentUser} onDialCodeChange={setUserDialCode} />;
             case 2:
                 return addressData && (
                     <MultiDispensaryShippingStep
@@ -493,6 +505,9 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                         groupedCart={groupedCart}
                         shippingSelections={shippingSelections}
                         shippingAddress={addressData.shippingAddress}
+                        customerName={addressData.fullName}
+                        customerPhone={addressData.phoneNumber}
+                        dialCode={userDialCode}
                         onBack={() => setStep(2)} />
                  );
             default: 

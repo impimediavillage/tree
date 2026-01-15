@@ -19,10 +19,13 @@ interface PaymentStepProps {
   groupedCart: Record<string, { dispensaryName: string; dispensaryType?: string; items: CartItem[] }>;
   shippingSelections: Record<string, ShippingRate | null>;
   shippingAddress: AddressValues['shippingAddress'];
+  customerName?: string;
+  customerPhone?: string;
+  dialCode?: string;
   onBack: () => void;
 }
 
-export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAddress, onBack }: PaymentStepProps) {
+export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAddress, customerName, customerPhone, dialCode, onBack }: PaymentStepProps) {
   const router = useRouter();
   const { currentUser } = useAuth();
   const { clearCart } = useCart();
@@ -190,7 +193,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
               <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-[#3D2E17]/20 shadow-md space-y-3">
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-[#5D4E37] uppercase tracking-wide">Full Name</p>
-                  <p className="text-base font-extrabold text-[#3D2E17]">{currentUser?.displayName || currentUser?.email || 'Customer'}</p>
+                  <p className="text-base font-extrabold text-[#3D2E17]">{customerName || currentUser?.name || currentUser?.displayName || 'Customer'}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-[#5D4E37] uppercase tracking-wide">Email Address</p>
@@ -198,7 +201,9 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-[#5D4E37] uppercase tracking-wide">Telephone</p>
-                  <p className="text-sm font-bold text-[#3D2E17]">{currentUser?.phoneNumber || 'Not provided'}</p>
+                  <p className="text-sm font-bold text-[#3D2E17]">
+                    {dialCode && customerPhone ? `${dialCode} ${customerPhone.replace(dialCode.replace(/\D/g, ''), '')}` : customerPhone || currentUser?.phoneNumber || 'Not provided'}
+                  </p>
                 </div>
               </div>
             </div>
