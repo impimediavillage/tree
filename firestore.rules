@@ -284,6 +284,11 @@ service cloud.firestore {
     }
 
     // ===== TREEHOUSE SYSTEM =====
+    match /treehouse_config/{configId} {
+      allow read: if true; // Public read for checkout shipping methods
+      allow write: if isRole('Super Admin');
+    }
+
     match /treehouseProducts/{productId} {
       allow read: if true;
       allow create, update: if isAuthenticated() && request.auth.uid == request.resource.data.creatorId;
