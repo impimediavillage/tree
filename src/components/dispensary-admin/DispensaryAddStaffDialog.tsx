@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -9,15 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Upload, AlertTriangle, X, Car, Phone, FileText, IdCard, Camera } from 'lucide-react';
+import { Loader2, UserPlus, Upload, AlertTriangle, X, Car, Phone, FileText, IdCard, Camera, MapPin, Navigation } from 'lucide-react';
 import { dispensaryOwnerAddStaffSchema, type DispensaryOwnerAddStaffFormData } from '@/lib/schemas';
 import type { User } from '@/types';
 import type { CrewMemberType, VehicleType } from '@/types/driver';
-import { auth as firebaseAuthInstance, db, storage } from '@/lib/firebase'; 
+import { auth as firebaseAuthInstance, db, storage, functions } from '@/lib/firebase'; 
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, addDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { httpsCallable } from 'firebase/functions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface DispensaryAddStaffDialogProps {
@@ -79,6 +81,18 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
   const [vehicleRegistration, setVehicleRegistration] = useState('');
   const [vehicleColor, setVehicleColor] = useState('');
   const [vehicleDescription, setVehicleDescription] = useState('');
+  
+  // Location fields for drivers
+  const [driverCity, setDriverCity] = useState('');
+  const [driverProvince, setDriverProvince] = useState('');
+  const [driverCountry, setDriverCountry] = useState('South Africa');
+  
+  // Delivery settings
+  const [deliveryRadius, setDeliveryRadius] = useState(10); // Default 10km
+  const [isPublicDriver, setIsPublicDriver] = useState(false); // Default private
+  
+  // Get current dispensary name from context
+  const [dispensaryName, setDispensaryName] = useState('Your Dispensary');
   
   const { toast } = useToast();
   const licenseInputRef = useRef<HTMLInputElement>(null);
@@ -157,6 +171,24 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
       if (vehicleInputRef.current) vehicleInputRef.current.value = '';
     }
   };
+
+  // Fetch dispensary name when dialog opens
+  useEffect(() => {
+    const fetchDispensaryName = async () => {
+      if (!isOpen) return;
+      
+      try {
+        const dispensaryDoc = await getDoc(doc(db, 'dispensaries', dispensaryId));
+        if (dispensaryDoc.exists()) {
+          setDispensaryName(dispensaryDoc.data().dispensaryName || 'Your Dispensary');
+        }
+      } catch (error) {
+        console.error('Failed to fetch dispensary name:', error);
+      }
+    };
+    
+    fetchDispensaryName();
+  }, [isOpen, dispensaryId]);
 
   // Upload file to Firebase Storage
   const uploadFile = async (file: File, userId: string, fileType: string): Promise<string> => {
@@ -257,6 +289,12 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
         signupSource: 'dispensary_panel',
         crewMemberType: crewType,
         isDriver: crewType === 'Driver',
+        // Add location fields for all crew members (especially drivers)
+        phone: crewType === 'Driver' ? driverPhone : undefined,
+        dialCode: crewType === 'Driver' ? driverDialCode : undefined,
+        city: crewType === 'Driver' ? driverCity : undefined,
+        province: crewType === 'Driver' ? driverProvince : undefined,
+        country: crewType === 'Driver' ? driverCountry : undefined,
       };
 
       // If driver, upload documents and add driver-specific fields
@@ -297,6 +335,13 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
           displayName: data.displayName, // Driver's display name
           phoneNumber: driverPhone,
           dialCode: driverDialCode,
+          // Location information
+          city: driverCity,
+          province: driverProvince,
+          country: driverCountry,
+          // Delivery settings
+          deliveryRadius: deliveryRadius, // km from dispensary
+          isPublicDriver: isPublicDriver, // Available to other dispensaries
           vehicle: {
             type: selectedVehicleType,
             registrationNumber: vehicleRegistration,
@@ -351,21 +396,34 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
       // Save user document
       await setDoc(doc(db, 'users', firebaseUser.uid), newStaffUserData);
 
-      // Send welcome email
+      // Send welcome email via Cloud Function
       try {
-        await fetch('/api/send-welcome-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userEmail: data.email,
-            userName: data.displayName,
-            userType: crewType === 'Driver' ? 'driver' : 'crew',
-            dispensaryId: dispensaryId,
-            temporaryPassword: data.password,
-          }),
+        const sendCrewEmail = httpsCallable(functions, 'sendCrewMemberEmail');
+        
+        let vehicleInfo = '';
+        if (crewType === 'Driver' && selectedVehicleType) {
+          vehicleInfo = `${selectedVehicleType}${vehicleRegistration ? ` (${vehicleRegistration})` : ''}${vehicleColor ? ` - ${vehicleColor}` : ''}`;
+        }
+        
+        await sendCrewEmail({
+          dispensaryName: dispensaryName,
+          memberName: data.displayName,
+          memberEmail: data.email,
+          memberRole: crewType,
+          temporaryPassword: data.password,
+          phoneNumber: crewType === 'Driver' ? `${driverDialCode}${driverPhone}` : undefined,
+          vehicleInfo: vehicleInfo || undefined,
         });
+        
+        console.log('✅ Welcome email sent successfully');
       } catch (emailError) {
         console.error('Failed to send welcome email:', emailError);
+        // Don't fail the entire operation if email fails
+        toast({ 
+          title: "Note", 
+          description: "Crew member added but welcome email failed to send. They can still log in with their credentials.",
+          variant: "default"
+        });
       }
 
       const successMessage = crewType === 'Driver' 
@@ -530,6 +588,100 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
                       />
                       <FormDescription className="text-xs mt-1">
                         Enter without country code
+                      </FormDescription>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location Information */}
+                <div className="space-y-4 p-4 border rounded-lg bg-green-50 dark:bg-green-950/20">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-green-600" />
+                    <h3 className="font-semibold text-sm">Location Information</h3>
+                  </div>
+                  <FormDescription className="text-xs">
+                    This helps determine which orders the driver can accept based on location.
+                  </FormDescription>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <FormLabel>City *</FormLabel>
+                      <Input
+                        placeholder="e.g., Cape Town"
+                        value={driverCity}
+                        onChange={(e) => setDriverCity(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <FormLabel>Province/State *</FormLabel>
+                      <Input
+                        placeholder="e.g., Western Cape"
+                        value={driverProvince}
+                        onChange={(e) => setDriverProvince(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <FormLabel>Country *</FormLabel>
+                    <Input
+                      placeholder="e.g., South Africa"
+                      value={driverCountry}
+                      onChange={(e) => setDriverCountry(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Delivery Settings */}
+                <div className="space-y-4 p-4 border rounded-lg bg-indigo-50 dark:bg-indigo-950/20">
+                  <div className="flex items-center gap-2">
+                    <Navigation className="h-5 w-5 text-indigo-600" />
+                    <h3 className="font-semibold text-sm">Delivery Settings</h3>
+                  </div>
+                  
+                  {/* Delivery Radius Slider */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <FormLabel>Delivery Radius</FormLabel>
+                      <span className="text-sm font-semibold text-primary">{deliveryRadius} km</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="50"
+                      step="5"
+                      value={deliveryRadius}
+                      onChange={(e) => setDeliveryRadius(Number(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                    />
+                    <FormDescription className="text-xs">
+                      Maximum distance from the dispensary the driver is willing to travel.
+                    </FormDescription>
+                  </div>
+
+                  {/* Public/Private Toggle */}
+                  <div className="flex items-start space-x-3 p-3 border rounded-lg bg-background">
+                    <Checkbox
+                      id="public-driver"
+                      checked={isPublicDriver}
+                      onCheckedChange={(checked) => setIsPublicDriver(checked as boolean)}
+                      className="mt-1"
+                    />
+                    <div className="space-y-1 flex-1">
+                      <label
+                        htmlFor="public-driver"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {isPublicDriver ? '🌍 Public Driver' : '🏠 Private Driver'}
+                      </label>
+                      <FormDescription className="text-xs">
+                        {isPublicDriver ? (
+                          <span className="text-green-600 dark:text-green-400 font-medium">
+                            ✓ This driver will be available to deliver for ANY dispensary within their radius.
+                          </span>
+                        ) : (
+                          <span>
+                            This driver will ONLY deliver for your dispensary. Toggle on to make them available to other dispensaries.
+                          </span>
+                        )}
                       </FormDescription>
                     </div>
                   </div>

@@ -5,6 +5,10 @@ import * as logger from 'firebase-functions/logger';
 import { defineSecret } from 'firebase-functions/params';
 import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem, OwnerUpdateDispensaryPayload, AIAdvisor } from './types';
 
+// Define SMTP secrets for email functionality
+const smtpUser = defineSecret('SMTP_USER');
+const smtpPass = defineSecret('SMTP_PASS');
+
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============//
 // MUST be initialized BEFORE importing any modules that use admin.firestore()
 if (admin.apps.length === 0) {
@@ -26,7 +30,7 @@ export { recordTreehouseEarning, createPayoutRequest } from './treehouse-earning
 export { recordDispensaryEarning, createDispensaryPayoutRequest } from './dispensary-earnings';
 
 // Import email service
-import { sendDispensaryApprovalEmail } from './email-service';
+import { sendDispensaryApprovalEmail, sendCrewMemberWelcomeEmail } from './email-service';
 
 // Export Dispensary Review functions
 export { processDispensaryReview, recalculateDispensaryReviewStats } from './dispensary-reviews';
@@ -871,7 +875,9 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
     }
 });
 
-export const createDispensaryUser = onCall(async (request: CallableRequest<{ email: string; displayName: string; dispensaryId: string; }>) => {
+export const createDispensaryUser = onCall(
+    { secrets: [smtpUser, smtpPass] },
+    async (request: CallableRequest<{ email: string; displayName: string; dispensaryId: string; }>) => {
     if (request.auth?.token.role !== 'Super Admin') {
         throw new HttpsError('permission-denied', 'Only Super Admins can create dispensary users.');
     }
@@ -1623,7 +1629,9 @@ export const updateDispensaryProfile = onCall({ cors: true }, async (request: Ca
 });
 
 
-export const submitDispensaryApplication = onCall({ cors: true }, async (request: CallableRequest<any>) => {
+export const submitDispensaryApplication = onCall(
+    { cors: true, secrets: [smtpUser, smtpPass] },
+    async (request: CallableRequest<any>) => {
     // 1. Data Validation & Sanitization
     const data = request.data;
     if (!data.ownerEmail || !data.fullName || !data.dispensaryName || !data.dispensaryType || !data.currency || !data.acceptTerms) {
@@ -1778,7 +1786,153 @@ export const submitDispensaryApplication = onCall({ cors: true }, async (request
     }
 });
 
+// ========================================================================================================
+//                                    DISPENSARY APPROVAL EMAIL TRIGGER
+// ========================================================================================================
 
+/**
+ * Trigger: When a dispensary document is updated
+ * Sends approval email when status changes from Pending to Approved
+ */
+export const onDispensaryStatusChange = onDocumentWritten(
+    { 
+        document: 'dispensaries/{dispensaryId}',
+        secrets: [smtpUser, smtpPass]
+    },
+    async (event) => {
+        const beforeData = event.data?.before?.data() as Dispensary | undefined;
+        const afterData = event.data?.after?.data() as Dispensary | undefined;
+        
+        // Exit if document was deleted
+        if (!afterData) {
+            return;
+        }
+        
+        // Check if status changed from anything to 'Approved'
+        const wasApproved = beforeData?.status !== 'Approved' && afterData.status === 'Approved';
+        
+        if (!wasApproved) {
+            return; // No action needed
+        }
+        
+        const dispensaryId = event.params.dispensaryId;
+        logger.info(`Dispensary ${dispensaryId} (${afterData.dispensaryName}) was approved. Sending email...`);
+        
+        try {
+            // Find the owner user by dispensaryId
+            const usersRef = admin.firestore().collection('users');
+            const ownerQuery = await usersRef
+                .where('dispensaryId', '==', dispensaryId)
+                .where('role', '==', 'DispensaryOwner')
+                .limit(1)
+                .get();
+            
+            if (ownerQuery.empty) {
+                logger.warn(`No DispensaryOwner found for dispensary ${dispensaryId}. Cannot send approval email.`);
+                return;
+            }
+            
+            const ownerDoc = ownerQuery.docs[0];
+            const ownerData = ownerDoc.data() as AppUser;
+            
+            // Check if owner already has a password (signed up themselves)
+            let temporaryPassword = '[Use your existing password]';
+            
+            // If user was created during signup, they already have a password
+            if (ownerData.signupSource === 'dispensary_signup') {
+                temporaryPassword = '[Use the password you created during signup]';
+            } else {
+                // Create a temporary password for admin-created accounts
+                temporaryPassword = Math.random().toString(36).slice(-8);
+                try {
+                    await admin.auth().updateUser(ownerDoc.id, {
+                        password: temporaryPassword
+                    });
+                } catch (authError) {
+                    logger.error(`Failed to set temporary password for ${ownerDoc.id}:`, authError);
+                    temporaryPassword = '[Please reset your password]';
+                }
+            }
+            
+            const loginUrl = process.env.FUNCTIONS_EMULATOR 
+                ? 'http://localhost:3000/auth/signin'
+                : 'https://thewellnesstree.com/auth/signin';
+            
+            await sendDispensaryApprovalEmail({
+                dispensaryName: afterData.dispensaryName,
+                ownerName: ownerData.displayName || afterData.fullName,
+                ownerEmail: ownerData.email,
+                temporaryPassword: temporaryPassword,
+                loginUrl: loginUrl,
+                dispensaryId: dispensaryId,
+            });
+            
+            logger.info(`✅ Approval email sent successfully to ${ownerData.email} for dispensary ${dispensaryId}`);
+            
+        } catch (emailError: any) {
+            logger.error(`❌ Failed to send approval email for dispensary ${dispensaryId}:`, emailError);
+            // Don't throw - dispensary is still approved even if email fails
+        }
+    }
+);
 
+/**
+ * Cloud Function to send welcome email to newly created crew member
+ * Called from frontend after creating crew member account
+ */
+export const sendCrewMemberEmail = onCall(
+    { secrets: [smtpUser, smtpPass] },
+    async (request: CallableRequest<{
+        dispensaryName: string;
+        memberName: string;
+        memberEmail: string;
+        memberRole: 'Driver' | 'Vendor' | 'In-house Staff';
+        temporaryPassword: string;
+        phoneNumber?: string;
+        vehicleInfo?: string;
+    }>) => {
+        // Only authenticated dispensary owners/staff can send crew member emails
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'Must be authenticated');
+        }
 
+        const { dispensaryName, memberName, memberEmail, memberRole, temporaryPassword, phoneNumber, vehicleInfo } = request.data;
 
+        if (!dispensaryName || !memberName || !memberEmail || !memberRole || !temporaryPassword) {
+            throw new HttpsError('invalid-argument', 'Missing required email data');
+        }
+
+        try {
+            const loginUrl = process.env.FUNCTIONS_EMULATOR === 'true'
+                ? 'http://localhost:3000/auth/signin'
+                : 'https://thewellnesstree.com/auth/signin';
+
+            let additionalInfo = '';
+            if (memberRole === 'Driver' && phoneNumber) {
+                additionalInfo = `Your registered phone number: ${phoneNumber}`;
+                if (vehicleInfo) {
+                    additionalInfo += `<br>Vehicle: ${vehicleInfo}`;
+                }
+            }
+
+            await sendCrewMemberWelcomeEmail({
+                dispensaryName,
+                memberName,
+                memberEmail,
+                memberRole,
+                temporaryPassword,
+                loginUrl,
+                phoneNumber,
+                vehicleInfo,
+                additionalInfo,
+            });
+
+            logger.info(`✅ Welcome email sent to crew member: ${memberEmail} (${memberRole})`);
+            return { success: true, message: 'Welcome email sent successfully' };
+
+        } catch (error: any) {
+            logger.error(`❌ Failed to send crew member email:`, error);
+            throw new HttpsError('internal', `Failed to send email: ${error.message}`);
+        }
+    }
+);

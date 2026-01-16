@@ -58,7 +58,8 @@ const managementSidebarNavItems: NavItem[] = [
 ];
 
 const settingsSidebarNavItems: NavItem[] = [
-  { title: 'My Profile', href: '/dispensary-admin/profile', icon: Store },
+  { title: 'Dispensary Profile', href: '/dispensary-admin/profile', icon: Store, ownerOnly: true }, // Only owners can edit dispensary
+  { title: 'My Profile', href: '/dispensary-admin/my-profile', icon: UserCircle }, // All users can edit their profile
   { title: 'Notifications', href: '#notifications', icon: Bell },
 ];
 

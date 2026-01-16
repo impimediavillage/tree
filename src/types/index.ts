@@ -202,9 +202,25 @@ export interface User {
   uid: string;
   email: string;
   name?: string;
-  phoneNumber?: string;
+  displayName?: string;
+  phoneNumber?: string; // Legacy field
+  
+  // Contact information (standardized)
+  phone?: string;
+  dialCode?: string; // e.g., "+27"
+  
+  // Location information
+  city?: string;
+  province?: string;
+  country?: string;
+  
   role: 'Super Admin' | 'DispensaryOwner' | 'DispensaryStaff' | 'approved' | 'pending';
   dispensaryId?: string;
+  
+  // Crew member fields
+  crewMemberType?: 'Vendor' | 'In-house Staff' | 'Driver';
+  isDriver?: boolean;
+  
   shippingAddress?: {
     address?: string;
     streetAddress?: string;

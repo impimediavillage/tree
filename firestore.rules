@@ -44,8 +44,8 @@ service cloud.firestore {
 
     // ===== USER MANAGEMENT =====
     match /users/{userId} {
-      // Users can read and update their own profile (including FCM tokens)
-      allow read, update: if isAuthenticated() && request.auth.uid == userId;
+      // Users can read their own profile
+      allow read: if isAuthenticated() && request.auth.uid == userId;
       // Dispensary staff can read users in their dispensary
       allow read: if isAuthenticated() && 
                     request.auth.token.dispensaryId != null && 
@@ -54,11 +54,19 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId || isRole('Super Admin');
       allow delete: if isRole('Super Admin');
       
-      // IMPORTANT: Allow users to write FCM tokens even if they only update the fcmTokens field
-      // This is needed for push notifications to work
+      // IMPORTANT: Users can update their own profile BUT cannot change critical fields
+      // Allow FCM token updates
       allow update: if isAuthenticated() && 
                       request.auth.uid == userId && 
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens', 'lastTokenUpdate']);
+      
+      // Allow profile updates but protect critical fields (role, crewMemberType, dispensaryId, isDriver)
+      allow update: if isAuthenticated() && 
+                      request.auth.uid == userId &&
+                      request.resource.data.role == resource.data.role &&
+                      request.resource.data.get('crewMemberType', null) == resource.data.get('crewMemberType', null) &&
+                      request.resource.data.dispensaryId == resource.data.dispensaryId &&
+                      request.resource.data.get('isDriver', false) == resource.data.get('isDriver', false);
     }
 
     // ===== ORDER COUNTERS =====
@@ -72,7 +80,9 @@ service cloud.firestore {
     // ===== DISPENSARIES =====
     match /dispensaries/{dispensaryId} {
       allow read: if true; // Public read for browsing
-      allow update: if isDispensaryMember(dispensaryId);
+      // ONLY DISPENSARY OWNERS CAN UPDATE DISPENSARY PROFILE
+      // Staff (vendors, drivers, in-house) can only update their user profile, not dispensary
+      allow update: if isDispensaryMember(dispensaryId) && isDispensaryOwner();
       allow create, delete: if isRole('Super Admin');
     }
 

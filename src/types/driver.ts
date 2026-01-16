@@ -102,6 +102,15 @@ export interface DriverProfile {
   dialCode: string; // e.g., "+27"
   displayName: string; // Driver's display name
   
+  // Location information
+  city?: string;
+  province?: string;
+  country?: string;
+  
+  // Delivery settings
+  deliveryRadius?: number; // km from dispensary/home base
+  isPublicDriver?: boolean; // Available to other dispensaries or private to one
+  
   // Vehicle information
   vehicle: VehicleInfo;
   

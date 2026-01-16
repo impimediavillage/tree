@@ -273,6 +273,16 @@ export interface User {
   uid: string;
   email: string;
   displayName?: string | null;
+  
+  // Contact information
+  phone?: string;
+  dialCode?: string; // e.g., "+27"
+  
+  // Location information
+  city?: string;
+  province?: string;
+  country?: string;
+  
   photoURL?: string | null;
   role: 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
   dispensaryId?: string | null;
@@ -286,6 +296,10 @@ export interface User {
   welcomeCreditsAwarded?: boolean;
   signupSource?: string; 
   updatedAt?: Timestamp | Date | string | null;
+  
+  // Crew member type (for DispensaryStaff)
+  crewMemberType?: 'Vendor' | 'In-house Staff' | 'Driver';
+  isDriver?: boolean;
 }
 
 // Represents a User document in Firestore (for server-side functions)

@@ -303,7 +303,17 @@ export interface User {
   email: string;
   displayName?: string | null;
   name?: string; // Full name for checkout/orders
-  phoneNumber?: string; // Phone number for orders
+  phoneNumber?: string; // Phone number for orders (legacy)
+  
+  // Contact information (standardized fields)
+  phone?: string; // Phone number
+  dialCode?: string; // e.g., "+27"
+  
+  // Location information
+  city?: string;
+  province?: string;
+  country?: string;
+  
   photoURL?: string | null;
   role: 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
   dispensaryId?: string | null;

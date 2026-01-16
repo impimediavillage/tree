@@ -72,7 +72,7 @@ const updateDispensaryProfile = httpsCallable(functions, 'updateDispensaryProfil
 
 
 export default function WellnessOwnerProfilePage() {
-    const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+    const { currentUser, currentDispensary, loading: authLoading, isDispensaryOwner } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +82,20 @@ export default function WellnessOwnerProfilePage() {
         if (!authLoading && !currentDispensary) {
             toast({ title: "Not Found", description: "Your dispensary profile could not be found.", variant: "destructive" });
             router.push('/dispensary-admin/dashboard');
+            return;
         }
+        
+        // ONLY DISPENSARY OWNERS CAN EDIT DISPENSARY PROFILE
+        if (!authLoading && !isDispensaryOwner) {
+            toast({ 
+                title: "Access Denied", 
+                description: "Only dispensary owners can edit the dispensary profile. Staff can only edit their personal profile.", 
+                variant: "destructive" 
+            });
+            router.push('/dispensary-admin/dashboard');
+            return;
+        }
+        
         if (!authLoading && currentDispensary) {
             setIsLoading(false);
             
@@ -94,7 +107,7 @@ export default function WellnessOwnerProfilePage() {
                 router.replace('/dispensary-admin/profile');
             }
         }
-    }, [currentDispensary, authLoading, router, toast]);
+    }, [currentDispensary, authLoading, isDispensaryOwner, router, toast]);
 
     if (isLoading || !currentDispensary) {
         return (
