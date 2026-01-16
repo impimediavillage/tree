@@ -322,6 +322,8 @@ export default function AddTHCProductPage() {
             dispensaryName: currentDispensary.dispensaryName,
             dispensaryType: currentDispensary.dispensaryType,
             productOwnerEmail: currentUser.email!,
+            createdBy: currentUser.uid,
+            vendorUserId: currentUser.uid,
             createdAt: serverTimestamp() as any,
             updatedAt: serverTimestamp() as any,
             quantityInStock: totalStock,
