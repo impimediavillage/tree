@@ -298,7 +298,7 @@ exports.restoreStockOnOrderCancelled = (0, firestore_1.onDocumentUpdated)('order
                     message: `Stock has been restored for cancelled order ${afterData.orderNumber}`,
                     read: false,
                     orderId: orderId,
-                    sound: 'notification-chime',
+                    sound: 'notification-pop',
                     createdAt: admin.firestore.FieldValue.serverTimestamp()
                 });
             }
@@ -348,7 +348,7 @@ exports.lowStockAlert = (0, firestore_1.onDocumentUpdated)('{collection}/{produc
                 message: `"${afterData.name}" has only ${afterStock} units remaining!`,
                 read: false,
                 productId: productId,
-                sound: 'alert-sound',
+                sound: 'nearby',
                 actionUrl: `/dispensary-admin/products`,
                 createdAt: admin.firestore.FieldValue.serverTimestamp()
             });
@@ -368,7 +368,7 @@ exports.lowStockAlert = (0, firestore_1.onDocumentUpdated)('{collection}/{produc
                 message: `"${afterData.name}" is running low (${afterStock} units left)`,
                 read: false,
                 productId: productId,
-                sound: 'notification-chime',
+                sound: 'notification-pop',
                 actionUrl: `/dispensary-admin/products`,
                 createdAt: admin.firestore.FieldValue.serverTimestamp()
             });

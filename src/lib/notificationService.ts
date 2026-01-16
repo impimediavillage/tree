@@ -7,6 +7,7 @@ import { Howl } from 'howler';
 import toast from 'react-hot-toast';
 import type { Notification, NotificationSound, NotificationPreferences } from '@/types/notification';
 import { db } from '@/lib/firebase';
+import { cacheSoundFiles } from '@/lib/sound-cache-service';
 import { 
   collection, 
   addDoc, 
@@ -39,22 +40,43 @@ const SOUND_FILES: Record<NotificationSound, string> = {
 
 // Preloaded sound instances
 const soundInstances: Map<NotificationSound, Howl> = new Map();
+let soundsInitialized = false;
 
 /**
- * Initialize sound system - preload all sounds
+ * Initialize sound system - preload all sounds with caching
  */
-export function initializeSoundSystem(): void {
-  Object.entries(SOUND_FILES).forEach(([soundName, soundPath]) => {
-    const howl = new Howl({
-      src: [soundPath],
-      volume: 0.5,
-      preload: true,
-      html5: true, // Use HTML5 Audio for better mobile support
-    });
-    soundInstances.set(soundName as NotificationSound, howl);
-  });
+export async function initializeSoundSystem(): Promise<void> {
+  if (soundsInitialized) {
+    console.log('🔊 Sound system already initialized');
+    return;
+  }
   
-  console.log('🔊 Sound system initialized with', soundInstances.size, 'sounds');
+  try {
+    // First, cache sound files using Cache API for offline support
+    await cacheSoundFiles();
+    
+    // Then, preload sounds with Howler.js for instant playback
+    Object.entries(SOUND_FILES).forEach(([soundName, soundPath]) => {
+      const howl = new Howl({
+        src: [soundPath],
+        volume: 0.5,
+        preload: true,
+        html5: true, // Use HTML5 Audio for better mobile support
+        onload: () => {
+          console.log(`✅ Loaded: ${soundName}`);
+        },
+        onloaderror: (id, error) => {
+          console.error(`❌ Failed to load ${soundName}:`, error);
+        },
+      });
+      soundInstances.set(soundName as NotificationSound, howl);
+    });
+    
+    soundsInitialized = true;
+    console.log('🔊 Sound system initialized with', soundInstances.size, 'sounds');
+  } catch (error) {
+    console.error('Error initializing sound system:', error);
+  }
 }
 
 /**

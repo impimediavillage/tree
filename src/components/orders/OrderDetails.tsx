@@ -30,7 +30,7 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Order Header */}
       <Card>
         <CardHeader>
@@ -58,17 +58,17 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
               <CardTitle className="text-lg">Customer Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <span>{order.customerDetails.phone}</span>
+              <div className="flex items-start gap-2">
+                <Phone className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span className="text-sm break-words">{order.customerDetails.phone}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span>{order.customerDetails.email}</span>
+              <div className="flex items-start gap-2">
+                <Mail className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span className="text-sm break-all">{order.customerDetails.email}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm">
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span className="text-sm break-words">
                   {order.shippingAddress.streetAddress}<br />
                   {order.shippingAddress.suburb}<br />
                   {order.shippingAddress.city}, {order.shippingAddress.province}<br />
@@ -111,8 +111,8 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
         <CardContent>
           <div className="space-y-4">
             {order.items.map((item: OrderItem) => (
-              <div key={item.id} className="flex justify-between items-center p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
+              <div key={item.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border rounded-lg gap-3">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
                   {item.imageUrl && (
                     <div className="w-16 h-16 relative rounded overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -135,8 +135,8 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
                     )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">R {item.price.toFixed(2)}</p>
+                <div className="text-right w-full sm:w-auto">
+                  <p className="font-medium text-sm">R {item.price.toFixed(2)}</p>
                   <p className="text-sm text-muted-foreground">
                     Total: R {(item.price * item.quantity).toFixed(2)}
                   </p>
@@ -163,7 +163,7 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
               {Object.values(order.shipments || {})[0]?.trackingNumber && (
                 <div>
                   <h4 className="font-medium mb-2">Tracking Information</h4>
-                  <p className="text-sm">Tracking #: {Object.values(order.shipments || {})[0].trackingNumber}</p>
+                  <p className="text-sm break-all">Tracking #: {Object.values(order.shipments || {})[0].trackingNumber}</p>
                   {Object.values(order.shipments || {})[0].trackingUrl && (
                     <Button variant="link" className="px-0" asChild>
                       <a href={Object.values(order.shipments || {})[0].trackingUrl || ''} target="_blank" rel="noopener noreferrer">

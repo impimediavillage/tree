@@ -104,6 +104,16 @@ exports.onOrderCreated = (0, firestore_1.onDocumentCreated)('orders/{orderId}', 
     if (!orderData)
         return;
     const orderId = event.params.orderId;
+    // Prevent duplicate notifications by checking if already processed
+    const existingNotifications = await db.collection('notifications')
+        .where('orderId', '==', orderId)
+        .where('type', '==', 'order')
+        .limit(1)
+        .get();
+    if (!existingNotifications.empty) {
+        v2_1.logger.info(`Notifications already sent for order ${orderId}, skipping`);
+        return;
+    }
     v2_1.logger.info(`📦 New order created: ${orderId}`);
     try {
         // Get all dispensaries from the order
@@ -295,6 +305,16 @@ exports.onPaymentCompleted = (0, firestore_1.onDocumentUpdated)('orders/{orderId
     const orderId = event.params.orderId;
     v2_1.logger.info(`💳 Payment completed for order: ${orderId}`);
     try {
+        // Prevent duplicate notifications
+        const existingPaymentNotifications = await db.collection('notifications')
+            .where('orderId', '==', orderId)
+            .where('type', '==', 'payment')
+            .limit(1)
+            .get();
+        if (!existingPaymentNotifications.empty) {
+            v2_1.logger.info(`Payment notifications already sent for order ${orderId}, skipping`);
+            return;
+        }
         // Notify each dispensary owner
         const dispensaryIds = Object.keys(afterData.shipments || {});
         for (const dispensaryId of dispensaryIds) {

@@ -343,7 +343,7 @@ export const restoreStockOnOrderCancelled = onDocumentUpdated(
             message: `Stock has been restored for cancelled order ${afterData.orderNumber}`,
             read: false,
             orderId: orderId,
-            sound: 'notification-chime',
+            sound: 'notification-pop',
             createdAt: admin.firestore.FieldValue.serverTimestamp()
           });
         }
@@ -404,7 +404,7 @@ export const lowStockAlert = onDocumentUpdated(
           message: `"${afterData.name}" has only ${afterStock} units remaining!`,
           read: false,
           productId: productId,
-          sound: 'alert-sound',
+          sound: 'nearby',
           actionUrl: `/dispensary-admin/products`,
           createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
@@ -423,7 +423,7 @@ export const lowStockAlert = onDocumentUpdated(
           message: `"${afterData.name}" is running low (${afterStock} units left)`,
           read: false,
           productId: productId,
-          sound: 'notification-chime',
+          sound: 'notification-pop',
           actionUrl: `/dispensary-admin/products`,
           createdAt: admin.firestore.FieldValue.serverTimestamp()
         });

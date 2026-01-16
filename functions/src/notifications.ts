@@ -87,6 +87,18 @@ export const onOrderCreated = onDocumentCreated('orders/{orderId}', async (event
   if (!orderData) return;
 
   const orderId = event.params.orderId;
+  
+  // Prevent duplicate notifications by checking if already processed
+  const existingNotifications = await db.collection('notifications')
+    .where('orderId', '==', orderId)
+    .where('type', '==', 'order')
+    .limit(1)
+    .get();
+  
+  if (!existingNotifications.empty) {
+    logger.info(`Notifications already sent for order ${orderId}, skipping`);
+    return;
+  }
   logger.info(`📦 New order created: ${orderId}`);
 
   try {
@@ -297,6 +309,18 @@ export const onPaymentCompleted = onDocumentUpdated('orders/{orderId}', async (e
   logger.info(`💳 Payment completed for order: ${orderId}`);
 
   try {
+    // Prevent duplicate notifications
+    const existingPaymentNotifications = await db.collection('notifications')
+      .where('orderId', '==', orderId)
+      .where('type', '==', 'payment')
+      .limit(1)
+      .get();
+    
+    if (!existingPaymentNotifications.empty) {
+      logger.info(`Payment notifications already sent for order ${orderId}, skipping`);
+      return;
+    }
+    
     // Notify each dispensary owner
     const dispensaryIds = Object.keys(afterData.shipments || {});
     
