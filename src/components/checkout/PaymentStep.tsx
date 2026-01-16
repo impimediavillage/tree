@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createOrder } from '@/lib/order-service';
 import { Loader2 } from 'lucide-react';
 import { CREATOR_COMMISSION_RATE, PLATFORM_COMMISSION_RATE } from '@/types/creator-lab';
+import { getDisplayPrice } from '@/lib/pricing';
 
 interface PaymentStepProps {
   cart: CartItem[];
@@ -33,7 +34,17 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  // Calculate customer-facing prices (with 25% commission for regular items, 5% for pool items)
+  const getCustomerPrice = (item: CartItem) => {
+    const isProductPool = item.dispensaryType === 'Product Pool';
+    // Use getDisplayPrice which adds the appropriate commission
+    return getDisplayPrice(item.price, 0, isProductPool);
+  };
+
+  const subtotal = cart.reduce((acc, item) => {
+    const customerPrice = getCustomerPrice(item);
+    return acc + (customerPrice * item.quantity);
+  }, 0);
   const totalShippingCost = Object.values(shippingSelections).reduce((acc, rate) => acc + (rate?.rate || 0), 0);
   const total = subtotal + totalShippingCost;
 
@@ -186,6 +197,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
       toast({
         title: 'Order(s) Placed Successfully!',
         description: `${orderRefs.length} order(s) have been created. You will receive confirmation via email.`,
+        variant: 'default',
       });
 
       // Clear cart after successful order creation
@@ -317,7 +329,9 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
             
             {/* Order Items */}
             <div className="space-y-3">
-              {cart.map(item => (
+              {cart.map(item => {
+                const customerPrice = getCustomerPrice(item);
+                return (
                 <div key={item.id} className="flex justify-between items-start p-3 rounded-lg bg-muted/30 border border-border/50">
                   <div className="flex-1">
                     <p className="font-bold text-[#3D2E17] text-sm">{item.name}</p>
@@ -328,10 +342,9 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
                       </p>
                     )}
                   </div>
-                  <p className="font-extrabold text-[#3D2E17]">R {(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-extrabold text-[#3D2E17]">R {(customerPrice * item.quantity).toFixed(2)}</p>
                 </div>
-              ))}
-            </div>
+              )})}            </div>
 
             {/* Price Breakdown */}
             <div className="space-y-3 p-4 rounded-xl bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-[#3D2E17]/20 shadow-lg">

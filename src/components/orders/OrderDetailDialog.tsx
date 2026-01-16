@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import type { Order, OrderItem } from "@/types/order";
 import type { OrderShipment, ShippingStatus } from "@/types/shipping";
 import { formatCurrency } from "@/lib/utils";
+import { getDisplayPrice } from "@/lib/pricing";
 import { Separator } from "@/components/ui/separator";
 import { OrderStatusManagement } from "./OrderStatusManagement";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -556,7 +557,10 @@ export function OrderDetailDialog({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 sm:space-y-3">
-                      {order.items?.map((item, idx) => (
+                      {order.items?.map((item, idx) => {
+                        const isProductPool = item.dispensaryType === 'Product Pool';
+                        const customerPrice = getDisplayPrice(item.price, 0, isProductPool);
+                        return (
                         <div key={idx} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border-2 rounded-xl hover:bg-muted/50 transition-all duration-200 hover:shadow-md bg-background/60">
                           <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-lg bg-gradient-to-br from-[#006B3E]/10 to-[#006B3E]/20 flex items-center justify-center flex-shrink-0">
                             <Package className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
@@ -573,7 +577,7 @@ export function OrderDetailDialog({
                               <>
                                 <p className="font-extrabold text-sm sm:text-base text-[#3D2E17] truncate">{item.name}</p>
                                 <p className="text-[10px] sm:text-xs text-muted-foreground font-bold">
-                                  Qty: {item.quantity} × {formatCurrency(item.price)}
+                                  Qty: {item.quantity} × {formatCurrency(customerPrice)}
                                 </p>
                               </>
                             )}
@@ -584,10 +588,10 @@ export function OrderDetailDialog({
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="font-extrabold text-sm sm:text-base md:text-lg text-[#006B3E]">{formatCurrency(item.price * item.quantity)}</p>
+                            <p className="font-extrabold text-sm sm:text-base md:text-lg text-[#006B3E]">{formatCurrency(customerPrice * item.quantity)}</p>
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </CardContent>
                 </Card>

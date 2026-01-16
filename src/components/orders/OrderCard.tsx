@@ -5,6 +5,7 @@ import { Timestamp } from 'firebase/firestore';
 import type { Order, OrderItem, OrderStatus } from "@/types/order";
 import type { OrderShipment, ShippingStatus } from "@/types/shipping";
 import { formatCurrency } from "@/lib/utils";
+import { getDisplayPrice } from "@/lib/pricing";
 import { ArrowRight, Clock, Package2, User, Truck, MapPin, Package, ShoppingBag, Star, Navigation } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
@@ -205,7 +206,16 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                 <Package2 className="h-6 w-6 sm:h-7 sm:w-7 text-[#006B3E] flex-shrink-0" />
                 <span className="text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17] truncate">#{order.orderNumber || 'No Number'}</span>
               </div>
-              <p className="text-lg sm:text-xl md:text-2xl font-extrabold text-[#006B3E]">{formatCurrency(order.total || 0)}</p>
+              <p className="text-lg sm:text-xl md:text-2xl font-extrabold text-[#006B3E]">{formatCurrency((() => {
+                // Calculate customer-facing total with commission
+                const itemsSubtotal = (order.items || []).reduce((sum, item) => {
+                  const isProductPool = item.dispensaryType === 'Product Pool';
+                  const customerPrice = getDisplayPrice(item.price, 0, isProductPool);
+                  return sum + (customerPrice * item.quantity);
+                }, 0);
+                const shippingTotal = Object.values(order.shipments || {}).reduce((sum, shipment) => sum + (shipment.cost || 0), 0);
+                return itemsSubtotal + shippingTotal;
+              })())}</p>
               <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                 <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 <span className="truncate font-bold">{orderDate}</span>
@@ -270,7 +280,10 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
             <span>Products ({totalItems} items)</span>
           </div>
           <div className="space-y-1 sm:space-y-2 pl-6 sm:pl-7">
-            {order.items?.slice(0, 3).map((item, idx) => (
+            {order.items?.slice(0, 3).map((item, idx) => {
+              const isProductPool = item.dispensaryType === 'Product Pool';
+              const customerPrice = getDisplayPrice(item.price, 0, isProductPool);
+              return (
               <div key={idx} className="flex justify-between items-start text-xs sm:text-sm gap-2">
                 {item.productType === 'THC' ? (
                   <div className="flex-1 truncate">
@@ -284,10 +297,9 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                     {item.quantity}x {item.name}
                   </span>
                 )}
-                <span className="font-extrabold ml-2 flex-shrink-0 text-[#006B3E]">{formatCurrency(item.price * item.quantity)}</span>
+                <span className="font-extrabold ml-2 flex-shrink-0 text-[#006B3E]">{formatCurrency(customerPrice * item.quantity)}</span>
               </div>
-            ))}
-            {order.items && order.items.length > 3 && (
+            )})}            {order.items && order.items.length > 3 && (
               <p className="text-[10px] sm:text-xs text-muted-foreground italic font-bold">
                 +{order.items.length - 3} more items
               </p>
