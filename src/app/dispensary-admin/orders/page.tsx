@@ -134,10 +134,17 @@ export default function DispensaryOrdersPage() {
           relevantOrders = fetchedOrders.filter(order => {
             // Check if any shipment has items created by this vendor
             const hasVendorProduct = Object.values(order.shipments || {}).some(shipment => 
-              shipment.items?.some(item => 
-                item.createdBy === currentUser.uid || 
-                item.vendorUserId === currentUser.uid
-              )
+              shipment.items?.some(item => {
+                // Check if item has creator info (new orders after migration)
+                if (item.createdBy || item.vendorUserId) {
+                  return item.createdBy === currentUser.uid || 
+                         item.vendorUserId === currentUser.uid;
+                }
+                // Fallback: Show orders without creator info (old orders pre-migration)
+                // This ensures vendors can still see historical orders
+                // Once all products are migrated, all new orders will have creator info
+                return true;
+              })
             );
             return hasVendorProduct;
           });
