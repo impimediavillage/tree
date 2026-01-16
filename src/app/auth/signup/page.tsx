@@ -41,6 +41,18 @@ function SignUpContent() {
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
   const [countryDialCodes, setCountryDialCodes] = useState<Array<{ name: string; iso: string; flag: string; dialCode: string; }>>([]);
 
+  const form = useForm<UserSignupFormData>({
+    resolver: zodResolver(userSignupSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      password: '',
+      confirmPassword: '',
+      preferredDispensaryTypes: [],
+    },
+  });
+
   // Load country dial codes
   useEffect(() => {
     import('@/../docs/country-dial-codes.json').then(module => {
@@ -58,18 +70,6 @@ function SignUpContent() {
       form.setValue('phoneNumber', combinedPhoneNumber, { shouldValidate: true, shouldDirty: false });
     }
   }, [selectedCountry, nationalPhoneNumber, form]);
-
-  const form = useForm<UserSignupFormData>({
-    resolver: zodResolver(userSignupSchema),
-    defaultValues: {
-      fullName: '',
-      email: '',
-      phoneNumber: '',
-      password: '',
-      confirmPassword: '',
-      preferredDispensaryTypes: [],
-    },
-  });
 
   useEffect(() => {
     const cartQueryParam = searchParams?.get('cart');
