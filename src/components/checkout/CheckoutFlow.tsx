@@ -6,7 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { auth, db, functions } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { CartItem, ShippingRate, AddressValues, GroupedCart } from '@/types';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -438,10 +438,15 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                         await setDoc(doc(db, "users", newUser.uid), { 
                           uid: newUser.uid, 
                           email: values.email, 
-                          name: values.fullName, 
-                          phoneNumber: values.phoneNumber, 
+                          name: values.fullName, // Full name from checkout form
+                          displayName: values.fullName, // Set displayName to match signup
+                          phoneNumber: values.phoneNumber, // Phone with dial code
+                          photoURL: null,
                           role: 'approved', 
                           credits: 10, 
+                          createdAt: serverTimestamp(),
+                          lastLoginAt: serverTimestamp(),
+                          status: 'Active',
                           welcomeCreditsAwarded: true, 
                           signupSource: 'checkout',
                           shippingAddress: {

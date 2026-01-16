@@ -31,7 +31,12 @@ service cloud.firestore {
 
     // ===== USER MANAGEMENT =====
     match /users/{userId} {
+      // Users can read and update their own profile
       allow read, update: if isAuthenticated() && request.auth.uid == userId;
+      // Dispensary staff can read users in their dispensary
+      allow read: if isAuthenticated() && 
+                    request.auth.token.dispensaryId != null && 
+                    get(/databases/$(database)/documents/users/$(userId)).data.dispensaryId == request.auth.token.dispensaryId;
       // Allow public user creation during checkout (guest checkout flow)
       allow create: if request.auth.uid == userId || isRole('Super Admin');
       allow delete: if isRole('Super Admin');
@@ -183,7 +188,10 @@ service cloud.firestore {
     }
 
     match /notificationPreferences/{userId} {
+      // Users can read/write their own preferences
       allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      // Also allow if the document doesn't exist yet (for creation)
+      allow create: if isAuthenticated();
     }
 
     match /driver_notifications/{notificationId} {

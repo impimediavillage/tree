@@ -37,11 +37,34 @@ function SignUpContent() {
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<{ name: string; iso: string; flag: string; dialCode: string; } | undefined>();
+  const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
+  const [countryDialCodes, setCountryDialCodes] = useState<Array<{ name: string; iso: string; flag: string; dialCode: string; }>>([]);
+
+  // Load country dial codes
+  useEffect(() => {
+    import('@/../docs/country-dial-codes.json').then(module => {
+      setCountryDialCodes(module.default);
+      // Set default to South Africa
+      const southAfrica = module.default.find((c: any) => c.iso === 'ZA');
+      setSelectedCountry(southAfrica);
+    });
+  }, []);
+
+  // Update phone number when dial code or national number changes
+  useEffect(() => {
+    if (selectedCountry) {
+      const combinedPhoneNumber = `${selectedCountry.dialCode}${nationalPhoneNumber}`.replace(/\D/g, '');
+      form.setValue('phoneNumber', combinedPhoneNumber, { shouldValidate: true, shouldDirty: false });
+    }
+  }, [selectedCountry, nationalPhoneNumber, form]);
 
   const form = useForm<UserSignupFormData>({
     resolver: zodResolver(userSignupSchema),
     defaultValues: {
+      fullName: '',
       email: '',
+      phoneNumber: '',
       password: '',
       confirmPassword: '',
       preferredDispensaryTypes: [],
@@ -97,7 +120,9 @@ function SignUpContent() {
       const newUserDocData = {
         uid: firebaseUser.uid,
         email: firebaseUser.email || '',
-        displayName: firebaseUser.email?.split('@')[0] || 'New User',
+        name: data.fullName, // Full name from form
+        displayName: data.fullName, // Set displayName to full name
+        phoneNumber: data.phoneNumber, // Phone number with dial code
         photoURL: null,
         role: 'LeafUser', 
         credits: 10, 
@@ -190,6 +215,15 @@ function SignUpContent() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField control={form.control} name="fullName" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Full Name</FormLabel>
+                     <FormControl>
+                        <Input type="text" placeholder="John Doe" {...field} className="text-base h-12" disabled={isLoading}/>
+                      </FormControl>
+                    <FormMessage />
+                  </FormItem>)}
+              />
               <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base">Email Address</FormLabel>
@@ -199,6 +233,28 @@ function SignUpContent() {
                       </div></FormControl>
                     <FormMessage />
                   </FormItem>)}
+              />
+              <FormField control={form.control} name="phoneNumber" render={() => (
+                  <FormItem>
+                    <FormLabel className="text-base">Phone Number</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-2">
+                        <div className="w-[100px] shrink-0 border rounded-md h-12 flex items-center justify-center bg-muted">
+                          {selectedCountry && <span className='text-sm font-medium'>{selectedCountry.flag} {selectedCountry.dialCode}</span>}
+                        </div>
+                        <Input 
+                          type="tel" 
+                          placeholder="821234567" 
+                          value={nationalPhoneNumber} 
+                          onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} 
+                          className="text-base h-12"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+              )}
               />
               <FormField control={form.control} name="password" render={({ field }) => (
                   <FormItem>

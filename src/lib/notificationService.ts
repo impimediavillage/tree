@@ -12,6 +12,7 @@ import {
   addDoc, 
   updateDoc, 
   doc, 
+  getDoc,
   query, 
   where, 
   orderBy, 
@@ -233,20 +234,19 @@ export async function getUserNotificationPreferences(
   userId: string
 ): Promise<NotificationPreferences> {
   try {
-    const prefsRef = collection(db, 'notificationPreferences');
-    const q = query(prefsRef, where('userId', '==', userId), limit(1));
-    const snapshot = await getDocs(q);
+    // Try direct document read first (more efficient and works with security rules)
+    const docRef = doc(db, 'notificationPreferences', userId);
+    const docSnap = await getDoc(docRef);
     
-    if (snapshot.empty) {
-      // Return default preferences
-      return getDefaultPreferences(userId);
+    if (docSnap.exists()) {
+      return {
+        ...docSnap.data(),
+        id: docSnap.id
+      } as unknown as NotificationPreferences;
     }
     
-    const docData = snapshot.docs[0].data();
-    return { 
-      ...docData,
-      id: snapshot.docs[0].id 
-    } as unknown as NotificationPreferences;
+    // Return default preferences if document doesn't exist
+    return getDefaultPreferences(userId);
   } catch (error) {
     console.error('Error getting notification preferences:', error);
     return getDefaultPreferences(userId);
