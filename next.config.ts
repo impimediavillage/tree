@@ -70,6 +70,4 @@ export default withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  // Exclude Firebase Messaging SW from next-pwa processing
-  publicExcludes: ['!firebase-messaging-sw.js'],
 })(nextConfig);
