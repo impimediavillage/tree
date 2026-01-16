@@ -189,26 +189,31 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeCh
     
     // Extract national phone number from full international number when data loads or changes
     useEffect(() => {
-      // Only restore once to avoid overwriting user input
-      if (hasRestoredPhone.current) return;
-      
       const phoneNumber = form.getValues('phoneNumber') || currentUser?.phoneNumber;
       
       if (phoneNumber && selectedCountry) {
+        console.log('📱 Extracting national number from:', phoneNumber, 'with dial code:', selectedCountry.dialCode);
+        
         // Remove dial code from stored phone number to get national number
         const dialCodeDigits = selectedCountry.dialCode.replace(/\D/g, '');
         const fullNumber = phoneNumber.replace(/\D/g, '');
+        
         if (fullNumber.startsWith(dialCodeDigits)) {
           const national = fullNumber.substring(dialCodeDigits.length);
-          setNationalPhoneNumber(national);
-          hasRestoredPhone.current = true;
-        } else if (fullNumber) {
-          // If dial code doesn't match, use full number as national
+          // Only update if different to avoid resetting user input
+          if (national !== nationalPhoneNumber) {
+            console.log('📱 Setting national number:', national);
+            setNationalPhoneNumber(national);
+            hasRestoredPhone.current = true;
+          }
+        } else if (fullNumber && !hasRestoredPhone.current) {
+          // If dial code doesn't match, use full number as national (only on first extraction)
+          console.log('📱 Dial code mismatch, using full number:', fullNumber);
           setNationalPhoneNumber(fullNumber);
           hasRestoredPhone.current = true;
         }
       }
-    }, [currentUser, selectedCountry, form]);
+    }, [currentUser, selectedCountry, form, nationalPhoneNumber]);
 
     return (
         <FormProvider {...form}>
@@ -373,25 +378,35 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
         });
         
         console.log("Checkout form pre-filled with user address:", fullAddress);
-      } else if (!currentUser) {
-        // Guest user - restore from localStorage if exists
-        try {
-          const savedFormData = localStorage.getItem('checkoutFormData');
-          if (savedFormData) {
-            const parsedData = JSON.parse(savedFormData);
-            // Extract dialCode if present
-            if (parsedData.dialCode) {
-              setUserDialCode(parsedData.dialCode);
-              delete parsedData.dialCode; // Remove before setting form values
-            }
-            form.reset(parsedData);
-            console.log("Checkout form restored from localStorage for guest");
-          }
-        } catch (error) {
-          console.error("Failed to restore checkout form from localStorage:", error);
-        }
       }
     }, [currentUser, form]);
+
+    // Separate effect for localStorage restoration - runs on mount regardless of currentUser
+    useEffect(() => {
+      // Only restore if user is not logged in
+      if (currentUser) return;
+      
+      try {
+        const savedFormData = localStorage.getItem('checkoutFormData');
+        if (savedFormData) {
+          const parsedData = JSON.parse(savedFormData);
+          console.log('📦 Restoring checkout data from localStorage:', parsedData);
+          
+          // Extract and set dialCode first
+          if (parsedData.dialCode) {
+            console.log('📞 Setting dial code:', parsedData.dialCode);
+            setUserDialCode(parsedData.dialCode);
+            delete parsedData.dialCode; // Remove before setting form values
+          }
+          
+          // Restore form data
+          form.reset(parsedData);
+          console.log("✅ Checkout form restored from localStorage");
+        }
+      } catch (error) {
+        console.error("Failed to restore checkout form from localStorage:", error);
+      }
+    }, []); // Run once on mount
 
     const handleAddressContinue = async (values: AddressValues) => {
         setIsSubmitting(true);
