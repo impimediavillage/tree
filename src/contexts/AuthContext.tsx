@@ -9,6 +9,7 @@ import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
+import { initializeFCM } from '@/lib/fcm-token-service';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -54,6 +55,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(fullProfile);
       setCurrentDispensary(fullProfile.dispensary || null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(fullProfile));
+      
+      // Initialize FCM for push notifications
+      if (fullProfile.uid) {
+        initializeFCM(fullProfile.uid).catch(error => {
+          console.error('Failed to initialize FCM:', error);
+        });
+      }
+      
       return fullProfile;
 
     } catch (error: any) {

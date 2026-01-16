@@ -57,6 +57,16 @@ export {
   onPayoutRequestUpdate
 } from './driver-functions';
 
+// Export Payout Notification functions
+export {
+  onTreehousePayoutRequestCreated,
+  onTreehousePayoutRequestUpdated,
+  onDispensaryPayoutRequestCreated,
+  onDispensaryPayoutRequestUpdated,
+  onInfluencerPayoutRequestCreated,
+  onInfluencerPayoutRequestUpdated
+} from './payout-notifications';
+
 // Export Advertising functions
 export {
   trackAdImpression,

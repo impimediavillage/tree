@@ -6,6 +6,7 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
+import { sendFCMPushNotification } from './notifications';
 
 const db = admin.firestore();
 
@@ -54,7 +55,7 @@ export const onInHouseDeliveryCreated = onDocumentUpdated(
             const driverId = driverDoc.id;
             
             // Create notification
-            return db.collection('driver_notifications').add({
+            await db.collection('driver_notifications').add({
               driverId,
               type: 'new_delivery',
               title: 'New Delivery Available! 🚗',
@@ -68,6 +69,21 @@ export const onInHouseDeliveryCreated = onDocumentUpdated(
               read: false,
               createdAt: admin.firestore.FieldValue.serverTimestamp(),
               expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 3600000) // 1 hour
+            });
+            
+            // Send FCM push notification (works even when app closed)
+            await sendFCMPushNotification(driverId, {
+              title: 'New Delivery Available! 🚗',
+              body: `Order #${afterData.orderNumber} is ready for pickup`,
+              data: {
+                type: 'new_delivery',
+                orderId: orderId,
+                orderNumber: afterData.orderNumber,
+                actionUrl: '/driver/dashboard',
+                sound: 'vroom',
+                priority: 'high',
+                notificationId: orderId,
+              },
             });
           });
 
@@ -413,6 +429,21 @@ export const onPayoutRequestUpdate = onDocumentUpdated(
       }
 
       await db.collection('driver_notifications').add(notification);
+      
+      // Send FCM push notification (works even when app closed)
+      await sendFCMPushNotification(driverId, {
+        title: notification.title,
+        body: notification.message,
+        data: {
+          type: notification.type,
+          amount: amount.toString(),
+          status: newStatus,
+          actionUrl: '/driver/payouts',
+          sound: notification.sound || 'notification-pop',
+          priority: notification.priority || 'high',
+        },
+      });
+      
       logger.info(`Sent payout notification to driver ${driverId}: ${newStatus}`);
     } catch (error) {
       logger.error('Error handling payout update:', error);

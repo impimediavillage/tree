@@ -479,16 +479,6 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     
     console.log('✅ Order saved successfully with ID:', mainOrderRef.id);
 
-    // Store in dispensary type collection
-    const typeCollectionName = params.dispensaryType.toLowerCase().replace(/\s+/g, '_') + '_orders';
-    const typeOrdersRef = collection(db, typeCollectionName);
-    await addDoc(typeOrdersRef, {
-      ...cleanedOrderData,
-      mainOrderId: mainOrderRef.id // Reference to main order
-    });
-    
-    console.log('✅ Dispensary type order saved successfully');
-
     return mainOrderRef;
   } catch (error) {
     console.error('❌ Error creating order:', error);

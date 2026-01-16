@@ -8,6 +8,11 @@
   "scope": "/",
   "start_url": "/",
   "description": "Wellness Store Hub",
+  "gcm_sender_id": "103953800507",
+  "permissions": [
+    "notifications",
+    "push"
+  ],
   "icons": [
     {
       "src": "/icons/512.png",

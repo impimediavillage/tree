@@ -6,6 +6,7 @@ import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getFunctions, type Functions } from 'firebase/functions';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
 import { getDatabase, type Database } from 'firebase/database'; // Added for real-time location tracking
+import { getMessaging, type Messaging, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -44,6 +45,8 @@ try {
 
 // Initialize Analytics only on the client-side
 let analytics: Analytics | undefined;
+let messaging: Messaging | undefined;
+
 if (typeof window !== 'undefined') {
     // Check if the measurementId is available, otherwise Analytics will not work
     if (firebaseConfig.measurementId) {
@@ -51,6 +54,18 @@ if (typeof window !== 'undefined') {
     } else {
         console.warn("Firebase Measurement ID is not set. Analytics will be disabled.");
     }
+
+    // Initialize Firebase Cloud Messaging
+    isSupported().then((supported) => {
+        if (supported) {
+            messaging = getMessaging(app);
+            console.log('🔔 Firebase Cloud Messaging initialized');
+        } else {
+            console.warn('Firebase Cloud Messaging not supported in this browser');
+        }
+    }).catch((error) => {
+        console.error('Error checking FCM support:', error);
+    });
 }
 
-export { app, auth, db, storage, functions, analytics, realtimeDb };
+export { app, auth, db, storage, functions, analytics, realtimeDb, messaging };

@@ -10,6 +10,75 @@ import * as admin from 'firebase-admin';
 const db = admin.firestore();
 
 /**
+ * Helper function to send FCM push notification to a user
+ * EXPORTED for use in other Cloud Functions (driver-functions, payout notifications, etc.)
+ */
+export async function sendFCMPushNotification(
+  userId: string,
+  notification: {
+    title: string;
+    body: string;
+    icon?: string;
+    data?: Record<string, string>;
+  }
+): Promise<void> {
+  try {
+    // Get user's FCM tokens
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    
+    if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
+      logger.info(`No FCM tokens for user ${userId}`);
+      return;
+    }
+
+    const tokens = userData.fcmTokens as string[];
+    logger.info(`Sending FCM push to ${tokens.length} device(s) for user ${userId}`);
+
+    // Send notification to all user's devices
+    const messages = tokens.map(token => ({
+      token,
+      notification: {
+        title: notification.title,
+        body: notification.body,
+        icon: notification.icon || '/icons/icon-192x192.png',
+      },
+      data: notification.data || {},
+      webpush: {
+        fcmOptions: {
+          link: notification.data?.actionUrl || '/',
+        },
+      },
+    }));
+
+    const response = await admin.messaging().sendEach(messages);
+    
+    logger.info(`FCM push sent: ${response.successCount} succeeded, ${response.failureCount} failed`);
+
+    // Remove invalid tokens
+    const invalidTokens: string[] = [];
+    response.responses.forEach((resp, idx) => {
+      if (!resp.success && (
+        resp.error?.code === 'messaging/invalid-registration-token' ||
+        resp.error?.code === 'messaging/registration-token-not-registered'
+      )) {
+        invalidTokens.push(tokens[idx]);
+      }
+    });
+
+    if (invalidTokens.length > 0) {
+      logger.info(`Removing ${invalidTokens.length} invalid FCM tokens`);
+      const validTokens = tokens.filter(t => !invalidTokens.includes(t));
+      await db.collection('users').doc(userId).update({
+        fcmTokens: validTokens,
+      });
+    }
+  } catch (error) {
+    logger.error('Error sending FCM push notification:', error);
+  }
+}
+
+/**
  * Send notification when new order is created
  * Notifies: Dispensary Owner, Super Admin, Treehouse Creators
  */
@@ -43,12 +112,13 @@ export const onOrderCreated = onDocumentCreated('orders/{orderId}', async (event
         const ownerId = ownerQuery.docs[0].id;
         
         // Create notification for dispensary owner
-        await db.collection('notifications').add({
+        const orderAmount = shipment.items.reduce((sum: number, item: any) => sum + item.lineTotal, 0);
+        const notificationData = {
           userId: ownerId,
           recipient_role: 'DispensaryOwner',
           type: 'order',
           title: 'New Order Received! 💰',
-          message: `Order #${orderData.orderNumber} - ${orderData.currency} ${shipment.items.reduce((sum: number, item: any) => sum + item.lineTotal, 0).toFixed(2)}`,
+          message: `Order #${orderData.orderNumber} - ${orderData.currency} ${orderAmount.toFixed(2)}`,
           priority: 'high',
           sound: 'ka-ching',
           animation: 'money-bag',
@@ -57,13 +127,30 @@ export const onOrderCreated = onDocumentCreated('orders/{orderId}', async (event
           orderId: orderId,
           orderNumber: orderData.orderNumber,
           dispensaryId: dispensaryId,
-          amount: shipment.items.reduce((sum: number, item: any) => sum + item.lineTotal, 0),
+          amount: orderAmount,
           currency: orderData.currency,
           actionUrl: `/dispensary-admin/orders/${orderId}`,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        
+        await db.collection('notifications').add(notificationData);
+        
+        // Send FCM push notification
+        await sendFCMPushNotification(ownerId, {
+          title: 'New Order Received! 💰',
+          body: `Order #${orderData.orderNumber} - ${orderData.currency} ${orderAmount.toFixed(2)}`,
+          data: {
+            type: 'order',
+            orderId: orderId,
+            orderNumber: orderData.orderNumber,
+            actionUrl: `/dispensary-admin/orders/${orderId}`,
+            sound: 'ka-ching',
+            priority: 'high',
+            notificationId: orderId,
+          },
         });
         
-        logger.info(`✅ Notification sent to dispensary owner: ${ownerId}`);
+        logger.info(`✅ Notification and FCM push sent to dispensary owner: ${ownerId}`);
       }
     }
 
@@ -85,6 +172,21 @@ export const onOrderCreated = onDocumentCreated('orders/{orderId}', async (event
         currency: orderData.currency,
         actionUrl: `/dashboard/leaf/orders/${orderId}`,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      
+      // Send FCM push notification to customer
+      await sendFCMPushNotification(orderData.userId, {
+        title: 'Order Confirmed! ✅',
+        body: `Your order #${orderData.orderNumber} has been confirmed and is being processed.`,
+        data: {
+          type: 'order',
+          orderId: orderId,
+          orderNumber: orderData.orderNumber,
+          actionUrl: `/dashboard/leaf/orders/${orderId}`,
+          sound: 'success-chime',
+          priority: 'medium',
+          notificationId: orderId,
+        },
       });
     }
 
@@ -109,6 +211,22 @@ export const onOrderCreated = onDocumentCreated('orders/{orderId}', async (event
         currency: orderData.currency,
         actionUrl: `/admin/orders/${orderId}`,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      
+      // Send FCM push notification to Super Admin (works even when logged out/app closed)
+      await sendFCMPushNotification(adminDoc.id, {
+        title: orderData.orderType === 'treehouse' ? 'New Treehouse Order 🏡' : 'New Platform Order 📊',
+        body: `Order #${orderData.orderNumber} - ${orderData.currency} ${orderData.total.toFixed(2)}`,
+        data: {
+          type: 'order',
+          orderId: orderId,
+          orderNumber: orderData.orderNumber,
+          orderType: orderData.orderType || 'standard',
+          actionUrl: `/admin/orders/${orderId}`,
+          sound: 'ka-ching',
+          priority: 'high',
+          notificationId: orderId,
+        },
       });
     }
 

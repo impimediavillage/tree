@@ -14,6 +14,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer'; // Import CartDrawer
 import BackgroundVideo from '@/components/layout/BackgroundVideo';
 import { Toaster as HotToaster } from 'react-hot-toast'; // For notification toasts
 import { SoundSystemInitializer } from '@/components/notifications/SoundSystemInitializer';
+import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
 
 export const metadata: Metadata = {
   title: 'The Wellness Tree - AI-Powered Wellness Hub - ',
@@ -57,6 +58,7 @@ export default function RootLayout({
               </main>
               <Footer />
               <CartDrawer /> {/* Add CartDrawer here to be accessible globally */}
+              <NotificationPermissionPrompt /> {/* Push notification permission prompt */}
               <Toaster />
               <HotToaster position="top-right" /> {/* For animated notification toasts */}
             </ReferralProvider>
