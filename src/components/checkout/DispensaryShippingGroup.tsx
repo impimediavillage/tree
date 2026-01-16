@@ -429,7 +429,7 @@ export const DispensaryShippingGroup = ({
         <CardTitle className="text-[#3D2E17] font-extrabold">Shipment from {dispensary?.dispensaryName || dispensaryName}</CardTitle>
         <CardDescription className="text-[#3D2E17] font-bold">Select a delivery method for the items from this dispensary.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 px-3 py-4 sm:px-4 sm:py-5">
         
         <div className='text-sm bg-background/50 rounded-md p-3 space-y-2'>
           <p className='font-extrabold text-[#3D2E17]'>Items in this shipment:</p>
@@ -611,10 +611,10 @@ export const DispensaryShippingGroup = ({
                             <Label 
                                 key={rate.id} 
                                 className={cn(
-                                    "flex justify-between items-center rounded-xl p-5 transition-all duration-200 cursor-pointer border-2",
+                                    "flex justify-between items-center rounded-xl p-4 sm:p-5 transition-all duration-200 cursor-pointer border-2 relative",
                                     isSelected
-                                        ? "bg-[#006B3E] border-[#006B3E] shadow-xl scale-[1.02] ring-4 ring-[#006B3E]/30"
-                                        : "bg-white/80 dark:bg-gray-800/50 border-[#006B3E]/20 hover:border-[#006B3E] hover:bg-gradient-to-br hover:from-white hover:to-green-50 dark:hover:from-gray-800 dark:hover:to-green-950/30 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
+                                        ? "bg-[#006B3E] border-[#006B3E] shadow-xl ring-2 ring-[#006B3E]/30"
+                                        : "bg-white/80 dark:bg-gray-800/50 border-[#006B3E]/20 hover:border-[#006B3E] hover:bg-gradient-to-br hover:from-white hover:to-green-50 dark:hover:from-gray-800 dark:hover:to-green-950/30 hover:shadow-lg active:scale-[0.99]"
                                 )}
                             >
                                 <div className="flex-1">
@@ -637,13 +637,13 @@ export const DispensaryShippingGroup = ({
                                         isSelected ? "text-green-50" : "text-[#006B3E]"
                                     )}>Est. Delivery: {rate.delivery_time}</p>
                                 </div>
-                                <div className="flex-shrink-0 ml-4">
+                                <div className="flex-shrink-0 ml-2 sm:ml-4">
                                     <div className={cn(
-                                        "px-4 py-2 rounded-lg",
+                                        "px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg",
                                         isSelected ? "bg-white/20 backdrop-blur-sm" : "bg-[#006B3E]/10"
                                     )}>
                                         <p className={cn(
-                                            "text-2xl font-black",
+                                            "text-xl sm:text-2xl font-black",
                                             isSelected ? "text-white" : "text-[#006B3E]"
                                         )}>R{rate.rate.toFixed(2)}</p>
                                     </div>

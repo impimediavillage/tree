@@ -653,8 +653,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                                 {/* Grand Total */}
                                 <div className="bg-gradient-to-br from-[#006B3E] to-[#3D2E17] p-5 rounded-2xl shadow-xl">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-xl font-black text-white flex items-center gap-2">
-                                            <DollarSign className="h-6 w-6" />
+                                        <span className="text-xl font-black text-white">
                                             Grand Total
                                         </span>
                                         <span className="text-3xl font-black text-white">R{(getCartTotal() + totalShippingCost).toFixed(2)}</span>
