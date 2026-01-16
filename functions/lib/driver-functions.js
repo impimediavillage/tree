@@ -41,6 +41,7 @@ exports.checkUnclaimedDeliveries = exports.onPayoutRequestUpdate = exports.onDri
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = __importStar(require("firebase-admin"));
+const notifications_1 = require("./notifications");
 const db = admin.firestore();
 // ============================================================================
 // DELIVERY NOTIFICATIONS
@@ -76,7 +77,7 @@ exports.onInHouseDeliveryCreated = (0, firestore_1.onDocumentUpdated)('orders/{o
                 const notificationPromises = driversQuery.docs.map(async (driverDoc) => {
                     const driverId = driverDoc.id;
                     // Create notification
-                    return db.collection('driver_notifications').add({
+                    await db.collection('driver_notifications').add({
                         driverId,
                         type: 'new_delivery',
                         title: 'New Delivery Available! 🚗',
@@ -90,6 +91,20 @@ exports.onInHouseDeliveryCreated = (0, firestore_1.onDocumentUpdated)('orders/{o
                         read: false,
                         createdAt: admin.firestore.FieldValue.serverTimestamp(),
                         expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 3600000) // 1 hour
+                    });
+                    // Send FCM push notification (works even when app closed)
+                    await (0, notifications_1.sendFCMPushNotification)(driverId, {
+                        title: 'New Delivery Available! 🚗',
+                        body: `Order #${afterData.orderNumber} is ready for pickup`,
+                        data: {
+                            type: 'new_delivery',
+                            orderId: orderId,
+                            orderNumber: afterData.orderNumber,
+                            actionUrl: '/driver/dashboard',
+                            sound: 'vroom',
+                            priority: 'high',
+                            notificationId: orderId,
+                        },
                     });
                 });
                 await Promise.all(notificationPromises);
@@ -167,7 +182,7 @@ exports.onDeliveryStatusUpdate = (0, firestore_1.onDocumentUpdated)('deliveries/
         // Update order status if needed
         if (orderStatus) {
             const orderRef = db.collection('orders').doc(orderId);
-            await orderRef.update({
+            const updateData = {
                 [`shipments.${dispensaryId}.status`]: orderStatus,
                 [`shipments.${dispensaryId}.lastStatusUpdate`]: admin.firestore.FieldValue.serverTimestamp(),
                 [`shipments.${dispensaryId}.statusHistory`]: admin.firestore.FieldValue.arrayUnion({
@@ -177,7 +192,13 @@ exports.onDeliveryStatusUpdate = (0, firestore_1.onDocumentUpdated)('deliveries/
                     updatedBy: afterData.driverId || 'system'
                 }),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
+            };
+            // Add driver info to shipment when claimed
+            if (newStatus === 'claimed' && afterData.driverId && afterData.driverName) {
+                updateData[`shipments.${dispensaryId}.driverId`] = afterData.driverId;
+                updateData[`shipments.${dispensaryId}.driverName`] = afterData.driverName;
+            }
+            await orderRef.update(updateData);
         }
         // Send notification to customer
         if (notificationTitle && customerId) {
@@ -389,6 +410,19 @@ exports.onPayoutRequestUpdate = (0, firestore_1.onDocumentUpdated)('driver_payou
             });
         }
         await db.collection('driver_notifications').add(notification);
+        // Send FCM push notification (works even when app closed)
+        await (0, notifications_1.sendFCMPushNotification)(driverId, {
+            title: notification.title,
+            body: notification.message,
+            data: {
+                type: notification.type,
+                amount: amount.toString(),
+                status: newStatus,
+                actionUrl: '/driver/payouts',
+                sound: notification.sound || 'notification-pop',
+                priority: notification.priority || 'high',
+            },
+        });
         v2_1.logger.info(`Sent payout notification to driver ${driverId}: ${newStatus}`);
     }
     catch (error) {
