@@ -52,13 +52,14 @@ interface Country {
     dialCode: string;
 }
 
-const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeChange }: { form: any; onContinue: (values: AddressValues) => Promise<void>; isSubmitting: boolean; currentUser: any; onDialCodeChange?: (dialCode: string) => void; }) => {
+const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeChange, initialDialCode }: { form: any; onContinue: (values: AddressValues) => Promise<void>; isSubmitting: boolean; currentUser: any; onDialCodeChange?: (dialCode: string) => void; initialDialCode?: string; }) => {
     const locationInputRef = useRef<HTMLInputElement>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInitialized = useRef(false);
     const { toast } = useToast();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>(countryDialCodes.find(c => c.iso === 'ZA'));
     const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
+    const hasRestoredPhone = useRef(false);
 
     const initializeMap = useCallback(async () => {
         if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
@@ -164,6 +165,16 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeCh
         }
     }, [initializeMap]);
     
+    // Set initial dial code if provided
+    useEffect(() => {
+        if (initialDialCode) {
+            const country = countryDialCodes.find(c => c.dialCode === initialDialCode);
+            if (country) {
+                setSelectedCountry(country);
+            }
+        }
+    }, [initialDialCode]);
+    
     // Update phone number when dial code or national number changes
     useEffect(() => {
         if (selectedCountry) {
@@ -176,21 +187,28 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeCh
         }
     }, [selectedCountry, nationalPhoneNumber, form, onDialCodeChange]);
     
-    // Extract national phone number from full international number when user data loads
+    // Extract national phone number from full international number when data loads or changes
     useEffect(() => {
-      if (currentUser?.phoneNumber && selectedCountry) {
+      // Only restore once to avoid overwriting user input
+      if (hasRestoredPhone.current) return;
+      
+      const phoneNumber = form.getValues('phoneNumber') || currentUser?.phoneNumber;
+      
+      if (phoneNumber && selectedCountry) {
         // Remove dial code from stored phone number to get national number
         const dialCodeDigits = selectedCountry.dialCode.replace(/\D/g, '');
-        const fullNumber = currentUser.phoneNumber.replace(/\D/g, '');
+        const fullNumber = phoneNumber.replace(/\D/g, '');
         if (fullNumber.startsWith(dialCodeDigits)) {
           const national = fullNumber.substring(dialCodeDigits.length);
           setNationalPhoneNumber(national);
-        } else {
-          // If dial code doesn't match, use full number
+          hasRestoredPhone.current = true;
+        } else if (fullNumber) {
+          // If dial code doesn't match, use full number as national
           setNationalPhoneNumber(fullNumber);
+          hasRestoredPhone.current = true;
         }
       }
-    }, [currentUser, selectedCountry]);
+    }, [currentUser, selectedCountry, form]);
 
     return (
         <FormProvider {...form}>
@@ -486,7 +504,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
 
         switch(step) {
             case 1: 
-                return <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} currentUser={currentUser} onDialCodeChange={setUserDialCode} />;
+                return <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} currentUser={currentUser} onDialCodeChange={setUserDialCode} initialDialCode={userDialCode} />;
             case 2:
                 return addressData && (
                     <MultiDispensaryShippingStep

@@ -51,12 +51,19 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
 
     setIsProcessing(true);
     try {
+      console.log('🛒 Starting order creation process...');
+      console.log('Customer info:', { customerName, customerPhone, dialCode });
+      console.log('Shipping address:', shippingAddress);
+      
       const orderPromises = [];
 
       // Create separate orders for each dispensary/vendor
       for (const [dispensaryId, group] of Object.entries(groupedCart) as [string, { dispensaryName: string; dispensaryType?: string; items: CartItem[] }][]) {
         const shipping = shippingSelections[dispensaryId];
-        if (!shipping) continue;
+        if (!shipping) {
+          console.warn(`⚠️ No shipping selection for ${dispensaryId}, skipping...`);
+          continue;
+        }
 
         const groupItems = group.items;
         const groupSubtotal = groupItems.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
@@ -65,6 +72,14 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
 
         // Detect if this is a Treehouse order (dispensaryId === 'treehouse')
         const isTreehouseOrder = dispensaryId === 'treehouse';
+        
+        console.log(`📦 Creating order for ${group.dispensaryName} (${dispensaryId})`, {
+          items: groupItems.length,
+          subtotal: groupSubtotal,
+          shipping: groupShippingCost,
+          total: groupTotal,
+          isTreehouse: isTreehouseOrder
+        });
 
         // Calculate commissions for Treehouse orders
         const platformCommission = isTreehouseOrder ? Math.round(groupTotal * PLATFORM_COMMISSION_RATE) : undefined;
@@ -96,9 +111,9 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
           shippingCost: groupShippingCost,
           total: groupTotal,
           customerDetails: {
-            name: currentUser.displayName || currentUser.email || 'Customer',
+            name: customerName || currentUser.name || currentUser.displayName || currentUser.email || 'Customer',
             email: currentUser.email || '',
-            phone: currentUser.phoneNumber || '',
+            phone: customerPhone || currentUser.phoneNumber || '',
           },
           // Influencer referral tracking
           ...(referralCode && { referralCode }),
@@ -116,15 +131,19 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
         orderPromises.push(createOrder(orderParams));
       }
 
+      console.log(`⏳ Waiting for ${orderPromises.length} order(s) to be created...`);
+      
       // Wait for all orders to be created
       const orderRefs = await Promise.all(orderPromises);
+      
+      console.log('✅ All orders created successfully:', orderRefs.map(ref => ref.id));
 
-      // Save shipping address to user profile for future auto-fill
+      // Save shipping address, phone, and name to user profile for future auto-fill
       if (currentUser) {
         try {
           const { doc, updateDoc } = await import('firebase/firestore');
           const { db } = await import('@/lib/firebase');
-          await updateDoc(doc(db, 'users', currentUser.uid), {
+          const updateData: any = {
             shippingAddress: {
               address: shippingAddress.address,
               streetAddress: shippingAddress.streetAddress,
@@ -135,14 +154,24 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
               country: shippingAddress.country,
               latitude: shippingAddress.latitude,
               longitude: shippingAddress.longitude
-            },
-            phoneNumber: currentUser.phoneNumber || '',
-            name: currentUser.displayName || currentUser.email || 'Customer'
-          });
-          console.log('Shipping address saved to user profile');
+            }
+          };
+          
+          // Update phone if provided from checkout
+          if (customerPhone) {
+            updateData.phoneNumber = customerPhone;
+          }
+          
+          // Update name if provided from checkout
+          if (customerName) {
+            updateData.name = customerName;
+          }
+          
+          await updateDoc(doc(db, 'users', currentUser.uid), updateData);
+          console.log('Shipping address, phone, and name saved to user profile');
         } catch (error) {
-          console.error('Failed to save address to user profile:', error);
-          // Don't block order completion if address save fails
+          console.error('Failed to save profile data:', error);
+          // Don't block order completion if profile save fails
         }
       }
 
@@ -165,7 +194,11 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
       // Redirect to orders page with checkout flag
       router.push('/dashboard/orders?from=checkout');
     } catch (error) {
-      console.error('Error creating orders:', error);
+      console.error('❌ Error creating orders:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        error
+      });
       toast({
         title: 'Order Failed',
         description: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
@@ -202,7 +235,25 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-[#5D4E37] uppercase tracking-wide">Telephone</p>
                   <p className="text-sm font-bold text-[#3D2E17]">
-                    {dialCode && customerPhone ? `${dialCode} ${customerPhone.replace(dialCode.replace(/\D/g, ''), '')}` : customerPhone || currentUser?.phoneNumber || 'Not provided'}
+                    {(() => {
+                      const phone = customerPhone || currentUser?.phoneNumber;
+                      if (!phone) return 'Not provided';
+                      
+                      // If we have a dial code, format the phone properly
+                      if (dialCode) {
+                        const dialCodeDigits = dialCode.replace(/\D/g, '');
+                        const phoneDigits = phone.replace(/\D/g, '');
+                        
+                        // If phone starts with dial code, split it properly
+                        if (phoneDigits.startsWith(dialCodeDigits)) {
+                          const nationalNumber = phoneDigits.substring(dialCodeDigits.length);
+                          return `${dialCode} ${nationalNumber}`;
+                        }
+                      }
+                      
+                      // Otherwise just show the phone as is
+                      return phone;
+                    })()}
                   </p>
                 </div>
               </div>
