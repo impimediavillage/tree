@@ -199,12 +199,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:w-[540px] p-0 bg-gradient-to-br from-white via-white/95 to-white/90 backdrop-blur-sm">
         <SheetHeader className="p-6 border-b border-[#3D2E17]/10 bg-gradient-to-r from-[#006B3E]/5 to-[#3D2E17]/5">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-3xl font-black text-[#3D2E17]">Notification Center</SheetTitle>
-            <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-red-500/10 transition-all duration-200">
-              <X className="h-6 w-6 text-[#3D2E17]/60 hover:text-red-500" />
-            </Button>
-          </div>
+          <SheetTitle className="text-3xl font-black text-[#3D2E17]">Notification Center</SheetTitle>
           
           {unreadCount > 0 && (
             <motion.div 
@@ -372,7 +367,13 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
             variant="outline"
             className="w-full font-black text-[#3D2E17] border-[#3D2E17]/30 hover:bg-[#006B3E]/10 hover:border-[#006B3E] transition-all duration-200 hover:scale-105"
             onClick={() => {
-              router.push('/dashboard/leaf/settings?tab=notifications');
+              // Dynamic route based on user role
+              const settingsRoute = currentUser?.role === 'DispensaryOwner' || currentUser?.role === 'DispensaryStaff' 
+                ? '/dispensary-admin/settings?tab=notifications'
+                : currentUser?.role === 'Super Admin'
+                ? '/admin/settings?tab=notifications'
+                : '/dashboard/leaf/settings?tab=notifications';
+              router.push(settingsRoute);
               onClose();
             }}
           >

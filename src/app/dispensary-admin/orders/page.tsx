@@ -53,7 +53,7 @@ import { OrderAnalyticsDashboard } from '@/components/analytics/OrderAnalyticsDa
 import { OrdersDashboardHelp } from '@/components/dispensary-admin/OrdersDashboardHelp';
 
 export default function DispensaryOrdersPage() {
-  const { currentUser, currentDispensary, isDispensaryOwner } = useAuth();
+  const { currentUser, currentDispensary, isDispensaryOwner, isVendor, isInHouseStaff } = useAuth();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
@@ -123,20 +123,38 @@ export default function DispensaryOrdersPage() {
         });
         console.log('Fetched orders:', fetchedOrders.length, 'orders processed');
 
-        // For owners, show all orders. For staff, only show orders for their dispensary
-        const relevantOrders = isDispensaryOwner
-          ? fetchedOrders // Show all orders for owners
-          : fetchedOrders.filter(order => {
-              // For staff, only show orders with shipments for their dispensary
-              const hasRelevantShipment = Object.values(order.shipments || {}).some(
-                shipment => shipment.dispensaryId === currentUser.dispensaryId
-              );
-              return hasRelevantShipment;
-            });
+        // Filter orders based on user role
+        let relevantOrders: Order[];
         
-        console.log('Relevant orders after dispensary filtering:', relevantOrders.length);
+        if (isDispensaryOwner || isInHouseStaff) {
+          // Owners and in-house staff see all dispensary orders
+          relevantOrders = fetchedOrders;
+        } else if (isVendor) {
+          // Vendors only see orders containing their products
+          relevantOrders = fetchedOrders.filter(order => {
+            // Check if any shipment has items from this vendor
+            const hasVendorProduct = Object.values(order.shipments || {}).some(shipment => 
+              shipment.items?.some(item => 
+                item.product?.createdBy === currentUser.uid || 
+                item.product?.vendorUserId === currentUser.uid
+              )
+            );
+            return hasVendorProduct;
+          });
+        } else {
+          // Staff see orders with shipments for their dispensary
+          relevantOrders = fetchedOrders.filter(order => {
+            const hasRelevantShipment = Object.values(order.shipments || {}).some(
+              shipment => shipment.dispensaryId === currentUser.dispensaryId
+            );
+            return hasRelevantShipment;
+          });
+        }
+        
+        console.log('Relevant orders after filtering:', relevantOrders.length);
         console.log('Current user dispensary ID:', currentUser?.dispensaryId);
         console.log('Is dispensary owner:', isDispensaryOwner);
+        console.log('Is vendor:', isVendor);
 
         setOrders(relevantOrders);
         

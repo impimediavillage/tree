@@ -123,6 +123,8 @@ export interface Product {
   dispensaryName: string;
   dispensaryType: string; 
   productOwnerEmail: string;
+  createdBy?: string; // userId of creator (for tracking vendor products)
+  vendorUserId?: string | null; // For vendor-specific products
   name: string;
   description: string;
   category: string; 

@@ -23,6 +23,19 @@ service cloud.firestore {
     function isDispensaryStaff() {
       return isRole('DispensaryStaff');
     }
+    
+    // Check if user is a vendor (DispensaryStaff with Vendor type)
+    function isVendor() {
+      return isRole('DispensaryStaff') && request.auth.token.crewMemberType == 'Vendor';
+    }
+    
+    // Check if user can manage a product (owner/staff or vendor who created it)
+    function canManageProduct(productData) {
+      return isDispensaryMember(productData.dispensaryId) && 
+             (isDispensaryOwner() || 
+              (isDispensaryStaff() && !isVendor()) || 
+              (isVendor() && (productData.createdBy == request.auth.uid || productData.vendorUserId == request.auth.uid)));
+    }
 
     // ===== SUPER ADMIN ACCESS =====
     match /{document=**} {
@@ -110,43 +123,49 @@ service cloud.firestore {
     // Main products collection (fallback)
     match /products/{productId} {
       allow read: if true;
-      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if canManageProduct(resource.data);
+      allow delete: if canManageProduct(resource.data);
     }
 
     // Cannibinoid Store Products
     match /cannibinoid_store_products/{productId} {
       allow read: if true;
-      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if canManageProduct(resource.data);
+      allow delete: if canManageProduct(resource.data);
     }
 
     // Traditional Medicine Products
     match /traditional_medicine_dispensary_products/{productId} {
       allow read: if true;
-      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if canManageProduct(resource.data);
+      allow delete: if canManageProduct(resource.data);
     }
 
     // Mushroom Store Products
     match /mushroom_store_products/{productId} {
       allow read: if true;
-      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if canManageProduct(resource.data);
+      allow delete: if canManageProduct(resource.data);
     }
 
     // Homeopathy Store Products
     match /homeopathy_store_products/{productId} {
       allow read: if true;
-      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if canManageProduct(resource.data);
+      allow delete: if canManageProduct(resource.data);
     }
 
     // Permaculture Store Products
     match /permaculture_store_products/{productId} {
       allow read: if true;
-      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if canManageProduct(resource.data);
+      allow delete: if canManageProduct(resource.data);
     }
     
     // Product Pool Products
@@ -183,13 +202,20 @@ service cloud.firestore {
 
     // ===== ORDERS SYSTEM =====
     match /orders/{orderId} {
+      // Allow reading orders if:
+      // 1. User is the customer who placed the order
+      // 2. User is dispensary owner/staff with a dispensaryId (will be filtered client-side)
+      // 3. User is Super Admin
       allow read: if isAuthenticated() && 
                     (request.auth.uid == resource.data.userId || 
-                     request.auth.token.dispensaryId in resource.data.shipments.keys());
+                     request.auth.token.dispensaryId in resource.data.shipments.keys() ||
+                     (request.auth.token.dispensaryId != null && (isDispensaryOwner() || isDispensaryStaff())) ||
+                     isRole('Super Admin'));
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && 
                       (request.auth.uid == resource.data.userId || 
-                       request.auth.token.dispensaryId in resource.data.shipments.keys());
+                       request.auth.token.dispensaryId in resource.data.shipments.keys() ||
+                       isRole('Super Admin'));
       allow delete: if isRole('Super Admin');
     }
 

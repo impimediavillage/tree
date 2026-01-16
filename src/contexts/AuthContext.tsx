@@ -23,6 +23,9 @@ interface AuthContextType {
   canAccessDispensaryPanel: boolean;
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
+  isVendor: boolean;
+  isDriver: boolean;
+  isInHouseStaff: boolean;
   fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>;
   refreshUserProfile: () => Promise<void>;
   logout: () => Promise<void>;
@@ -128,6 +131,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const canAccessDispensaryPanel = (isDispensaryOwner || isDispensaryStaff) && currentDispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   
+  // Crew member type checks
+  const isVendor = isDispensaryStaff && currentUser?.crewMemberType === 'Vendor';
+  const isDriver = isDispensaryStaff && (currentUser?.crewMemberType === 'Driver' || currentUser?.isDriver === true);
+  const isInHouseStaff = isDispensaryStaff && currentUser?.crewMemberType === 'In-house Staff';
+  
   const value: AuthContextType = {
     currentUser,
     setCurrentUser,
@@ -139,6 +147,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     canAccessDispensaryPanel,
     isLeafUser,
     currentDispensaryStatus,
+    isVendor,
+    isDriver,
+    isInHouseStaff,
     fetchUserProfile,
     refreshUserProfile,
     logout,

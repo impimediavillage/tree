@@ -76,7 +76,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensary, isDispensaryOwner, isDispensaryStaff, logout } = useAuth();
+  const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensary, isDispensaryOwner, isDispensaryStaff, isVendor, isDriver, isInHouseStaff, logout } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showNotificationCenter, setShowNotificationCenter] = useState(false);
   const [showSocialShareHub, setShowSocialShareHub] = useState(false);
@@ -92,6 +92,13 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
         }
     }
   }, [authLoading, canAccessDispensaryPanel, currentUser, router, toast]);
+
+  // Redirect drivers to their dedicated panel
+  useEffect(() => {
+    if (!authLoading && currentUser && isDriver) {
+      router.replace('/driver');
+    }
+  }, [authLoading, currentUser, isDriver, router]);
 
   const handleNavClick = (href: string, e: React.MouseEvent) => {
     if (href === '#notifications') {
@@ -125,6 +132,34 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
     );
   }
   
+  // Filter navigation items based on crew member type
+  const filterNavItems = (items: NavItem[]) => {
+    return items.filter(item => {
+      // Owners see everything
+      if (isDispensaryOwner) return true;
+      
+      // Vendors: Only see products, orders (filtered), analytics, payouts, notifications
+      if (isVendor) {
+        const vendorAllowed = ['/dispensary-admin/products', '/dispensary-admin/orders', 
+          '/dispensary-admin/analytics', '/dispensary-admin/payouts', '/dispensary-admin/profile'];
+        return vendorAllowed.some(path => item.href.startsWith(path)) || item.href === '#notifications';
+      }
+      
+      // Drivers: Only see driver-specific pages (redirected to driver panel in useEffect below)
+      if (isDriver) {
+        return false; // Drivers get redirected to driver panel
+      }
+      
+      // In-house staff: See everything except owner-only items
+      if (isInHouseStaff) {
+        return !item.ownerOnly;
+      }
+      
+      // Default: Check ownerOnly flag
+      return !item.ownerOnly;
+    });
+  };
+  
   const SidebarNavigation = () => (
     <>
        <div className="flex items-center gap-3 p-3 border-b border-sidebar-border">
@@ -154,7 +189,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
             <div className="px-2 py-1.5">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Main</p>
             </div>
-            {mainSidebarNavItems.map((item) => {
+            {filterNavItems(mainSidebarNavItems).map((item) => {
               const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
               return (
                 <Button
@@ -230,7 +265,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
             <div className="px-2 py-1.5">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Management</p>
             </div>
-            {managementSidebarNavItems.map((item) => {
+            {filterNavItems(managementSidebarNavItems).map((item) => {
               const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
               const isSpecialHref = item.href.startsWith('#');
               // Hide item if it's for a specific dispensary type and current doesn't match
@@ -284,7 +319,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
             <div className="px-2 py-1.5">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Settings</p>
             </div>
-            {settingsSidebarNavItems.map((item) => {
+            {filterNavItems(settingsSidebarNavItems).map((item) => {
               const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
               const isSpecialHref = item.href.startsWith('#');
               return (

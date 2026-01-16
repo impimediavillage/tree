@@ -19,7 +19,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { getProductCollectionName } from '@/lib/utils';
 
 export default function WellnessProductsPage() {
-  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+  const { currentUser, currentDispensary, loading: authLoading, isVendor } = useAuth();
   const { toast } = useToast();
   
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -48,7 +48,15 @@ export default function WellnessProductsPage() {
         );
 
         const querySnapshot = await getDocs(productsQuery);
-        const fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        let fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        
+        // Filter for vendors - only show their own products
+        if (isVendor) {
+          fetchedProducts = fetchedProducts.filter(p => 
+            p.createdBy === currentUser?.uid || p.vendorUserId === currentUser?.uid
+          );
+        }
+        
         setAllProducts(fetchedProducts);
 
         if (fetchedProducts.length > 0) {
