@@ -455,12 +455,11 @@ export const TreehouseShippingGroup = ({
                         )}
                     </div>
                     <Button 
-                        variant="outline" 
-                        className="w-full justify-between h-auto py-3 text-left"
+                        className="w-full justify-start text-left font-bold h-auto py-3 bg-[#006B3E] hover:bg-[#005030] text-white border-0"
                         onClick={openLockerModal}
                         disabled={!isAddressComplete(addressData.shippingAddress)}
                     >
-                        {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.address}</p></div> : 'Click to select destination locker'}
+                        {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-green-100'>{destinationLocker.address}</p></div> : 'Select destination locker'}
                     </Button>
                     {!isAddressComplete(addressData.shippingAddress) && <p className='text-xs text-muted-foreground mt-1'>Please complete your address to select a locker.</p>}
                     {!destinationLocker && isAddressComplete(addressData.shippingAddress) && <p className='text-xs text-primary font-semibold mt-1'>⬆️ Please select a destination locker above to see shipping rates</p>}
@@ -470,7 +469,7 @@ export const TreehouseShippingGroup = ({
         )}
 
         <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
-            <DialogContent className="sm:max-w-[700px] bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 dark:from-gray-900 dark:via-amber-950 dark:to-green-950">
+            <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 dark:from-gray-900 dark:via-amber-950 dark:to-green-950">
                 <DialogHeader className="pb-4 border-b-2 border-[#006B3E]/30">
                     <DialogTitle className="text-2xl font-black text-[#3D2E17] flex items-center gap-2">
                         <MapPin className="h-6 w-6 text-[#006B3E]" />
@@ -487,7 +486,7 @@ export const TreehouseShippingGroup = ({
                         className="pl-10 border-2 border-[#006B3E]/30 focus:border-[#006B3E] font-semibold"
                     />
                 </div>
-                <div className="mt-4 max-h-[450px] overflow-y-auto space-y-3 p-2 smooth-scroll" style={{ scrollBehavior: 'smooth' }}>
+                <div className="mt-4 flex-1 overflow-y-auto space-y-3 p-2 pr-3 smooth-scroll" style={{ scrollBehavior: 'smooth' }}>
                     {filteredLockers.length > 0 ? (
                         filteredLockers.map(locker => {
                             const isSelected = destinationLocker?.id === locker.id;

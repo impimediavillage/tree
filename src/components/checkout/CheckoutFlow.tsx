@@ -306,10 +306,24 @@ const MultiDispensaryShippingStep = ({ groupedCart, addressData, onBack, onConti
                     />
                 )
             })}
-            <div className="flex justify-between items-center pt-6">
-                <Button type="button" variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Address</Button>
-                <Button type="button" onClick={onContinue} disabled={!allDispensariesHaveSelection}>
-                    Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
+            <div className="flex justify-between items-center pt-6 gap-3">
+                <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={onBack}
+                    className="h-12 w-12 text-[#3D2E17] hover:text-[#3D2E17] hover:bg-[#3D2E17]/10"
+                    aria-label="Back to address"
+                >
+                    <ArrowLeft className="h-6 w-6" />
+                </Button>
+                <Button 
+                    type="button" 
+                    onClick={onContinue} 
+                    disabled={!allDispensariesHaveSelection}
+                    className="flex-1"
+                >
+                    Let's pay now <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
             </div>
         </div>
