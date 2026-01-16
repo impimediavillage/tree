@@ -126,6 +126,8 @@ export interface CartItem {
   dispensaryName: string;
   dispensaryType?: string | null;
   productOwnerEmail: string;
+  createdBy?: string; // userId who created the product (for vendor filtering)
+  vendorUserId?: string | null; // Vendor user ID if product was created by vendor
   currency?: string;
   price: number;
   unit: string;

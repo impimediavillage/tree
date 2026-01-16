@@ -418,6 +418,8 @@ export interface CartItem {
   dispensaryName: string;
   dispensaryType: string; 
   productOwnerEmail: string;
+  createdBy?: string; // userId who created the product (for vendor filtering)
+  vendorUserId?: string | null; // Vendor user ID if product was created by vendor
   
   // Shipping-related dimension fields, mapped from PriceTier
   weight?: number | null;

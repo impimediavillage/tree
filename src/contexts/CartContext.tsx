@@ -88,6 +88,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         dispensaryName: product.dispensaryName,
         dispensaryType: product.dispensaryType,
         productOwnerEmail: product.productOwnerEmail,
+        createdBy: product.createdBy, // Store product creator for vendor filtering
+        vendorUserId: product.vendorUserId, // Store vendor ID if applicable
         currency: product.currency,
         unit: tier.unit,
         quantityInStock: tier.quantityInStock ?? 0,

@@ -130,13 +130,13 @@ export default function DispensaryOrdersPage() {
           // Owners and in-house staff see all dispensary orders
           relevantOrders = fetchedOrders;
         } else if (isVendor) {
-          // Vendors only see orders containing their products
+          // Vendors only see orders containing products THEY created
           relevantOrders = fetchedOrders.filter(order => {
-            // Check if any shipment has items from this vendor
+            // Check if any shipment has items created by this vendor
             const hasVendorProduct = Object.values(order.shipments || {}).some(shipment => 
               shipment.items?.some(item => 
-                item.product?.createdBy === currentUser.uid || 
-                item.product?.vendorUserId === currentUser.uid
+                item.createdBy === currentUser.uid || 
+                item.vendorUserId === currentUser.uid
               )
             );
             return hasVendorProduct;
