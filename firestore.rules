@@ -42,6 +42,14 @@ service cloud.firestore {
       allow delete: if isRole('Super Admin');
     }
 
+    // ===== ORDER COUNTERS =====
+    match /order_counters/{counterId} {
+      // Allow authenticated users to read order counters (needed for order number generation)
+      allow read: if isAuthenticated();
+      // Only allow writes from backend/cloud functions
+      allow write: if false;
+    }
+
     // ===== DISPENSARIES =====
     match /dispensaries/{dispensaryId} {
       allow read: if true; // Public read for browsing

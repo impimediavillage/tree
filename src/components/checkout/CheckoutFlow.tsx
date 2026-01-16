@@ -192,16 +192,14 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeCh
       const phoneNumber = form.getValues('phoneNumber') || currentUser?.phoneNumber;
       
       if (phoneNumber && selectedCountry) {
-        console.log('📱 Extracting national number from:', phoneNumber, 'with dial code:', selectedCountry.dialCode);
-        
         // Remove dial code from stored phone number to get national number
         const dialCodeDigits = selectedCountry.dialCode.replace(/\D/g, '');
         const fullNumber = phoneNumber.replace(/\D/g, '');
         
         if (fullNumber.startsWith(dialCodeDigits)) {
           const national = fullNumber.substring(dialCodeDigits.length);
-          // Only update if different to avoid resetting user input
-          if (national !== nationalPhoneNumber) {
+          // Only set if not already set to avoid overwriting user input
+          if (!hasRestoredPhone.current || nationalPhoneNumber === '') {
             console.log('📱 Setting national number:', national);
             setNationalPhoneNumber(national);
             hasRestoredPhone.current = true;
@@ -213,7 +211,7 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeCh
           hasRestoredPhone.current = true;
         }
       }
-    }, [currentUser, selectedCountry, form, nationalPhoneNumber]);
+    }, [currentUser, selectedCountry, form]);
 
     return (
         <FormProvider {...form}>
