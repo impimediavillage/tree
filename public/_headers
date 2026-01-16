@@ -1,0 +1,4 @@
+# Firebase Messaging Service Worker must be served with correct headers
+/firebase-messaging-sw.js
+  Service-Worker-Allowed: /
+  Content-Type: application/javascript
