@@ -213,7 +213,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                   const customerPrice = getDisplayPrice(item.price, 0, isProductPool);
                   return sum + (customerPrice * item.quantity);
                 }, 0);
-                const shippingTotal = Object.values(order.shipments || {}).reduce((sum, shipment) => sum + (shipment.cost || 0), 0);
+                const shippingTotal = Object.values(order.shipments || {}).reduce((sum, shipment) => sum + (shipment.shippingMethod?.rate || 0), 0);
                 return itemsSubtotal + shippingTotal;
               })())}</p>
               <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
