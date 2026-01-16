@@ -144,11 +144,14 @@ export function NotificationPermissionPrompt() {
               </div>
               
               <div className="flex-1">
-                <h3 className="font-extrabold text-[#3D2E17] mb-2">
-                  📱 Stay Updated with Push Notifications
+                <h3 className="font-extrabold text-xl text-[#3D2E17] mb-2 leading-tight">
+                  Grow your roots
                 </h3>
-                <p className="text-sm text-[#5D4E37] mb-4">
-                  Get instant alerts for new orders, shipment updates, and important messages even when the app is closed!
+                <p className="text-sm text-[#5D4E37] mb-1">
+                  Receive push notifications. Get instant alerts for new orders, shipment updates, and important messages even when the app is closed from
+                </p>
+                <p className="font-extrabold text-lg text-[#3D2E17] mb-4">
+                  The Wellness Tree
                 </p>
                 
                 <div className="flex gap-2">
