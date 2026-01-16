@@ -31,7 +31,7 @@ service cloud.firestore {
 
     // ===== USER MANAGEMENT =====
     match /users/{userId} {
-      // Users can read and update their own profile
+      // Users can read and update their own profile (including FCM tokens)
       allow read, update: if isAuthenticated() && request.auth.uid == userId;
       // Dispensary staff can read users in their dispensary
       allow read: if isAuthenticated() && 
@@ -40,6 +40,12 @@ service cloud.firestore {
       // Allow public user creation during checkout (guest checkout flow)
       allow create: if request.auth.uid == userId || isRole('Super Admin');
       allow delete: if isRole('Super Admin');
+      
+      // IMPORTANT: Allow users to write FCM tokens even if they only update the fcmTokens field
+      // This is needed for push notifications to work
+      allow update: if isAuthenticated() && 
+                      request.auth.uid == userId && 
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens', 'lastTokenUpdate']);
     }
 
     // ===== ORDER COUNTERS =====
@@ -360,6 +366,22 @@ service cloud.firestore {
       allow read: if isAuthenticated() && 
                     (isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin'));
       allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if isRole('Super Admin');
+    }
+
+    // ===== TREEHOUSE CREATOR PAYOUTS =====
+    match /payout_requests/{requestId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.creatorId || isRole('Super Admin'));
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.creatorId;
+      allow update: if isRole('Super Admin');
+    }
+
+    // ===== INFLUENCER PAYOUTS =====
+    match /influencerPayouts/{requestId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.influencerId || isRole('Super Admin'));
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.influencerId;
       allow update: if isRole('Super Admin');
     }
 
