@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -557,7 +558,7 @@ export function DispensaryTypeDialog({
                   </div>
 
                   {/* Generic Workflow Toggle Card */}
-                  {!isEditing && isSuperAdmin && (
+                  {isSuperAdmin && (
                     <Card className="bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border-2 border-purple-500/30 shadow-lg hover:shadow-xl transition-all duration-300">
                       <CardContent className="pt-6 space-y-4">
                         <div className="flex items-center justify-between">
@@ -565,19 +566,28 @@ export function DispensaryTypeDialog({
                             <div className="flex items-center gap-2">
                               <span className="text-2xl">✨</span>
                               <FormLabel className="text-lg font-black text-[#3D2E17] dark:text-white">Use Generic Workflow</FormLabel>
+                              {isEditing && (
+                                <span className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded">LOCKED</span>
+                              )}
                             </div>
                             <FormDescription className="text-[#3D2E17]/70 font-semibold">
-                              Enable visual drag-and-drop category builder with AI-powered structure detection
+                              {isEditing 
+                                ? 'Workflow type cannot be changed after creation to prevent data inconsistencies'
+                                : 'Enable visual drag-and-drop category builder with AI-powered structure detection'
+                              }
                             </FormDescription>
                                 </div>
                           <Switch
                             checked={useGenericWorkflow}
                             onCheckedChange={(checked) => {
-                              setUseGenericWorkflow(checked);
-                              if (checked) {
-                                setCurrentTab('categories');
+                              if (!isEditing) {
+                                setUseGenericWorkflow(checked);
+                                if (checked) {
+                                  setCurrentTab('categories');
+                                }
                               }
                             }}
+                            disabled={isEditing}
                             disabled={isSubmitting}
                             className="data-[state=checked]:bg-purple-500"
                           />

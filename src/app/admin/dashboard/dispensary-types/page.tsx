@@ -88,60 +88,7 @@ export default function AdminWellnessTypesPage() {
     }
   };
 
-  const quickAddApothecary = async () => {
-    if (!isSuperAdmin) {
-      toast({ title: 'Access Denied', description: 'Only Super Admins can add types.', variant: 'destructive' });
-      return;
-    }
 
-    try {
-      const existingQuery = query(
-        collection(db, 'dispensaryTypes'),
-        where('name', '==', 'Apothecary')
-      );
-      const existingSnapshot = await getDocs(existingQuery);
-
-      if (!existingSnapshot.empty) {
-        toast({ 
-          title: 'Already Exists', 
-          description: 'Apothecary type is already in the system.', 
-          variant: 'default' 
-        });
-        return;
-      }
-
-      const apothecaryData = {
-        name: 'Apothecary',
-        description: 'Traditional herbal pharmacy offering natural remedies, tinctures, salves, and holistic health products',
-        iconPath: 'https://firebasestorage.googleapis.com/v0/b/dispensary-tree.firebasestorage.app/o/dispensary-type-assets%2Ficons%2Fapothecary-icon.png?alt=media',
-        image: 'https://firebasestorage.googleapis.com/v0/b/dispensary-tree.firebasestorage.app/o/dispensary-type-assets%2Fimages%2Fapothecary-image.png?alt=media',
-        isActive: true,
-        useGenericWorkflow: true,
-        advisorFocusPrompt: 'You are a knowledgeable apothecary advisor specializing in herbal remedies, natural medicine, and holistic wellness. Guide users on selecting traditional remedies, understanding herb properties, and safe usage.',
-        recommendedAdvisorIds: [],
-        storeCount: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      await addDoc(collection(db, 'dispensaryTypes'), apothecaryData);
-      
-      toast({ 
-        title: 'Success!', 
-        description: 'Apothecary type added. Configure categories in the edit dialog.',
-        duration: 5000
-      });
-      
-      fetchWellnessTypes();
-    } catch (error: any) {
-      console.error('Error adding Apothecary:', error);
-      toast({ 
-        title: 'Error', 
-        description: error.message || 'Failed to add Apothecary type.', 
-        variant: 'destructive' 
-      });
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -156,20 +103,11 @@ export default function AdminWellnessTypesPage() {
           </p>
         </div>
         {isSuperAdmin && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button 
-              onClick={quickAddApothecary}
-              variant="outline"
-              className="border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-[#3D2E17] dark:text-white font-bold"
-            >
-              <Zap className="mr-2 h-4 w-4 text-purple-500" /> Quick Add Apothecary
+          <DispensaryTypeDialog onSave={fetchWellnessTypes} isSuperAdmin={isSuperAdmin}>
+            <Button className="bg-[#006B3E] hover:bg-[#3D2E17] text-white font-bold">
+              <PlusCircle className="mr-2 h-4 w-4" /> Add New Type
             </Button>
-            <DispensaryTypeDialog onSave={fetchWellnessTypes} isSuperAdmin={isSuperAdmin}>
-              <Button className="bg-[#006B3E] hover:bg-[#3D2E17] text-white font-bold">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Type
-              </Button>
-            </DispensaryTypeDialog>
-          </div>
+          </DispensaryTypeDialog>
         )}
       </div>
 
