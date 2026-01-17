@@ -7,12 +7,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LogInIcon, Mail, Lock, ArrowLeft, Loader2, Eye, EyeOff, Sparkles, TreePine } from 'lucide-react';
+import { LogInIcon, Mail, Lock, ArrowLeft, Loader2, Eye, EyeOff, Sparkles, TreePine, Store, Leaf } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
@@ -29,6 +30,7 @@ function SignInContent() {
   const { loadCart, cartItems } = useCart(); // Get loadCart function and cartItems
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSignUpDialog, setShowSignUpDialog] = useState(false);
 
   const form = useForm<UserSigninFormData>({
     resolver: zodResolver(userSigninSchema),
@@ -143,12 +145,19 @@ function SignInContent() {
         <CardHeader className="text-center space-y-4">
           {/* Colorful Icon - Centrally Placed */}
           <Link href="/" className="inline-block mx-auto group">
-        <div className="flex flex-col items-center gap-3">
-          <TreePine className="h-20 w-20 text-[#3D2E17] group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-bold text-[#3D2E17] group-hover:text-[#006B3E] transition-colors">
+            <div className="flex flex-col items-center gap-3">
+              <TreePine className="h-20 w-20 text-[#3D2E17] group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-bold text-[#3D2E17] group-hover:text-[#006B3E] transition-colors">
               </span>
             </div>
           </Link>
+          
+          {/* Back to Front Button */}
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/">
+              Back to front 😊
+            </Link>
+          </Button>
           
           <div>
             <CardTitle className="text-3xl font-bold text-[#3D2E17]">Welcome Back!</CardTitle>
@@ -196,14 +205,82 @@ function SignInContent() {
               Forgot Password?
             </Button>
           </div>
-           <div className="mt-4 text-center text-sm text-muted-foreground">
+          <div className="mt-4 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}
-            <Link href={signUpHref} className="font-extrabold text-[#3D2E17] hover:underline">
-                Sign Up
-            </Link>
+            <Button 
+              variant="link" 
+              onClick={() => setShowSignUpDialog(true)} 
+              className="font-extrabold text-[#3D2E17] hover:underline p-0 h-auto"
+            >
+              Sign Up
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Sign Up Dialog */}
+      <Dialog open={showSignUpDialog} onOpenChange={setShowSignUpDialog}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-center text-[#3D2E17]">
+              Choose Your Path
+            </DialogTitle>
+            <DialogDescription className="text-center text-lg">
+              Select the membership type that best fits your needs
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+            {/* Create Store Card */}
+            <Card className="p-6 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between hover:shadow-xl transition-shadow">
+              <div className="text-center">
+                <div className="flex justify-center mb-4">
+                  <Store className="h-16 w-16 text-[#006B3E]" />
+                </div>
+                <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
+                  Join Our Growing Ecosystem
+                </h2>
+                <p className="text-base font-semibold text-[#3D2E17] mt-3">
+                  Create your own Cannabinoid store, Permaculture / Organic farming store, Homeopathy store, Traditional Medicine store, or Mushroom store.
+                </p>
+              </div>
+              <div className="mt-6 space-y-3">
+                <Button 
+                  asChild 
+                  size="lg" 
+                  className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full"
+                >
+                  <Link href="/dispensary-signup">Create store</Link>
+                </Button>
+              </div>
+            </Card>
+
+            {/* Become Leaf User Card */}
+            <Card className="p-6 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between hover:shadow-xl transition-shadow">
+              <div className="text-center">
+                <div className="flex justify-center mb-4">
+                  <Leaf className="h-16 w-16 text-[#006B3E]" />
+                </div>
+                <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
+                  Need Wellness information now?
+                </h2>
+                <p className="text-base font-semibold text-[#3D2E17] mt-3">
+                  Get instant access now. Sign up as Leaf user and get 10 free credits to get vital wellness info. Remember to connect with a real practitioner as AI can make mistakes.
+                </p>
+              </div>
+              <div className="mt-6 space-y-3">
+                <Button 
+                  asChild 
+                  size="lg" 
+                  className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full"
+                >
+                  <Link href={signUpHref}>Create Free leaf account</Link>
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -316,7 +316,7 @@ export default function HolisticAiHubPage() {
                 Discover unique creator-designed apparel. Shop from talented creators and support independent brands.
               </p>
             </div>
-            <div className="mt-8 space-y-4 text-center">
+            <div className="mt-8 space-y-4 text-center px-6">
               <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
                 <Link href="/treehouse">Enter Treehouse Store</Link>
               </Button>
@@ -392,7 +392,7 @@ export default function HolisticAiHubPage() {
                 Connect with authentic wellness stores. From cbds to traditional medicine, natural health permaculture, and fungi, find everything you need.
               </p>
             </div>
-            <div className="mt-8 space-y-4 text-center">
+            <div className="mt-8 space-y-4 text-center px-6">
               <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
                 <Link href="/browse-dispensary-types">Browse Stores</Link>
               </Button>
