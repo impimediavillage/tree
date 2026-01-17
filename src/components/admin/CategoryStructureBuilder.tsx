@@ -42,17 +42,30 @@ const nodeTypes = {
 
 interface CategoryStructureBuilderProps {
   onStructureChange?: (json: any, metadata: CategoryStructureMetadata) => void;
-  initialJSON?: string;
+  initialJSON?: any; // Changed from string to any to accept objects
+  showMetadataPanel?: boolean; // Optional metadata display
 }
 
 export default function CategoryStructureBuilder({
   onStructureChange,
-  initialJSON = ''
+  initialJSON = '',
+  showMetadataPanel = true
 }: CategoryStructureBuilderProps) {
-  const [jsonInput, setJsonInput] = useState(initialJSON);
+  const [jsonInput, setJsonInput] = useState(
+    typeof initialJSON === 'string' ? initialJSON : JSON.stringify(initialJSON, null, 2)
+  );
   const [parsedJSON, setParsedJSON] = useState<any>(null);
   const [metadata, setMetadata] = useState<CategoryStructureMetadata | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  
+  // Extract rich metadata from parsed JSON (SAFE - won't break if not present)
+  const [richMetadata, setRichMetadata] = useState<{
+    meta?: any;
+    structuredData?: any;
+    semantics?: any;
+    searchBoost?: any;
+    blueprint?: any;
+  } | null>(null);
   
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -68,7 +81,18 @@ export default function CategoryStructureBuilder({
       const parsed = JSON.parse(jsonInput);
       setParsedJSON(parsed);
 
-      // Analyze structure
+      // SAFE: Extract rich metadata if present (won't break if missing)
+      if (parsed.meta || parsed.recommendedStructuredData || parsed.semanticRelationships) {
+        setRichMetadata({
+          meta: parsed.meta,
+          structuredData: parsed.recommendedStructuredData,
+          semantics: parsed.semanticRelationships,
+          searchBoost: parsed.aiSearchBoost,
+          blueprint: parsed.pageBlueprint
+        });
+      }
+
+      // Analyze structure (existing logic - unchanged)
       const structureMetadata = analyzeCategoryStructure(parsed);
       setMetadata(structureMetadata);
 
@@ -312,6 +336,83 @@ export default function CategoryStructureBuilder({
                     </Badge>
                   ))}
                 </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rich Metadata Panel (SAFE - only shows if metadata exists) */}
+      {showMetadataPanel && richMetadata && (richMetadata.meta || richMetadata.structuredData || richMetadata.semantics) && (
+        <Card className="border-2 border-purple-500/30 bg-purple-50/50 dark:bg-purple-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+              <Sparkles className="h-5 w-5" />
+              Rich Metadata & SEO
+            </CardTitle>
+            <CardDescription>
+              Advanced targeting, search optimization, and compliance data
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Meta Information */}
+            {richMetadata.meta && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-purple-900 dark:text-purple-300">📍 Targeting & Compliance</h4>
+                {richMetadata.meta.region && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{richMetadata.meta.region}</Badge>
+                  </div>
+                )}
+                {richMetadata.meta.compliance && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-semibold">Compliance:</span> {richMetadata.meta.compliance}
+                  </p>
+                )}
+                {richMetadata.meta.keywords && richMetadata.meta.keywords.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold mb-1">Keywords:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {richMetadata.meta.keywords.map((keyword: string, idx: number) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {keyword}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Structured Data */}
+            {richMetadata.structuredData && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-purple-900 dark:text-purple-300">🔗 Schema.org</h4>
+                <div className="text-xs font-mono bg-muted/50 p-2 rounded">
+                  {'@type'}: {richMetadata.structuredData['@type'] || 'Not specified'}
+                </div>
+              </div>
+            )}
+
+            {/* Semantic Relationships */}
+            {richMetadata.semantics && (richMetadata.semantics.entities || richMetadata.semantics.synonyms) && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-purple-900 dark:text-purple-300">🧠 Semantic Network</h4>
+                {richMetadata.semantics.entities && (
+                  <p className="text-xs text-muted-foreground">
+                    {Object.keys(richMetadata.semantics.entities).length} entity mappings configured
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* AI Search Boost */}
+            {richMetadata.searchBoost && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-purple-900 dark:text-purple-300">⚡ AI Search Optimization</h4>
+                {richMetadata.searchBoost.style && (
+                  <Badge variant="secondary">{richMetadata.searchBoost.style}</Badge>
+                )}
               </div>
             )}
           </CardContent>

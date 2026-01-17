@@ -30,6 +30,9 @@ import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { cn } from '@/lib/utils';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import MetadataViewer from '@/components/admin/MetadataViewer';
+import { generateSEOMetaTags } from '@/lib/structuredDataHelper';
+import type { EnhancedCategoryItem } from '@/types';
 
 const regularUnits = ['gram', '10 grams', '0.25 oz', '0.5 oz', '3ml', '5ml', '10ml', 'ml', 'bottle', 'mg', 'pack', 'box', 'piece', 'seed', 'unit'];
 const poolUnits = ['100 grams', '200 grams', '200 grams+', '500 grams', '500 grams+', '1kg', '2kg', '5kg', '10kg', '10kg+', 'oz', '50ml', '100ml', '1 litre', '2 litres', '5 litres', '10 litres', 'pack', 'box'];
@@ -67,6 +70,15 @@ export default function GenericProductAddPage({
   
   const [categoryStructure, setCategoryStructure] = useState<CategoryItem[]>([]);
   const [selectedTopLevelCategory, setSelectedTopLevelCategory] = useState<CategoryItem | null>(null);
+  
+  // Rich metadata state (optional - won't break if not present)
+  const [typeMetadata, setTypeMetadata] = useState<{
+    meta?: any;
+    structuredData?: any;
+    semanticRelationships?: any;
+    aiSearchBoost?: any;
+    pageBlueprint?: any;
+  } | null>(null);
   
   const [files, setFiles] = useState<File[]>([]);
   const finalFormRef = useRef<HTMLDivElement>(null);
@@ -124,7 +136,23 @@ export default function GenericProductAddPage({
 
       const data = docSnap.data();
       
-      // Navigate through the category path
+      // SAFE: Extract rich metadata if present (won't break if missing)
+      if (data?.meta || data?.recommendedStructuredData || data?.semanticRelationships) {
+        setTypeMetadata({
+          meta: data.meta,
+          structuredData: data.recommendedStructuredData,
+          semanticRelationships: data.semanticRelationships,
+          aiSearchBoost: data.aiSearchBoost,
+          pageBlueprint: data.pageBlueprint
+        });
+        console.log('[GenericProductAddPage] Rich metadata loaded:', {
+          hasMeta: !!data.meta,
+          hasStructuredData: !!data.recommendedStructuredData,
+          hasSemantics: !!data.semanticRelationships
+        });
+      }
+      
+      // Navigate through the category path (existing logic - unchanged)
       let categories = data?.categoriesData;
       for (const path of categoryPath) {
         categories = categories?.[path];
@@ -366,6 +394,21 @@ export default function GenericProductAddPage({
                         <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-[#3D2E17] disabled:opacity-100" />
                       </FormItem>
                     </div>
+
+                    {/* Rich Metadata Display (SAFE - only shows if metadata exists) */}
+                    {typeMetadata && selectedTopLevelCategory && (
+                      <div className="animate-fade-in-scale-up">
+                        <MetadataViewer
+                          metadata={{
+                            meta: typeMetadata.meta,
+                            structuredData: typeMetadata.structuredData,
+                            semanticRelationships: typeMetadata.semanticRelationships,
+                            aiSearchBoost: typeMetadata.aiSearchBoost
+                          }}
+                          compact={false}
+                        />
+                      </div>
+                    )}
 
                     {/* Product Name & Description */}
                     <FormField

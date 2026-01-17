@@ -126,7 +126,76 @@ export interface DispensaryTypeProductCategoriesDoc {
   id?: string;
   name?: string; 
   categoriesData: ProductCategory[];
+  meta?: CategoryMetadata; // Rich metadata for SEO, targeting, compliance
+  recommendedStructuredData?: StructuredDataSchema; // Schema.org recommendations
+  semanticRelationships?: SemanticRelationshipMap; // Entity relationships for search
+  aiSearchBoost?: AISearchBoostConfig; // AI search optimization
+  pageBlueprint?: PageBlueprint; // Page structure and internal linking
   updatedAt?: Timestamp | Date | string;
+}
+
+// Rich metadata for dispensary type categories
+export interface CategoryMetadata {
+  region?: string; // e.g., "South Africa", "Africa", "Global"
+  compliance?: string; // e.g., "MCC Act 2024", "FDA Guidelines"
+  keywords?: string[]; // SEO keywords
+  targetAudience?: string[]; // Target demographics
+  regulatoryNotes?: string; // Compliance notes
+}
+
+// Schema.org structured data recommendations
+export interface StructuredDataSchema {
+  '@type'?: string; // e.g., "Product", "MedicalBusiness"
+  category?: string;
+  additionalType?: string;
+  potentialAction?: any;
+}
+
+// Semantic relationships for enhanced search
+export interface SemanticRelationshipMap {
+  entities?: { [key: string]: string[] }; // Entity mappings
+  synonyms?: { [key: string]: string[] }; // Synonym mappings
+  relatedTerms?: { [key: string]: string[] }; // Related terminology
+}
+
+// AI search boost configuration
+export interface AISearchBoostConfig {
+  weights?: { [field: string]: number }; // Field weights for search
+  style?: string; // Search style hints
+  boostSignals?: string[]; // Signals to boost in search
+}
+
+// Page blueprint for category and product pages
+export interface PageBlueprint {
+  sectionOrder?: string[]; // Order of page sections
+  internalLinking?: {
+    strategy?: string;
+    relatedCategories?: boolean;
+    crossSellProducts?: boolean;
+  };
+}
+
+// Enhanced category item with SEO and metadata
+export interface EnhancedCategoryItem {
+  name: string;
+  value: string;
+  description?: string;
+  type?: string;
+  imageUrl?: string;
+  examples?: string[];
+  searchTags?: string[]; // SEO search tags
+  userIntent?: string; // User intent classification
+  audience?: string[]; // Target audience
+  regionalRelevance?: string; // Regional targeting
+  useCases?: string[]; // Common use cases
+  seoPageIntent?: {
+    h1?: string;
+    metaTitle?: string;
+    metaDescription?: string;
+    ogTags?: { [key: string]: string };
+  };
+  structuredDataHints?: StructuredDataSchema;
+  faqSeedQuestions?: string[]; // FAQ suggestions
 }
 
 
