@@ -141,7 +141,7 @@ export default function GenericProductEditPage({
     fetchInitialData();
   }, [fetchInitialData]);
 
-  const onSubmit = async (data: ProductFormData) {
+  const onSubmit = async (data: ProductFormData) => {
     if (!currentUser || !productId) {
       toast({
         title: 'Error',
@@ -474,8 +474,8 @@ export default function GenericProductEditPage({
                         <MultiImageDropzone 
                           value={files} 
                           onChange={(files) => setFiles(files)} 
-                          existingImages={existingImageUrls}
-                          onExistingImagesChange={setExistingImageUrls}
+                          existingImageUrls={existingImageUrls}
+                          onExistingImageDelete={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))}
                         />
                       </FormControl>
                       <FormDescription>Upload up to 5 images. The first image is the main one.</FormDescription>
