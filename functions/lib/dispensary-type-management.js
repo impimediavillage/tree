@@ -38,11 +38,114 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCategoryDocument = exports.listCategoryDocuments = exports.createCategoryFromTemplate = exports.copyCategoryStructure = void 0;
+exports.analyzeCategoryStructureAndUpdate = exports.deleteCategoryDocument = exports.listCategoryDocuments = exports.createCategoryFromTemplate = exports.copyCategoryStructure = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
 const logger = __importStar(require("firebase-functions/logger"));
 const db = admin.firestore();
+/**
+ * Analyzes a categoriesData object to determine its structure
+ */
+function analyzeCategoryStructure(categoriesData) {
+    if (!categoriesData || typeof categoriesData !== 'object') {
+        throw new Error('Invalid categoriesData: must be an object');
+    }
+    const levels = [];
+    const navigationPath = [];
+    const sampleCategories = [];
+    // Level 1: Top-level categories
+    const topLevelKeys = Object.keys(categoriesData);
+    if (topLevelKeys.length === 0) {
+        throw new Error('categoriesData is empty');
+    }
+    // Determine the primary navigation key
+    const firstKey = topLevelKeys[0];
+    const firstValue = categoriesData[firstKey];
+    // Check if top level is an array of category objects
+    if (Array.isArray(firstValue)) {
+        // Structure: { key: [{name, image, subcategories?}, ...] }
+        levels.push({
+            key: firstKey,
+            label: 'Category',
+            hasImage: firstValue.length > 0 && 'image' in firstValue[0],
+            isArray: true
+        });
+        navigationPath.push(firstKey);
+        // Extract sample categories
+        firstValue.slice(0, 3).forEach((cat) => {
+            if (cat.name)
+                sampleCategories.push(cat.name);
+        });
+        // Check for subcategories
+        if (firstValue.length > 0 && firstValue[0].subcategories) {
+            const subcategories = firstValue[0].subcategories;
+            if (Array.isArray(subcategories)) {
+                levels.push({
+                    key: 'subcategories',
+                    label: 'Subcategory',
+                    hasImage: subcategories.length > 0 && 'image' in subcategories[0],
+                    isArray: true
+                });
+                // Check for sub-subcategories (3rd level)
+                if (subcategories.length > 0 && subcategories[0].subcategories) {
+                    levels.push({
+                        key: 'subcategories',
+                        label: 'Sub-Subcategory',
+                        hasImage: false,
+                        isArray: true
+                    });
+                }
+            }
+        }
+    }
+    else if (typeof firstValue === 'object' && !Array.isArray(firstValue)) {
+        // Structure: { key: { nestedKey: [...] } }
+        levels.push({
+            key: firstKey,
+            label: 'Category Group',
+            hasImage: false,
+            isArray: false
+        });
+        navigationPath.push(firstKey);
+        // Navigate deeper
+        const nestedKeys = Object.keys(firstValue);
+        if (nestedKeys.length > 0) {
+            const nestedKey = nestedKeys[0];
+            const nestedValue = firstValue[nestedKey];
+            if (Array.isArray(nestedValue)) {
+                levels.push({
+                    key: nestedKey,
+                    label: 'Category',
+                    hasImage: nestedValue.length > 0 && 'image' in nestedValue[0],
+                    isArray: true
+                });
+                navigationPath.push(nestedKey);
+                // Extract sample categories
+                nestedValue.slice(0, 3).forEach((cat) => {
+                    if (cat.name)
+                        sampleCategories.push(cat.name);
+                });
+                // Check for subcategories
+                if (nestedValue.length > 0 && nestedValue[0].subcategories) {
+                    levels.push({
+                        key: 'subcategories',
+                        label: 'Subcategory',
+                        hasImage: Array.isArray(nestedValue[0].subcategories) &&
+                            nestedValue[0].subcategories.length > 0 &&
+                            'image' in nestedValue[0].subcategories[0],
+                        isArray: true
+                    });
+                }
+            }
+        }
+    }
+    return {
+        depth: levels.length,
+        levels,
+        navigationPath,
+        sampleCategories
+    };
+}
 /**
  * Copy category structure from one dispensary type to another
  */
@@ -253,6 +356,95 @@ exports.deleteCategoryDocument = (0, https_1.onCall)({ cors: true }, async (requ
     catch (error) {
         logger.error('Error deleting category document:', error);
         throw new https_1.HttpsError('internal', `Failed to delete document: ${error.message}`);
+    }
+});
+/**
+ * Analyze category structure and update the dispensaryTypes document
+ * This function analyzes the categoriesData structure and stores metadata
+ * in the corresponding dispensaryTypes document for dynamic rendering
+ */
+exports.analyzeCategoryStructureAndUpdate = (0, https_1.onCall)({ cors: true }, async (request) => {
+    // Verify user is Super Admin
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    const userData = userDoc.data();
+    if (!userData || userData.role !== 'Super Admin') {
+        throw new https_1.HttpsError('permission-denied', 'Only Super Admins can analyze category structures');
+    }
+    const { dispensaryTypeName } = request.data;
+    if (!dispensaryTypeName) {
+        throw new https_1.HttpsError('invalid-argument', 'dispensaryTypeName is required');
+    }
+    try {
+        logger.info(`Analyzing category structure for "${dispensaryTypeName}"`, {
+            userId: request.auth.uid,
+            dispensaryTypeName
+        });
+        // Fetch categoriesData document
+        const categoryDoc = await db
+            .collection('dispensaryTypeProductCategories')
+            .doc(dispensaryTypeName)
+            .get();
+        if (!categoryDoc.exists) {
+            throw new https_1.HttpsError('not-found', `Category document "${dispensaryTypeName}" not found`);
+        }
+        const categoryData = categoryDoc.data();
+        if (!categoryData || !categoryData.categoriesData) {
+            throw new https_1.HttpsError('invalid-argument', 'categoriesData not found in document');
+        }
+        // Analyze the structure
+        const metadata = analyzeCategoryStructure(categoryData.categoriesData);
+        metadata.lastAnalyzed = new Date().toISOString();
+        metadata.analyzedBy = request.auth.uid;
+        logger.info(`Analyzed structure for "${dispensaryTypeName}"`, {
+            depth: metadata.depth,
+            navigationPath: metadata.navigationPath,
+            sampleCategories: metadata.sampleCategories
+        });
+        // Find and update the corresponding dispensaryTypes document
+        const typesQuery = await db
+            .collection('dispensaryTypes')
+            .where('name', '==', dispensaryTypeName)
+            .limit(1)
+            .get();
+        if (typesQuery.empty) {
+            logger.warn(`No dispensaryTypes document found for "${dispensaryTypeName}"`, {
+                dispensaryTypeName
+            });
+            return {
+                success: true,
+                message: `Structure analyzed successfully, but no dispensaryTypes document found for "${dispensaryTypeName}". Metadata returned but not saved.`,
+                metadata
+            };
+        }
+        // Update the dispensaryTypes document with category structure metadata
+        const typeDocId = typesQuery.docs[0].id;
+        await db
+            .collection('dispensaryTypes')
+            .doc(typeDocId)
+            .update({
+            categoryStructure: metadata,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        logger.info(`Updated dispensaryTypes document with category structure`, {
+            typeDocId,
+            dispensaryTypeName,
+            metadata
+        });
+        return {
+            success: true,
+            message: `Successfully analyzed and updated category structure for "${dispensaryTypeName}"`,
+            metadata
+        };
+    }
+    catch (error) {
+        logger.error('Error analyzing category structure:', error);
+        if (error instanceof https_1.HttpsError) {
+            throw error;
+        }
+        throw new https_1.HttpsError('internal', `Failed to analyze structure: ${error.message}`);
     }
 });
 //# sourceMappingURL=dispensary-type-management.js.map

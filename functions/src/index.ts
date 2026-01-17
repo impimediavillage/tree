@@ -50,7 +50,8 @@ export {
   copyCategoryStructure,
   createCategoryFromTemplate,
   listCategoryDocuments,
-  deleteCategoryDocument
+  deleteCategoryDocument,
+  analyzeCategoryStructureAndUpdate
 } from './dispensary-type-management';
 
 // Export Notification functions

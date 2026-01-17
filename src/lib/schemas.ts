@@ -289,6 +289,25 @@ export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => 
 export type ProductFormData = z.infer<typeof productSchema>;
 export type ProductAttribute = z.infer<typeof attributeSchema>;
 
+// Generic Product Schema (for any dispensary type)
+export const genericProductSchema = z.object({
+  name: z.string().min(1, 'Product name is required'),
+  description: z.string().min(1, 'Description is required'),
+  category: z.string().min(1, 'Category is required'),
+  price: z.number().min(0, 'Price must be positive'),
+  stockQuantity: z.number().int().min(0, 'Stock must be a positive integer'),
+  imageUrl: z.string().optional(),
+  imageFile: z.instanceof(File).optional(),
+  isAvailableForPool: z.boolean().default(false),
+  poolSharingRule: z.enum(['none', 'all', 'select']).default('none'),
+  poolPriceTiers: z.array(z.object({
+    minQuantity: z.number().int().min(1),
+    price: z.number().min(0),
+  })).default([]),
+});
+
+export type GenericProductFormData = z.infer<typeof genericProductSchema>;
+
 
 export const productRequestSchema = z.object({
   productId: z.string(),

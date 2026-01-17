@@ -87,8 +87,27 @@ export interface DispensaryType {
   advisorFocusPrompt?: string | null;
   recommendedAdvisorIds?: string[]; // Array of AI Advisor IDs linked to this dispensary type
   isActive?: boolean; // Controls whether this type is visible to public users
+  useGenericWorkflow?: boolean; // If true, uses generic workflow; if false, uses custom pages
+  categoryStructure?: CategoryStructureMetadata; // Dynamic category structure metadata (only used if useGenericWorkflow=true)
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
+}
+
+// Category structure metadata for dynamic rendering
+export interface CategoryStructureMetadata {
+  depth: number;
+  levels: CategoryLevel[];
+  navigationPath: string[];
+  sampleCategories?: string[];
+  lastAnalyzed?: string;
+  analyzedBy?: string;
+}
+
+export interface CategoryLevel {
+  key: string;
+  label: string;
+  hasImage: boolean;
+  isArray: boolean;
 }
 
 // Represents a document in the 'dispensaryTypeProductCategories' collection

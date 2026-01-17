@@ -98,8 +98,27 @@ export interface DispensaryType {
   recommendedAdvisorIds?: string[]; // Array of AI Advisor IDs linked to this dispensary type
   storeCount?: number;
   isActive?: boolean; // Controls whether this type is visible to public users
+  useGenericWorkflow?: boolean; // If true, uses GenericProductAddPage/EditPage; if false, uses custom pages
+  categoryStructure?: CategoryStructureMetadata; // Dynamic category structure metadata (only used if useGenericWorkflow=true)
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
+}
+
+// Category structure metadata for dynamic rendering
+export interface CategoryStructureMetadata {
+  depth: number; // 1, 2, or 3 levels deep
+  levels: CategoryLevel[]; // Array of level definitions
+  navigationPath: string[]; // Path to navigate through categoriesData
+  sampleCategories?: string[]; // Sample category names
+  lastAnalyzed?: Date | string;
+  analyzedBy?: string;
+}
+
+export interface CategoryLevel {
+  key: string;
+  label: string; // Display name (e.g., "Category", "Subcategory")
+  hasImage: boolean;
+  isArray: boolean;
 }
 
 // Represents a document in the 'dispensaryTypeProductCategories' collection
