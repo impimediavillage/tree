@@ -587,8 +587,7 @@ export function DispensaryTypeDialog({
                                 }
                               }
                             }}
-                            disabled={isEditing}
-                            disabled={isSubmitting}
+                            disabled={isEditing || isSubmitting}
                             className="data-[state=checked]:bg-purple-500"
                           />
                         </div>
