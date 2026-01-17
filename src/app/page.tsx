@@ -508,8 +508,8 @@ export default function HolisticAiHubPage() {
             Get specialized insights and recommendations across various domains of holistic wellness and knowledge.
           </p>
           {currentUser && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Your credits: <span className="font-semibold text-primary">{currentUser.credits ?? 0}</span>
+            <p className="text-xl font-bold text-[#3D2E17] mt-4">
+              Your Credits: <span className="text-3xl font-black text-[#006B3E]">{currentUser.credits ?? 0}</span>
             </p>
           )}
         </div>

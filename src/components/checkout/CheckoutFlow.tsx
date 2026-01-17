@@ -59,7 +59,6 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeCh
     const { toast } = useToast();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>(countryDialCodes.find(c => c.iso === 'ZA'));
     const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
-    const hasRestoredPhone = useRef(false);
 
     const initializeMap = useCallback(async () => {
         if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
@@ -187,31 +186,32 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser, onDialCodeCh
         }
     }, [selectedCountry, nationalPhoneNumber, form, onDialCodeChange]);
     
-    // Extract national phone number from full international number when data loads or changes
+    // Extract national phone number from full international number - reactive to form changes
     useEffect(() => {
       const phoneNumber = form.getValues('phoneNumber') || currentUser?.phoneNumber;
       
-      if (phoneNumber && selectedCountry) {
-        // Remove dial code from stored phone number to get national number
-        const dialCodeDigits = selectedCountry.dialCode.replace(/\D/g, '');
-        const fullNumber = phoneNumber.replace(/\D/g, '');
-        
-        if (fullNumber.startsWith(dialCodeDigits)) {
-          const national = fullNumber.substring(dialCodeDigits.length);
-          // Only set if not already set to avoid overwriting user input
-          if (!hasRestoredPhone.current || nationalPhoneNumber === '') {
-            console.log('📱 Setting national number:', national);
-            setNationalPhoneNumber(national);
-            hasRestoredPhone.current = true;
-          }
-        } else if (fullNumber && !hasRestoredPhone.current) {
-          // If dial code doesn't match, use full number as national (only on first extraction)
-          console.log('📱 Dial code mismatch, using full number:', fullNumber);
-          setNationalPhoneNumber(fullNumber);
-          hasRestoredPhone.current = true;
+      if (!phoneNumber || !selectedCountry) {
+        // No phone data or country selected
+        if (phoneNumber === '') {
+          setNationalPhoneNumber(''); // Clear if phone is explicitly empty
         }
+        return;
       }
-    }, [currentUser, selectedCountry, form]);
+      
+      // Remove dial code from stored phone number to get national number
+      const dialCodeDigits = selectedCountry.dialCode.replace(/\D/g, '');
+      const fullNumber = phoneNumber.replace(/\D/g, '');
+      
+      if (fullNumber.startsWith(dialCodeDigits)) {
+        const national = fullNumber.substring(dialCodeDigits.length);
+        console.log('📱 Extracted national number:', national, 'from', fullNumber);
+        setNationalPhoneNumber(national);
+      } else if (fullNumber) {
+        // If dial code doesn't match, use full number as national
+        console.log('📱 Dial code mismatch, using full number:', fullNumber);
+        setNationalPhoneNumber(fullNumber);
+      }
+    }, [form.watch('phoneNumber'), selectedCountry, currentUser?.phoneNumber]);
 
     return (
         <FormProvider {...form}>
@@ -366,7 +366,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
     });
 
     useEffect(() => {
-      // Pre-fill form if user is logged in and has address info
+      // Priority 1: Load from logged-in user profile
       if (currentUser && currentUser.shippingAddress) {
         // Build full address from component parts if not present
         const fullAddress = currentUser.shippingAddress.address || 
@@ -389,36 +389,44 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
           }
         });
         
-        console.log("Checkout form pre-filled with user address:", fullAddress);
-      }
-    }, [currentUser, form]);
-
-    // Separate effect for localStorage restoration - runs on mount regardless of currentUser
-    useEffect(() => {
-      // Only restore if user is not logged in
-      if (currentUser) return;
-      
-      try {
-        const savedFormData = localStorage.getItem('checkoutFormData');
-        if (savedFormData) {
-          const parsedData = JSON.parse(savedFormData);
-          console.log('📦 Restoring checkout data from localStorage:', parsedData);
-          
-          // Extract and set dialCode first
-          if (parsedData.dialCode) {
-            console.log('📞 Setting dial code:', parsedData.dialCode);
-            setUserDialCode(parsedData.dialCode);
-            delete parsedData.dialCode; // Remove before setting form values
+        // Extract dial code from user's phone number
+        if (currentUser.phoneNumber && currentUser.phoneNumber.startsWith('+')) {
+          const matched = countryDialCodes.find(c => 
+            currentUser.phoneNumber!.startsWith(c.dialCode)
+          );
+          if (matched) {
+            setUserDialCode(matched.dialCode);
           }
-          
-          // Restore form data
-          form.reset(parsedData);
-          console.log("✅ Checkout form restored from localStorage");
         }
-      } catch (error) {
-        console.error("Failed to restore checkout form from localStorage:", error);
+        
+        console.log("✅ Checkout form pre-filled with user profile:", fullAddress);
+        return;
       }
-    }, []); // Run once on mount
+      
+      // Priority 2: Load from localStorage for guest users (fallback)
+      if (!currentUser) {
+        try {
+          const savedFormData = localStorage.getItem('checkoutFormData');
+          if (savedFormData) {
+            const parsedData = JSON.parse(savedFormData);
+            console.log('📦 Restoring checkout data from localStorage:', parsedData);
+            
+            // Extract and set dialCode first
+            if (parsedData.dialCode) {
+              console.log('📞 Setting dial code:', parsedData.dialCode);
+              setUserDialCode(parsedData.dialCode);
+              delete parsedData.dialCode; // Remove before setting form values
+            }
+            
+            // Restore form data
+            form.reset(parsedData);
+            console.log("✅ Checkout form restored from localStorage");
+          }
+        } catch (error) {
+          console.error("Failed to restore checkout form from localStorage:", error);
+        }
+      }
+    }, [currentUser, form]); // Re-run when user login state changes
 
     const handleAddressContinue = async (values: AddressValues) => {
         setIsSubmitting(true);
