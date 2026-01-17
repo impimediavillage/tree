@@ -92,6 +92,24 @@ export function DispensaryTypeDialog({
     },
   });
 
+  const fetchExistingCategoryStructure = async (typeName: string) => {
+    try {
+      const { doc: firestoreDoc, getDoc } = await import('firebase/firestore');
+      const docRef = firestoreDoc(db, 'dispensaryTypeProductCategories', typeName);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data?.categoriesData) {
+          setCategoriesJSON(data.categoriesData);
+          console.log('Loaded existing category structure for', typeName);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching existing categories:', error);
+    }
+  };
+
   React.useEffect(() => {
     const fetchAdvisors = async () => {
       if (isOpen) {
@@ -126,6 +144,14 @@ export function DispensaryTypeDialog({
         });
         setIconPreview(dispensaryType.iconPath || null);
         setImagePreview(dispensaryType.image || null);
+        
+        // Load existing workflow flag and category structure
+        setUseGenericWorkflow(dispensaryType.useGenericWorkflow === true);
+        
+        // Fetch existing category structure if available
+        if (dispensaryType.useGenericWorkflow) {
+          fetchExistingCategoryStructure(dispensaryType.name);
+        }
       } else {
         form.reset({
           name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '', recommendedAdvisorIds: [],
@@ -278,10 +304,11 @@ export function DispensaryTypeDialog({
         toast({ title: 'Store Type Created', description: `"${formData.name}" has been added.` });
       }
 
-      // If using generic workflow and has category structure, create the category document
-      if (useGenericWorkflow && categoriesJSON && !isEditing) {
+      // If using generic workflow and has category structure, create/update the category document
+      if (useGenericWorkflow && categoriesJSON) {
         try {
-          toast({ title: 'Creating Category Structure...', description: 'Setting up product categories.' });
+          const actionText = isEditing ? 'Updating' : 'Creating';
+          toast({ title: `${actionText} Category Structure...`, description: 'Setting up product categories.' });
           
           const functions = getFunctions();
           const createCategoryFn = httpsCallable(functions, 'createCategoryFromTemplate');
@@ -654,9 +681,10 @@ export function DispensaryTypeDialog({
             </TabsContent>
 
             {/* Category Structure Tab */}
-            {!isEditing && useGenericWorkflow && (
+            {useGenericWorkflow && (
               <TabsContent value="categories" className="mt-4">
                 <CategoryStructureBuilder
+                  initialJSON={categoriesJSON}
                   onStructureChange={(json, metadata) => {
                     setCategoriesJSON(json);
                     setCategoryMetadata(metadata);
@@ -678,7 +706,7 @@ export function DispensaryTypeDialog({
               >
                 Cancel
               </Button>
-              {!isEditing && useGenericWorkflow && currentTab === 'basic' && (
+              {useGenericWorkflow && currentTab === 'basic' && (
                 <Button
                   type="button"
                   onClick={() => setCurrentTab('categories')}
@@ -688,7 +716,7 @@ export function DispensaryTypeDialog({
                   Next: Configure Categories <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
-              {!isEditing && useGenericWorkflow && currentTab === 'categories' && (
+              {useGenericWorkflow && currentTab === 'categories' && (
                 <Button
                   type="button"
                   variant="outline"
@@ -702,7 +730,7 @@ export function DispensaryTypeDialog({
               <Button
                 type="button"
                 onClick={form.handleSubmit(onSubmit)}
-                disabled={isSubmitting || (useGenericWorkflow && !categoriesJSON && !isEditing)}
+                disabled={isSubmitting}
                 className="bg-[#006B3E] hover:bg-[#3D2E17] text-white font-bold shadow-lg transition-all duration-300"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
