@@ -83,5 +83,4 @@ export default withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  publicExcludes: ['!firebase-messaging-sw.js'], // Exclude FCM service worker from next-pwa processing
 })(nextConfig);
