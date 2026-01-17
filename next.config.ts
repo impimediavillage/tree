@@ -24,7 +24,20 @@ const nextConfig: NextConfig = {
             key: 'Content-Type',
             value: 'application/javascript; charset=utf-8',
           },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
         ],
+      },
+    ];
+  },
+  // Copy service worker to output directory
+  async rewrites() {
+    return [
+      {
+        source: '/firebase-messaging-sw.js',
+        destination: '/firebase-messaging-sw.js',
       },
     ];
   },
@@ -70,4 +83,5 @@ export default withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  publicExcludes: ['!firebase-messaging-sw.js'], // Exclude FCM service worker from next-pwa processing
 })(nextConfig);
