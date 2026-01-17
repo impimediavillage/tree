@@ -31,21 +31,25 @@ import {
   Play
 } from 'lucide-react';
 import { analyzeCategoryStructure, type CategoryStructureMetadata } from '@/lib/categoryStructureAnalyzer';
-import { parseJsonToNodes, reconstructJsonFromNodes, applyAutoLayout } from '@/lib/jsonTreeParser';
+import { buildJSONTree, extractCategoryNodes } from '@/lib/jsonTreeBuilder';
+import { reconstructJSONFromGraph, isValidConnection, suggestFieldName } from '@/lib/jsonGraphReconstructor';
 import CategoryNode from './CategoryNode';
 import SubcategoryNode from './SubcategoryNode';
-import { JsonObjectNode, JsonArrayNode, JsonPrimitiveNode, JsonMetadataNode } from './JsonNodes';
+import JSONNode from './JSONNode';
+import AnimatedWireEdge from './AnimatedWireEdge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
 // Custom node types
 const nodeTypes = {
-  category: CategoryNode,
-  subcategory: SubcategoryNode,
-  jsonObject: JsonObjectNode,
-  jsonArray: JsonArrayNode,
-  jsonPrimitive: JsonPrimitiveNode,
-  jsonMetadata: JsonMetadataNode,
+  categoryNode: CategoryNode,
+  subcategoryNode: SubcategoryNode,
+  custom: JSONNode, // For full JSON visualization
+};
+
+// Custom edge types
+const edgeTypes = {
+  animated: AnimatedWireEdge,
 };
 
 interface CategoryStructureBuilderProps {
@@ -110,13 +114,13 @@ export default function CategoryStructureBuilder({
       let visualEdges: Edge[];
       
       if (viewMode === 'fullJson') {
-        // Full JSON tree visualization
-        const result = parseJsonToNodes(parsed);
-        visualNodes = applyAutoLayout(result.nodes, result.edges);
+        // Full JSON tree visualization - ALL fields visible
+        const result = buildJSONTree(parsed);
+        visualNodes = result.nodes;
         visualEdges = result.edges;
       } else {
         // Category-only view (existing behavior)
-        const result = convertJSONToNodes(parsed, structureMetadata);
+        const result = extractCategoryNodes(parsed);
         visualNodes = result.nodes;
         visualEdges = result.edges;
       }
@@ -142,7 +146,7 @@ export default function CategoryStructureBuilder({
         variant: 'destructive'
       });
     }
-  }, [jsonInput, onStructureChange, setNodes, setEdges, toast]);
+  }, [jsonInput, viewMode, onStructureChange, setNodes, setEdges, toast]);
 
   // Convert JSON to React Flow nodes
   const convertJSONToNodes = (json: any, meta: CategoryStructureMetadata): { nodes: Node[], edges: Edge[] } => {
@@ -263,9 +267,117 @@ export default function CategoryStructureBuilder({
   };
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    (params: Connection) => {
+      // Validate connection before adding
+      const sourceNode = nodes.find(n => n.id === params.source);
+      const targetNode = nodes.find(n => n.id === params.target);
+      
+      const validation = isValidConnection(sourceNode, targetNode);
+      
+      if (!validation.valid) {
+        toast({
+          title: 'Invalid Connection',
+          description: validation.reason,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Add animated wire edge
+      const newEdge = {
+        ...params,
+        type: 'animated',
+        animated: true,
+        data: {
+          label: sourceNode && targetNode ? suggestFieldName(sourceNode, targetNode) : undefined,
+          color: sourceNode?.data.color
+        }
+      };
+
+      setEdges((eds) => addEdge(newEdge, eds));
+      
+      toast({
+        title: 'Connection Created',
+        description: 'Wire connected! Drag endpoints to reconnect.',
+        variant: 'default'
+      });
+    },
+    [nodes, setEdges, toast]
   );
+
+  // Handle edge reconnection (dragging wire to new target)
+  const onReconnect = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      const sourceNode = nodes.find(n => n.id === newConnection.source);
+      const targetNode = nodes.find(n => n.id === newConnection.target);
+      
+      const validation = isValidConnection(sourceNode, targetNode);
+      
+      if (!validation.valid) {
+        toast({
+          title: 'Invalid Connection',
+          description: validation.reason,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setEdges((eds) => {
+        // Remove old edge
+        const filtered = eds.filter(e => e.id !== oldEdge.id);
+        
+        // Add new edge with animation
+        const newEdge: Edge = {
+          id: `reconnected-${Date.now()}`,
+          source: newConnection.source || '',
+          target: newConnection.target || '',
+          type: 'animated',
+          animated: true,
+          data: {
+            label: sourceNode && targetNode ? suggestFieldName(sourceNode, targetNode) : undefined,
+            color: sourceNode?.data.color
+          }
+        };
+        
+        return [...filtered, newEdge];
+      });
+
+      toast({
+        title: 'Wire Reconnected!',
+        description: 'Connection moved to new target.',
+        variant: 'default'
+      });
+    },
+    [nodes, setEdges, toast]
+  );
+
+  // Export restructured JSON based on current wire connections
+  const exportRestructuredJSON = useCallback(() => {
+    try {
+      const restructuredJSON = reconstructJSONFromGraph(nodes, edges);
+      const jsonString = JSON.stringify(restructuredJSON, null, 2);
+      
+      setJsonInput(jsonString);
+      setParsedJSON(restructuredJSON);
+      
+      toast({
+        title: 'JSON Restructured!',
+        description: 'Visual structure converted back to JSON.',
+        variant: 'default'
+      });
+
+      // Update parent if provided
+      if (onStructureChange && metadata) {
+        onStructureChange(restructuredJSON, metadata);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Export Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  }, [nodes, edges, metadata, onStructureChange, toast]);
 
   const resetBuilder = () => {
     setJsonInput('');
@@ -274,6 +386,7 @@ export default function CategoryStructureBuilder({
     setParseError(null);
     setNodes([]);
     setEdges([]);
+    setRichMetadata(null);
   };
 
   return (
@@ -305,15 +418,52 @@ export default function CategoryStructureBuilder({
             </div>
           )}
 
-          <div className="flex gap-2">
-            <Button onClick={parseAndVisualize} className="flex-1">
-              <Play className="mr-2 h-4 w-4" />
-              Parse & Visualize
-            </Button>
-            <Button onClick={resetBuilder} variant="outline">
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Reset
-            </Button>
+          <div className="space-y-3">
+            {/* View Mode Toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md border">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="view-mode" className="text-sm font-semibold">
+                  Visualization Mode:
+                </Label>
+                <Badge variant={viewMode === 'category' ? 'default' : 'secondary'}>
+                  {viewMode === 'category' ? 'Categories Only' : 'Full JSON Tree'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="view-mode" className="text-xs text-muted-foreground">
+                  Categories
+                </Label>
+                <Switch
+                  id="view-mode"
+                  checked={viewMode === 'fullJson'}
+                  onCheckedChange={(checked) => setViewMode(checked ? 'fullJson' : 'category')}
+                />
+                <Label htmlFor="view-mode" className="text-xs text-muted-foreground">
+                  Full JSON
+                </Label>
+              </div>
+            </div>
+
+            {/* Description based on mode */}
+            {viewMode === 'fullJson' && (
+              <div className="flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                <Sparkles className="h-4 w-4 text-blue-600 mt-0.5" />
+                <p className="text-xs text-blue-900 dark:text-blue-200">
+                  <span className="font-semibold">Full JSON Mode:</span> Visualizes ALL fields including metadata, structured data, and semantic relationships. Every field becomes a draggable node.
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Button onClick={parseAndVisualize} className="flex-1">
+                <Play className="mr-2 h-4 w-4" />
+                Parse & Visualize
+              </Button>
+              <Button onClick={resetBuilder} variant="outline">
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Reset
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -462,7 +612,19 @@ export default function CategoryStructureBuilder({
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onReconnect={onReconnect}
                 nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                reconnectRadius={30}
+                defaultEdgeOptions={{
+                  type: 'animated',
+                  animated: true,
+                }}
+                connectionLineStyle={{
+                  strokeWidth: 3,
+                  stroke: '#f59e0b',
+                  strokeDasharray: '5,5',
+                }}
                 fitView
                 className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800"
               >
@@ -476,7 +638,7 @@ export default function CategoryStructureBuilder({
                   }}
                   className="bg-white/90 dark:bg-slate-800/90"
                 />
-                <Panel position="top-right" className="bg-white/90 dark:bg-slate-800/90 p-2 rounded-lg shadow-lg">
+                <Panel position="top-right" className="bg-white/90 dark:bg-slate-800/90 p-2 rounded-lg shadow-lg space-y-2">
                   <div className="text-xs space-y-1">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded bg-indigo-500" />
@@ -491,6 +653,24 @@ export default function CategoryStructureBuilder({
                       <span>Sub-sub</span>
                     </div>
                   </div>
+                  
+                  {viewMode === 'fullJson' && (
+                    <>
+                      <div className="border-t pt-2">
+                        <Button
+                          size="sm"
+                          onClick={exportRestructuredJSON}
+                          className="w-full text-xs"
+                        >
+                          <Sparkles className="mr-1 h-3 w-3" />
+                          Export Structure
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Drag wire endpoints to reconnect
+                      </p>
+                    </>
+                  )}
                 </Panel>
               </ReactFlow>
             </div>

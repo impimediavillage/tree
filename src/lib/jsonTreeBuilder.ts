@@ -1,0 +1,192 @@
+import type { Node, Edge } from 'reactflow';
+
+export type JSONNodeType = 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null';
+
+export interface JSONNodeData {
+  label: string;
+  value?: any;
+  fieldName?: string;
+  type: JSONNodeType;
+  isExpandable: boolean;
+  depth: number;
+  fullPath: string;
+}
+
+/**
+ * Converts entire JSON structure into React Flow nodes
+ * Every field becomes a visual node that can be dragged and connected
+ */
+export function buildJSONTree(json: any): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  let nodeId = 0;
+  let yOffset = 0;
+
+  const NODE_HEIGHT = 80;
+  const NODE_WIDTH = 250;
+  const INDENT = 100;
+
+  function getNodeType(value: any): JSONNodeType {
+    if (value === null) return 'null';
+    if (Array.isArray(value)) return 'array';
+    if (typeof value === 'object') return 'object';
+    return typeof value as JSONNodeType;
+  }
+
+  function getNodeColor(type: JSONNodeType): string {
+    switch (type) {
+      case 'object': return '#9333ea'; // Purple
+      case 'array': return '#3b82f6'; // Blue
+      case 'string': return '#10b981'; // Green
+      case 'number': return '#f59e0b'; // Orange
+      case 'boolean': return '#ef4444'; // Red
+      case 'null': return '#6b7280'; // Gray
+      default: return '#8b5cf6';
+    }
+  }
+
+  function formatValue(value: any, type: JSONNodeType): string {
+    if (type === 'string') return `"${value}"`;
+    if (type === 'boolean') return value ? 'true' : 'false';
+    if (type === 'null') return 'null';
+    if (type === 'number') return String(value);
+    if (type === 'array') return `[${value?.length || 0} items]`;
+    if (type === 'object') return `{${Object.keys(value || {}).length} fields}`;
+    return String(value);
+  }
+
+  function traverse(
+    obj: any,
+    fieldName: string,
+    parentId: string | null,
+    depth: number,
+    path: string[]
+  ): string {
+    const currentId = `node-${nodeId++}`;
+    const type = getNodeType(obj);
+    const isExpandable = type === 'object' || type === 'array';
+    const fullPath = path.join('.');
+
+    // Create node
+    const node: Node = {
+      id: currentId,
+      type: 'custom',
+      position: { x: depth * INDENT, y: yOffset },
+      data: {
+        label: fieldName,
+        value: obj,
+        fieldName,
+        type,
+        isExpandable,
+        depth,
+        fullPath,
+        color: getNodeColor(type),
+        displayValue: formatValue(obj, type)
+      } as JSONNodeData & { color: string; displayValue: string }
+    };
+
+    nodes.push(node);
+    yOffset += NODE_HEIGHT + 20;
+
+    // Create edge from parent
+    if (parentId) {
+      edges.push({
+        id: `edge-${parentId}-${currentId}`,
+        source: parentId,
+        target: currentId,
+        type: 'smoothstep',
+        animated: false,
+        style: { stroke: getNodeColor(type), strokeWidth: 2 }
+      });
+    }
+
+    // Recursively traverse children
+    if (type === 'object' && obj !== null) {
+      Object.entries(obj).forEach(([key, value]) => {
+        traverse(value, key, currentId, depth + 1, [...path, key]);
+      });
+    } else if (type === 'array' && Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        traverse(item, `[${index}]`, currentId, depth + 1, [...path, `[${index}]`]);
+      });
+    }
+
+    return currentId;
+  }
+
+  // Start traversal from root
+  traverse(json, 'root', null, 0, ['root']);
+
+  return { nodes, edges };
+}
+
+/**
+ * Extract only category nodes for simplified view
+ * (Original behavior - for backward compatibility)
+ */
+export function extractCategoryNodes(json: any): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  let nodeId = 0;
+  let yOffset = 0;
+
+  const categoriesData = json?.categoriesData;
+  if (!categoriesData) return { nodes, edges };
+
+  function findCategoryArray(obj: any, path: string[] = []): any[] | null {
+    for (const key in obj) {
+      if (Array.isArray(obj[key]) && obj[key].length > 0 && obj[key][0].name) {
+        return obj[key];
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+        const result = findCategoryArray(obj[key], [...path, key]);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+
+  const categories = findCategoryArray(categoriesData);
+  if (!categories) return { nodes, edges };
+
+  categories.forEach((category, index) => {
+    const categoryId = `category-${nodeId++}`;
+    nodes.push({
+      id: categoryId,
+      type: 'categoryNode',
+      position: { x: 50, y: yOffset },
+      data: {
+        label: category.name || category.type || 'Unnamed',
+        type: category.type,
+        description: category.description,
+        imageUrl: category.imageUrl
+      }
+    });
+
+    // Add subcategories if they exist
+    if (category.subcategories && Array.isArray(category.subcategories)) {
+      category.subcategories.forEach((sub: any, subIndex: number) => {
+        const subId = `sub-${nodeId++}`;
+        nodes.push({
+          id: subId,
+          type: 'subcategoryNode',
+          position: { x: 350, y: yOffset + (subIndex * 100) },
+          data: {
+            label: sub.name || sub.type,
+            type: sub.type
+          }
+        });
+
+        edges.push({
+          id: `edge-${categoryId}-${subId}`,
+          source: categoryId,
+          target: subId,
+          type: 'smoothstep'
+        });
+      });
+    }
+
+    yOffset += 120 + (category.subcategories?.length || 0) * 100;
+  });
+
+  return { nodes, edges };
+}
