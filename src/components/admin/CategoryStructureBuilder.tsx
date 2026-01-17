@@ -31,13 +31,21 @@ import {
   Play
 } from 'lucide-react';
 import { analyzeCategoryStructure, type CategoryStructureMetadata } from '@/lib/categoryStructureAnalyzer';
+import { parseJsonToNodes, reconstructJsonFromNodes, applyAutoLayout } from '@/lib/jsonTreeParser';
 import CategoryNode from './CategoryNode';
 import SubcategoryNode from './SubcategoryNode';
+import { JsonObjectNode, JsonArrayNode, JsonPrimitiveNode, JsonMetadataNode } from './JsonNodes';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 // Custom node types
 const nodeTypes = {
   category: CategoryNode,
   subcategory: SubcategoryNode,
+  jsonObject: JsonObjectNode,
+  jsonArray: JsonArrayNode,
+  jsonPrimitive: JsonPrimitiveNode,
+  jsonMetadata: JsonMetadataNode,
 };
 
 interface CategoryStructureBuilderProps {
@@ -57,6 +65,7 @@ export default function CategoryStructureBuilder({
   const [parsedJSON, setParsedJSON] = useState<any>(null);
   const [metadata, setMetadata] = useState<CategoryStructureMetadata | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'category' | 'fullJson'>('category');
   
   // Extract rich metadata from parsed JSON (SAFE - won't break if not present)
   const [richMetadata, setRichMetadata] = useState<{
@@ -96,8 +105,22 @@ export default function CategoryStructureBuilder({
       const structureMetadata = analyzeCategoryStructure(parsed);
       setMetadata(structureMetadata);
 
-      // Convert to visual nodes
-      const { nodes: visualNodes, edges: visualEdges } = convertJSONToNodes(parsed, structureMetadata);
+      // Convert to visual nodes based on view mode
+      let visualNodes: Node[];
+      let visualEdges: Edge[];
+      
+      if (viewMode === 'fullJson') {
+        // Full JSON tree visualization
+        const result = parseJsonToNodes(parsed);
+        visualNodes = applyAutoLayout(result.nodes, result.edges);
+        visualEdges = result.edges;
+      } else {
+        // Category-only view (existing behavior)
+        const result = convertJSONToNodes(parsed, structureMetadata);
+        visualNodes = result.nodes;
+        visualEdges = result.edges;
+      }
+      
       setNodes(visualNodes);
       setEdges(visualEdges);
 
