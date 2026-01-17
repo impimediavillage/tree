@@ -45,6 +45,14 @@ export {
   calculateCommissionOnOrderDelivered
 } from './influencer-commissions';
 
+// Export Dispensary Type Management functions
+export {
+  copyCategoryStructure,
+  createCategoryFromTemplate,
+  listCategoryDocuments,
+  deleteCategoryDocument
+} from './dispensary-type-management';
+
 // Export Notification functions
 export {
   onOrderCreated,

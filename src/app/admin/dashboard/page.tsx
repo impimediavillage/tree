@@ -8,6 +8,7 @@ import { Users, Building, ListChecks, CreditCard, ShieldAlert, Settings, Package
 import { useEffect, useState, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { CategoryManagementButton } from '@/components/admin/CategoryManagementButton';
 
 interface StatCardProps {
   title: string;
@@ -219,6 +220,7 @@ export default function AdminDashboardOverviewPage() {
             link="/admin/dashboard/pool-issues"
             buttonText="View Issues"
         />
+        <CategoryManagementButton />
       </div>
     </div>
   );

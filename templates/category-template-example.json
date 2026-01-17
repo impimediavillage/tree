@@ -1,0 +1,51 @@
+{
+  "homeopathicProducts": {
+    "homeopathicProducts": [
+      {
+        "name": "Tissue Salts",
+        "value": "tissueSalts",
+        "description": "Biochemic tissue salts for mineral balance"
+      },
+      {
+        "name": "Single Remedies",
+        "value": "singleRemedies",
+        "description": "Individual homeopathic remedies"
+      },
+      {
+        "name": "Combination Remedies",
+        "value": "combinationRemedies",
+        "description": "Pre-mixed homeopathic combinations"
+      },
+      {
+        "name": "Mother Tinctures",
+        "value": "motherTinctures",
+        "description": "Herbal tinctures used in homeopathy"
+      },
+      {
+        "name": "Creams & Ointments",
+        "value": "creamsOintments",
+        "description": "Topical homeopathic preparations"
+      },
+      {
+        "name": "Flower Essences",
+        "value": "flowerEssences",
+        "description": "Bach flowers and other flower remedies"
+      },
+      {
+        "name": "Cell Salts",
+        "value": "cellSalts",
+        "description": "Schuessler cell salts"
+      },
+      {
+        "name": "Homeopathic Kits",
+        "value": "homeopathicKits",
+        "description": "First aid and remedy kits"
+      },
+      {
+        "name": "Books & Resources",
+        "value": "booksResources",
+        "description": "Educational materials on homeopathy"
+      }
+    ]
+  }
+}
