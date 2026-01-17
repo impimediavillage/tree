@@ -3,13 +3,13 @@
 
 import * as React from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, deleteDoc, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc, query, orderBy, Timestamp, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import type { DispensaryType, User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, ListChecks, Loader2, Search, ListFilter } from 'lucide-react';
+import { PlusCircle, ListChecks, Loader2, Search, ListFilter, Zap } from 'lucide-react';
 import { DispensaryTypeDialog } from '@/components/admin/DispensaryTypeDialog';
 import { DispensaryTypeCard } from '@/components/admin/DispensaryTypeCard';
 import Link from 'next/link';
@@ -101,11 +101,20 @@ export default function AdminWellnessTypesPage() {
           </p>
         </div>
         {isSuperAdmin && (
-          <DispensaryTypeDialog onSave={fetchWellnessTypes} isSuperAdmin={isSuperAdmin}>
-            <Button className="bg-[#006B3E] hover:bg-[#3D2E17] text-white font-bold">
-              <PlusCircle className="mr-2 h-4 w-4" /> Add New Type
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              onClick={quickAddApothecary}
+              variant="outline"
+              className="border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-[#3D2E17] dark:text-white font-bold"
+            >
+              <Zap className="mr-2 h-4 w-4 text-purple-500" /> Quick Add Apothecary
             </Button>
-          </DispensaryTypeDialog>
+            <DispensaryTypeDialog onSave={fetchWellnessTypes} isSuperAdmin={isSuperAdmin}>
+              <Button className="bg-[#006B3E] hover:bg-[#3D2E17] text-white font-bold">
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Type
+              </Button>
+            </DispensaryTypeDialog>
+          </div>
         )}
       </div>
 
