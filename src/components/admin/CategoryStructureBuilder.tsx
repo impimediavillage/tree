@@ -125,9 +125,12 @@ export default function CategoryStructureBuilder({
         setEdges(visualEdges);
       } catch (vizError: any) {
         console.error('Visualization error:', vizError);
+        const safeVizErrorMsg = typeof vizError?.message === 'string' 
+          ? vizError.message 
+          : 'Failed to create visual representation.';
         toast({
           title: 'Visualization Error',
-          description: vizError.message || 'Failed to create visual representation.',
+          description: safeVizErrorMsg,
           variant: 'destructive'
         });
         // Fallback to empty state instead of breaking
@@ -143,19 +146,22 @@ export default function CategoryStructureBuilder({
 
       toast({
         title: 'Structure Parsed!',
-        description: `Found ${structureMetadata.depth} level(s) with ${visualNodes.length} categories.`,
+        description: `Found ${structureMetadata.depth} level(s) with ${visualNodes.length} node(s).`,
         variant: 'default'
       });
     } catch (error: any) {
-      const errorMessage = error.message || 'Invalid JSON format';
+      const errorMessage = typeof error?.message === 'string' ? error.message : 'Invalid JSON format';
       setParseError(errorMessage);
       console.error('Parse and visualize error:', error);
       
+      // Ensure error description is always a string
+      const safeDescription = errorMessage.includes('JSON') 
+        ? 'Check your JSON syntax - ensure quotes and commas are correct'
+        : String(errorMessage).substring(0, 200);
+      
       toast({
         title: 'Error Visualizing JSON',
-        description: errorMessage.includes('JSON') 
-          ? 'Check your JSON syntax - ensure quotes and commas are correct'
-          : errorMessage,
+        description: safeDescription,
         variant: 'destructive'
       });
       
