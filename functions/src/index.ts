@@ -23,6 +23,9 @@ if (admin.apps.length === 0) {
 // Export Creator Lab functions
 export { generateCreatorDesign, finalizeDesignComposite, generateModelShowcase, publishCreatorProduct, updateTreehouseProduct, toggleProductStatus, deleteTreehouseProduct } from './creator-lab';
 
+// Export Product Migration function
+export { migrateProductCreatorFields } from './migrate-products';
+
 // Export Treehouse Earnings functions
 export { recordTreehouseEarning, createPayoutRequest } from './treehouse-earnings';
 

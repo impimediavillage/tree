@@ -390,6 +390,18 @@ exports.onShippingStatusChange = (0, firestore_1.onDocumentUpdated)('orders/{ord
         v2_1.logger.info(`🚚 Shipping status changed: ${beforeShipment.status} -> ${afterShipment.status}`);
         try {
             const newStatus = afterShipment.status;
+            // Prevent duplicate shipping notifications for same status
+            const existingShipmentNotifs = await db.collection('notifications')
+                .where('orderId', '==', orderId)
+                .where('type', '==', 'shipment')
+                .where('metadata.status', '==', newStatus)
+                .where('metadata.dispensaryId', '==', dispensaryId)
+                .limit(1)
+                .get();
+            if (!existingShipmentNotifs.empty) {
+                v2_1.logger.info(`Shipping notification already sent for order ${orderId}, status ${newStatus}, skipping`);
+                continue;
+            }
             let sound = 'vroom';
             let animation = 'truck-drive';
             let title = 'Shipping Update 🚚';
@@ -470,6 +482,7 @@ exports.onShippingStatusChange = (0, firestore_1.onDocumentUpdated)('orders/{ord
                     metadata: {
                         trackingNumber: afterShipment.trackingNumber,
                         status: newStatus,
+                        dispensaryId: dispensaryId,
                     },
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 });

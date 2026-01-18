@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { CategoryManagementButton } from '@/components/admin/CategoryManagementButton';
+import { MigrateProductFieldsButton } from '@/components/admin/MigrateProductFieldsButton';
 
 interface StatCardProps {
   title: string;
@@ -221,6 +222,21 @@ export default function AdminDashboardOverviewPage() {
             buttonText="View Issues"
         />
         <CategoryManagementButton />
+        
+        {/* Migration Tool - Add Product Fields */}
+        <Card className="hover:shadow-xl transition-shadow bg-muted/50 border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-xl font-extrabold text-[#3D2E17]">
+              <Package className="text-[#006B3E] h-10 w-10" /> Product Migration
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-[#5D4E37] font-semibold mb-4">
+              Add creator fields to existing products. Required for Vendor order filtering.
+            </p>
+            <MigrateProductFieldsButton />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
