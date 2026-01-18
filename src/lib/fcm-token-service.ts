@@ -9,7 +9,10 @@ import { doc, setDoc, updateDoc, getDoc, serverTimestamp } from 'firebase/firest
 
 // VAPID key for push notifications (from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates)
 // You need to generate this in Firebase Console
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || 'BNxdG8gKZ7QVZ8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z';
+const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+
+// Validate VAPID key
+const isValidVapidKey = VAPID_KEY && VAPID_KEY.length > 50 && !VAPID_KEY.includes('Z8Z8Z8');
 
 /**
  * Request notification permission and get FCM token
@@ -19,6 +22,13 @@ export async function requestFCMToken(userId: string): Promise<string | null> {
     // Check if messaging is available
     if (!messaging) {
       console.warn('Firebase Messaging not available');
+      return null;
+    }
+
+    // Check if VAPID key is valid
+    if (!isValidVapidKey) {
+      console.error('Invalid VAPID key. Please generate a valid key in Firebase Console > Project Settings > Cloud Messaging > Web Push certificates');
+      console.error('Set NEXT_PUBLIC_FIREBASE_VAPID_KEY in your environment variables');
       return null;
     }
 

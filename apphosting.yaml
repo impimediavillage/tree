@@ -45,3 +45,5 @@ runConfig:
 env:
   - variable: NEXT_PUBLIC_FIREBASE_DATABASE_URL
     value: "https://dispensary-tree-default-rtdb.firebaseio.com"
+  - variable: NEXT_PUBLIC_FIREBASE_VAPID_KEY
+    value: "BAPvI84bUkhPf-DiO2ZP3aa6tWjbPSVBVarr6awFohXkDkDQCQYwZx9DqaahSOhkP9MryMLscatOoyWaWDBBu0M"

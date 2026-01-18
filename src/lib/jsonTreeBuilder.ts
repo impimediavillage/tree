@@ -52,13 +52,18 @@ export function buildJSONTree(json: any): { nodes: Node[]; edges: Edge[] } {
   }
 
   function formatValue(value: any, type: JSONNodeType): string {
-    if (type === 'string') return `"${value}"`;
-    if (type === 'boolean') return value ? 'true' : 'false';
-    if (type === 'null') return 'null';
-    if (type === 'number') return String(value);
-    if (type === 'array') return `[${value?.length || 0} items]`;
-    if (type === 'object') return `{${Object.keys(value || {}).length} fields}`;
-    return String(value);
+    try {
+      if (type === 'string') return `"${String(value)}"`;
+      if (type === 'boolean') return value ? 'true' : 'false';
+      if (type === 'null') return 'null';
+      if (type === 'number') return String(value);
+      if (type === 'array') return `[${value?.length || 0} items]`;
+      if (type === 'object') return `{${Object.keys(value || {}).length} fields}`;
+      return String(value);
+    } catch (error) {
+      console.error('Error formatting value:', error);
+      return '[Error]';
+    }
   }
 
   function traverse(
@@ -86,7 +91,7 @@ export function buildJSONTree(json: any): { nodes: Node[]; edges: Edge[] } {
       position: { x: depth * INDENT, y: yOffset },
       data: {
         label: fieldName,
-        value: obj,
+        value: undefined, // Don't store the actual value to avoid React rendering issues
         fieldName,
         type,
         isExpandable,
