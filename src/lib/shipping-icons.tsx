@@ -30,7 +30,6 @@ export function getShippingStatusIcon(
   const shippingStatuses: ShippingStatus[] = [
     'label_generated',
     'ready_for_shipping',
-    'shipped',
     'in_transit',
     'out_for_delivery'
   ];
@@ -40,7 +39,7 @@ export function getShippingStatusIcon(
     return { icon: PackageCheck, label: 'Delivered', color: 'text-green-600' };
   }
   
-  if (status === 'pending' || status === 'processing') {
+  if (status === 'pending') {
     return { icon: Clock, label: 'Processing', color: 'text-yellow-600' };
   }
   
@@ -69,13 +68,11 @@ export function getStatusDisplayWithIcon(
   
   const statusLabels: Record<ShippingStatus, { label: string; description: string }> = {
     pending: { label: 'Pending', description: 'Order awaiting processing' },
-    processing: { label: 'Processing', description: 'Order being prepared' },
     ready_for_shipping: { label: 'Ready for Shipping', description: '📦 PUDO/Courier - Ready to ship' },
     ready_for_pickup: { label: 'Ready for Pickup', description: '🚗 Driver - Ready for collection' },
     label_generated: { label: 'Label Generated', description: '📦 PUDO - Shipping label created' },
     claimed_by_driver: { label: 'Claimed by Driver', description: '🚗 Driver - Assignment confirmed' },
     picked_up: { label: 'Picked Up', description: '🚗 Driver - Package collected' },
-    shipped: { label: 'Shipped', description: '📦 Courier - Package in transit' },
     in_transit: { label: 'In Transit', description: '📦 Courier - Moving to destination' },
     en_route: { label: 'En Route', description: '🚗 Driver - On the way to customer' },
     out_for_delivery: { label: 'Out for Delivery', description: '📦 Courier - Final delivery leg' },
@@ -84,8 +81,7 @@ export function getStatusDisplayWithIcon(
     delivered: { label: 'Delivered', description: '✅ Successfully delivered' },
     cancelled: { label: 'Cancelled', description: '❌ Order cancelled' },
     failed: { label: 'Failed', description: '⚠️ Delivery failed' },
-    returned: { label: 'Returned', description: '↩️ Package returned' },
-    collection_ready: { label: 'Ready for Collection', description: '🏪 Available at store' }
+    returned: { label: 'Returned', description: '↩️ Package returned' }
   };
   
   const statusInfo = statusLabels[status] || { label: status, description: '' };
