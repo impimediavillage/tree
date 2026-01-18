@@ -113,7 +113,6 @@ export function OrderStatusManagement({ order, onUpdateStatus }: OrderStatusMana
       case 'ready_for_pickup':
         return { icon: <Icon className="h-4 w-4" />, variant: 'secondary' as const, color: iconInfo.color };
       case 'in_transit':
-      case 'shipped':
       case 'en_route':
       case 'nearby':
         return { icon: <Icon className="h-4 w-4" />, variant: 'default' as const, color: iconInfo.color };
