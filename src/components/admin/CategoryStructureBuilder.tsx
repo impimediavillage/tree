@@ -38,6 +38,23 @@ import SubcategoryNode from './SubcategoryNode';
 import JSONNode from './JSONNode';
 import AnimatedWireEdge from './AnimatedWireEdge';
 
+// Helper function to safely render any value (CRITICAL: prevents React error #31)
+function safeRender(value: any): string {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (Array.isArray(value)) return `Array[${value.length}]`;
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value).substring(0, 150) + '...';
+    } catch {
+      return '[Object]';
+    }
+  }
+  return String(value);
+}
+
 // Custom node types
 const nodeTypes = {
   categoryNode: CategoryNode,
@@ -536,7 +553,8 @@ export default function CategoryStructureBuilder({
                 )}
                 {richMetadata.meta.compliance && (
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-semibold">Compliance:</span> {richMetadata.meta.compliance}
+                    <span className="font-semibold">Compliance:</span>{' '}
+                    {safeRender(richMetadata.meta.compliance)}
                   </p>
                 )}
                 {richMetadata.meta.keywords && richMetadata.meta.keywords.length > 0 && (
