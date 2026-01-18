@@ -37,8 +37,6 @@ import CategoryNode from './CategoryNode';
 import SubcategoryNode from './SubcategoryNode';
 import JSONNode from './JSONNode';
 import AnimatedWireEdge from './AnimatedWireEdge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 
 // Custom node types
 const nodeTypes = {
@@ -69,7 +67,7 @@ export default function CategoryStructureBuilder({
   const [parsedJSON, setParsedJSON] = useState<any>(null);
   const [metadata, setMetadata] = useState<CategoryStructureMetadata | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'category' | 'fullJson'>('category');
+  // Always use full JSON mode - toggle removed as per user request
   
   // Extract rich metadata from parsed JSON (SAFE - won't break if not present)
   const [richMetadata, setRichMetadata] = useState<{
@@ -109,25 +107,18 @@ export default function CategoryStructureBuilder({
       const structureMetadata = analyzeCategoryStructure(parsed);
       setMetadata(structureMetadata);
 
-      // Convert to visual nodes based on view mode
+      // Convert to visual nodes - always use full JSON mode
       let visualNodes: Node[];
       let visualEdges: Edge[];
       
       try {
-        if (viewMode === 'fullJson') {
-          // Full JSON tree visualization - ALL fields visible
-          const result = buildJSONTree(parsed);
-          visualNodes = result.nodes;
-          visualEdges = result.edges;
-          
-          if (visualNodes.length === 0) {
-            throw new Error('No nodes generated from JSON structure');
-          }
-        } else {
-          // Category-only view (existing behavior)
-          const result = extractCategoryNodes(parsed);
-          visualNodes = result.nodes;
-          visualEdges = result.edges;
+        // Full JSON tree visualization - ALL fields visible
+        const result = buildJSONTree(parsed);
+        visualNodes = result.nodes;
+        visualEdges = result.edges;
+        
+        if (visualNodes.length === 0) {
+          throw new Error('No nodes generated from JSON structure');
         }
         
         setNodes(visualNodes);
@@ -136,7 +127,7 @@ export default function CategoryStructureBuilder({
         console.error('Visualization error:', vizError);
         toast({
           title: 'Visualization Error',
-          description: vizError.message || 'Failed to create visual representation. Try Category view instead.',
+          description: vizError.message || 'Failed to create visual representation.',
           variant: 'destructive'
         });
         // Fallback to empty state instead of breaking
@@ -173,7 +164,7 @@ export default function CategoryStructureBuilder({
       setEdges([]);
       setParsedJSON(null);
     }
-  }, [jsonInput, viewMode, onStructureChange, setNodes, setEdges, toast]);
+  }, [jsonInput, onStructureChange, setNodes, setEdges, toast]); // Removed viewMode dependency
 
   // Convert JSON to React Flow nodes
   const convertJSONToNodes = (json: any, meta: CategoryStructureMetadata): { nodes: Node[], edges: Edge[] } => {
@@ -446,40 +437,13 @@ export default function CategoryStructureBuilder({
           )}
 
           <div className="space-y-3">
-            {/* View Mode Toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md border">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="view-mode" className="text-sm font-semibold">
-                  Visualization Mode:
-                </Label>
-                <Badge variant={viewMode === 'category' ? 'default' : 'secondary'}>
-                  {viewMode === 'category' ? 'Categories Only' : 'Full JSON Tree'}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="view-mode" className="text-xs text-muted-foreground">
-                  Categories
-                </Label>
-                <Switch
-                  id="view-mode"
-                  checked={viewMode === 'fullJson'}
-                  onCheckedChange={(checked) => setViewMode(checked ? 'fullJson' : 'category')}
-                />
-                <Label htmlFor="view-mode" className="text-xs text-muted-foreground">
-                  Full JSON
-                </Label>
-              </div>
+            {/* Info about Full JSON Mode (always on) */}
+            <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <Sparkles className="h-4 w-4 text-blue-600 mt-0.5" />
+              <p className="text-xs text-blue-900 dark:text-blue-200">
+                <span className="font-semibold">Full JSON Visualization:</span> Every field in your JSON structure becomes a draggable node, including metadata, structured data, and semantic relationships.
+              </p>
             </div>
-
-            {/* Description based on mode */}
-            {viewMode === 'fullJson' && (
-              <div className="flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                <Sparkles className="h-4 w-4 text-blue-600 mt-0.5" />
-                <p className="text-xs text-blue-900 dark:text-blue-200">
-                  <span className="font-semibold">Full JSON Mode:</span> Visualizes ALL fields including metadata, structured data, and semantic relationships. Every field becomes a draggable node.
-                </p>
-              </div>
-            )}
             
             <div className="flex gap-2">
               <Button onClick={parseAndVisualize} className="flex-1">
@@ -681,23 +645,20 @@ export default function CategoryStructureBuilder({
                     </div>
                   </div>
                   
-                  {viewMode === 'fullJson' && (
-                    <>
-                      <div className="border-t pt-2">
-                        <Button
-                          size="sm"
-                          onClick={exportRestructuredJSON}
-                          className="w-full text-xs"
-                        >
-                          <Sparkles className="mr-1 h-3 w-3" />
-                          Export Structure
-                        </Button>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground">
-                        Drag wire endpoints to reconnect
-                      </p>
-                    </>
-                  )}
+                  {/* Always show export button in full JSON mode */}
+                  <div className="border-t pt-2">
+                    <Button
+                      size="sm"
+                      onClick={exportRestructuredJSON}
+                      className="w-full text-xs"
+                    >
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      Export Structure
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Drag wire endpoints to reconnect
+                  </p>
                 </Panel>
               </ReactFlow>
             </div>

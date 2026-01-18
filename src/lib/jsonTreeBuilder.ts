@@ -53,16 +53,29 @@ export function buildJSONTree(json: any): { nodes: Node[]; edges: Edge[] } {
 
   function formatValue(value: any, type: JSONNodeType): string {
     try {
-      if (type === 'string') return `"${String(value)}"`;
+      // Ensure we NEVER return an object or array
+      if (value === null || value === undefined) return 'null';
+      if (type === 'string') return `"${String(value).substring(0, 100)}"`;
       if (type === 'boolean') return value ? 'true' : 'false';
       if (type === 'null') return 'null';
       if (type === 'number') return String(value);
-      if (type === 'array') return `[${value?.length || 0} items]`;
-      if (type === 'object') return `{${Object.keys(value || {}).length} fields}`;
-      return String(value);
+      if (type === 'array') {
+        const len = Array.isArray(value) ? value.length : 0;
+        return `Array[${len} items]`;
+      }
+      if (type === 'object') {
+        try {
+          const keys = Object.keys(value || {});
+          return `Object{${keys.length} fields}`;
+        } catch {
+          return '{Object}';
+        }
+      }
+      // Fallback: force to string
+      return String(value).substring(0, 100);
     } catch (error) {
       console.error('Error formatting value:', error);
-      return '[Error]';
+      return '[Format Error]';
     }
   }
 
@@ -85,20 +98,33 @@ export function buildJSONTree(json: any): { nodes: Node[]; edges: Edge[] } {
     const fullPath = path.join('.');
 
     // Create node
+    // CRITICAL: Ensure displayValue is ALWAYS a string
+    let safeDisplayValue: string;
+    try {
+      safeDisplayValue = formatValue(obj, type);
+      // Double-check it's actually a string
+      if (typeof safeDisplayValue !== 'string') {
+        safeDisplayValue = '[Invalid Display Value]';
+      }
+    } catch (error) {
+      console.error('Error creating display value:', error);
+      safeDisplayValue = '[Error]';
+    }
+
     const node: Node = {
       id: currentId,
       type: 'custom',
       position: { x: depth * INDENT, y: yOffset },
       data: {
-        label: fieldName,
+        label: String(fieldName), // Ensure string
         value: undefined, // Don't store the actual value to avoid React rendering issues
-        fieldName,
+        fieldName: String(fieldName),
         type,
         isExpandable,
         depth,
         fullPath,
         color: getNodeColor(type),
-        displayValue: formatValue(obj, type)
+        displayValue: safeDisplayValue // Guaranteed to be a string
       } as JSONNodeData & { color: string; displayValue: string }
     };
 
