@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle2, Clock, Truck, AlertCircle, Download } from 'lucide-react';
+import { CheckCircle2, Clock, Truck, AlertCircle, Download, Car, PackageCheck } from 'lucide-react';
 import type { Order, OrderStatus, OrderItem } from '@/types/order';
 import type { ShippingStatus } from '@/types/shipping';
 import { 
@@ -17,6 +17,7 @@ import {
   STATUS_LABELS 
 } from '@/lib/status-validation';
 import { StatusConfirmationDialog } from './StatusConfirmationDialog';
+import { getShippingStatusIcon } from '@/lib/shipping-icons';
 
 interface OrderStatusManagementProps {
   order: Order;
@@ -97,20 +98,30 @@ export function OrderStatusManagement({ order, onUpdateStatus }: OrderStatusMana
   };
 
   const getStatusBadge = (status: ShippingStatus) => {
+    // Get shipping provider from first shipment
+    const shippingProvider = Object.values(order.shipments)[0]?.shippingProvider;
+    const iconInfo = getShippingStatusIcon(status, shippingProvider);
+    const Icon = iconInfo.icon;
+    
     switch (status) {
       case 'delivered':
-        return { icon: <CheckCircle2 className="h-4 w-4" />, variant: 'success' as const };
+        return { icon: <Icon className="h-4 w-4" />, variant: 'success' as const, color: iconInfo.color };
       case 'failed':
       case 'returned':
-        return { icon: <AlertCircle className="h-4 w-4" />, variant: 'destructive' as const };
+        return { icon: <AlertCircle className="h-4 w-4" />, variant: 'destructive' as const, color: 'text-red-600' };
       case 'ready_for_shipping':
-        return { icon: <Clock className="h-4 w-4" />, variant: 'secondary' as const };
+      case 'ready_for_pickup':
+        return { icon: <Icon className="h-4 w-4" />, variant: 'secondary' as const, color: iconInfo.color };
       case 'in_transit':
-        return { icon: <Truck className="h-4 w-4" />, variant: 'default' as const };
+      case 'shipped':
+      case 'en_route':
+      case 'nearby':
+        return { icon: <Icon className="h-4 w-4" />, variant: 'default' as const, color: iconInfo.color };
       case 'out_for_delivery':
-        return { icon: <Truck className="h-4 w-4" />, variant: 'primary' as const };
+      case 'arrived':
+        return { icon: <Icon className="h-4 w-4" />, variant: 'primary' as const, color: iconInfo.color };
       default:
-        return { icon: <Clock className="h-4 w-4" />, variant: 'secondary' as const };
+        return { icon: <Icon className="h-4 w-4" />, variant: 'secondary' as const, color: iconInfo.color };
     }
   };
 
@@ -138,21 +149,38 @@ export function OrderStatusManagement({ order, onUpdateStatus }: OrderStatusMana
           onValueChange={(value: ShippingStatus) => handleStatusChange(value)}
           disabled={isUpdating || allowedStatuses.length === 0}
         >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue>{STATUS_LABELS[currentStatus]}</SelectValue>
+          <SelectTrigger className="w-[250px]">
+            <div className="flex items-center gap-2">
+              {statusBadge.icon}
+              <span>{STATUS_LABELS[currentStatus]}</span>
+            </div>
           </SelectTrigger>
           <SelectContent>
             {/* Current status */}
             <SelectItem value={currentStatus} disabled>
-              {STATUS_LABELS[currentStatus]} (Current)
+              <div className="flex items-center gap-2">
+                {statusBadge.icon}
+                <span>{STATUS_LABELS[currentStatus]} (Current)</span>
+              </div>
             </SelectItem>
             
             {/* Allowed transitions */}
-            {allowedStatuses.map((status) => (
-              <SelectItem key={status} value={status}>
-                {STATUS_LABELS[status]}
-              </SelectItem>
-            ))}
+            {allowedStatuses.map((status) => {
+              const shippingProvider = Object.values(order.shipments)[0]?.shippingProvider;
+              const iconInfo = getShippingStatusIcon(status, shippingProvider);
+              const Icon = iconInfo.icon;
+              return (
+                <SelectItem key={status} value={status}>
+                  <div className="flex items-center gap-2">
+                    <Icon className={`h-4 w-4 ${iconInfo.color}`} />
+                    <span>{STATUS_LABELS[status]}</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {iconInfo.label}
+                    </span>
+                  </div>
+                </SelectItem>
+              );
+            })}
             
             {/* Show message if no transitions allowed */}
             {allowedStatuses.length === 0 && (
@@ -163,7 +191,7 @@ export function OrderStatusManagement({ order, onUpdateStatus }: OrderStatusMana
           </SelectContent>
         </Select>
 
-        <Badge variant="outline" className="ml-auto">
+        <Badge variant="outline" className={`ml-auto ${statusBadge.color}`}>
           <span className="flex items-center gap-2">
             {statusBadge.icon}
             {STATUS_LABELS[currentStatus]}

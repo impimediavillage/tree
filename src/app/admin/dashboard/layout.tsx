@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import React from 'react';
 
 interface NavItem {
@@ -92,6 +94,7 @@ export default function AdminDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, loading: authLoading, isSuperAdmin, logout } = useAuth();
+  const [showNotificationCenter, setShowNotificationCenter] = React.useState(false);
 
   // This effect handles redirection after the auth state is confirmed.
   React.useEffect(() => {
@@ -347,12 +350,24 @@ export default function AdminDashboardLayout({
                 {getPageTitle()}
               </h1>
             </div>
+            <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
           </header>
+          
+          {/* Desktop Top Bar with Notifications */}
+          <div className="hidden md:flex items-center justify-end gap-4 border-b bg-background px-6 py-3">
+            <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+          </div>
           <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto"> 
             {children}
           </div>
         </main>
       </div>
+      
+      {/* Notification Center */}
+      <NotificationCenter 
+        isOpen={showNotificationCenter} 
+        onClose={() => setShowNotificationCenter(false)} 
+      />
     </SidebarProvider>
   );
 }

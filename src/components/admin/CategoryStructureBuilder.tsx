@@ -113,20 +113,37 @@ export default function CategoryStructureBuilder({
       let visualNodes: Node[];
       let visualEdges: Edge[];
       
-      if (viewMode === 'fullJson') {
-        // Full JSON tree visualization - ALL fields visible
-        const result = buildJSONTree(parsed);
-        visualNodes = result.nodes;
-        visualEdges = result.edges;
-      } else {
-        // Category-only view (existing behavior)
-        const result = extractCategoryNodes(parsed);
-        visualNodes = result.nodes;
-        visualEdges = result.edges;
+      try {
+        if (viewMode === 'fullJson') {
+          // Full JSON tree visualization - ALL fields visible
+          const result = buildJSONTree(parsed);
+          visualNodes = result.nodes;
+          visualEdges = result.edges;
+          
+          if (visualNodes.length === 0) {
+            throw new Error('No nodes generated from JSON structure');
+          }
+        } else {
+          // Category-only view (existing behavior)
+          const result = extractCategoryNodes(parsed);
+          visualNodes = result.nodes;
+          visualEdges = result.edges;
+        }
+        
+        setNodes(visualNodes);
+        setEdges(visualEdges);
+      } catch (vizError: any) {
+        console.error('Visualization error:', vizError);
+        toast({
+          title: 'Visualization Error',
+          description: vizError.message || 'Failed to create visual representation. Try Category view instead.',
+          variant: 'destructive'
+        });
+        // Fallback to empty state instead of breaking
+        setNodes([]);
+        setEdges([]);
+        throw vizError; // Re-throw to be caught by outer catch
       }
-      
-      setNodes(visualNodes);
-      setEdges(visualEdges);
 
       // Notify parent
       if (onStructureChange) {
@@ -139,12 +156,22 @@ export default function CategoryStructureBuilder({
         variant: 'default'
       });
     } catch (error: any) {
-      setParseError(error.message || 'Invalid JSON format');
+      const errorMessage = error.message || 'Invalid JSON format';
+      setParseError(errorMessage);
+      console.error('Parse and visualize error:', error);
+      
       toast({
-        title: 'Parse Error',
-        description: error.message || 'Invalid JSON format',
+        title: 'Error Visualizing JSON',
+        description: errorMessage.includes('JSON') 
+          ? 'Check your JSON syntax - ensure quotes and commas are correct'
+          : errorMessage,
         variant: 'destructive'
       });
+      
+      // Reset to safe state
+      setNodes([]);
+      setEdges([]);
+      setParsedJSON(null);
     }
   }, [jsonInput, viewMode, onStructureChange, setNodes, setEdges, toast]);
 

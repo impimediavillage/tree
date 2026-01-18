@@ -17,6 +17,12 @@ export interface JSONNodeData {
  * Every field becomes a visual node that can be dragged and connected
  */
 export function buildJSONTree(json: any): { nodes: Node[]; edges: Edge[] } {
+  // Safety checks
+  if (!json || (typeof json !== 'object' && !Array.isArray(json))) {
+    console.warn('buildJSONTree: Invalid input, expected object or array');
+    return { nodes: [], edges: [] };
+  }
+
   const nodes: Node[] = [];
   const edges: Edge[] = [];
   let nodeId = 0;
@@ -62,6 +68,12 @@ export function buildJSONTree(json: any): { nodes: Node[]; edges: Edge[] } {
     depth: number,
     path: string[]
   ): string {
+    // Prevent infinite loops from circular references or too deep nesting
+    if (depth > 50) {
+      console.warn('buildJSONTree: Max depth reached, stopping traversal');
+      return `node-max-depth-${nodeId++}`;
+    }
+
     const currentId = `node-${nodeId++}`;
     const type = getNodeType(obj);
     const isExpandable = type === 'object' || type === 'array';
@@ -101,21 +113,49 @@ export function buildJSONTree(json: any): { nodes: Node[]; edges: Edge[] } {
     }
 
     // Recursively traverse children
-    if (type === 'object' && obj !== null) {
-      Object.entries(obj).forEach(([key, value]) => {
-        traverse(value, key, currentId, depth + 1, [...path, key]);
-      });
-    } else if (type === 'array' && Array.isArray(obj)) {
-      obj.forEach((item, index) => {
-        traverse(item, `[${index}]`, currentId, depth + 1, [...path, `[${index}]`]);
-      });
+    try {
+      if (type === 'object' && obj !== null) {
+        Object.entries(obj).forEach(([key, value]) => {
+          traverse(value, key, currentId, depth + 1, [...path, key]);
+        });
+      } else if (type === 'array' && Array.isArray(obj)) {
+        obj.forEach((item, index) => {
+          traverse(item, `[${index}]`, currentId, depth + 1, [...path, `[${index}]`]);
+        });
+      }
+    } catch (error) {
+      console.error('Error traversing node:', fieldName, error);
     }
 
     return currentId;
   }
 
   // Start traversal from root
-  traverse(json, 'root', null, 0, ['root']);
+  try {
+    traverse(json, 'root', null, 0, ['root']);
+  } catch (error) {
+    console.error('Error building JSON tree:', error);
+    // Return partial results if any nodes were created
+    if (nodes.length === 0) {
+      // Create a single error node
+      nodes.push({
+        id: 'error-node',
+        type: 'custom',
+        position: { x: 100, y: 100 },
+        data: {
+          label: 'Error',
+          value: 'Failed to parse JSON structure',
+          fieldName: 'error',
+          type: 'string' as JSONNodeType,
+          isExpandable: false,
+          depth: 0,
+          fullPath: 'error',
+          color: '#ef4444',
+          displayValue: 'Error parsing JSON'
+        }
+      });
+    }
+  }
 
   return { nodes, edges };
 }

@@ -18,6 +18,15 @@ interface JSONNodeData {
 }
 
 function JSONNode({ data }: NodeProps<JSONNodeData>) {
+  // Safety check
+  if (!data) {
+    return (
+      <div className="px-4 py-3 rounded-lg border-2 shadow-lg bg-red-50 min-w-[220px]">
+        <span className="text-red-600 text-xs">Invalid node data</span>
+      </div>
+    );
+  }
+
   const { label, type, isExpandable, displayValue, color } = data;
 
   return (

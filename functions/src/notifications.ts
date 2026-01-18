@@ -405,6 +405,21 @@ export const onShippingStatusChange = onDocumentUpdated('orders/{orderId}', asyn
 
     try {
       const newStatus = afterShipment.status;
+      
+      // Prevent duplicate shipping notifications for same status
+      const existingShipmentNotifs = await db.collection('notifications')
+        .where('orderId', '==', orderId)
+        .where('type', '==', 'shipment')
+        .where('metadata.status', '==', newStatus)
+        .where('metadata.dispensaryId', '==', dispensaryId)
+        .limit(1)
+        .get();
+      
+      if (!existingShipmentNotifs.empty) {
+        logger.info(`Shipping notification already sent for order ${orderId}, status ${newStatus}, skipping`);
+        continue;
+      }
+      
       let sound: string = 'vroom';
       let animation: string = 'truck-drive';
       let title: string = 'Shipping Update 🚚';
@@ -487,6 +502,7 @@ export const onShippingStatusChange = onDocumentUpdated('orders/{orderId}', asyn
           metadata: {
             trackingNumber: afterShipment.trackingNumber,
             status: newStatus,
+            dispensaryId: dispensaryId,
           },
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
