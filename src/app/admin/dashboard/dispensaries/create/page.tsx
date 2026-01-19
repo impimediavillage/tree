@@ -74,7 +74,7 @@ export default function AdminCreateDispensaryPage() {
       latitude: undefined, longitude: undefined,
       showLocation: true, deliveryRadius: 'none',
       message: '', openTime: '', closeTime: '', originLocker: null,
-      inHouseDeliveryPrice: undefined, sameDayDeliveryCutoff: '', inHouseDeliveryCutoffTime: ''
+      inHouseDeliveryPrice: undefined, pricePerKm: undefined, minimumOrderAmount: undefined, sameDayDeliveryCutoff: '', inHouseDeliveryCutoffTime: ''
     },
   });
 
@@ -359,7 +359,65 @@ export default function AdminCreateDispensaryPage() {
                                   </div>
                                 </FormControl>
                                 <FormDescription>
-                                  Cost charged to customers for in-house delivery. Leave empty for free delivery.
+                                  Flat fee for in-house delivery. Leave blank if using Per km pricing.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="minimumOrderAmount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Minimum Order Amount</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R</span>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      placeholder="0.00"
+                                      className="pl-7"
+                                      {...field}
+                                      value={field.value || ''}
+                                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                                    />
+                                  </div>
+                                </FormControl>
+                                <FormDescription>
+                                  Minimum order value required for delivery. Leave empty for no minimum.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="pricePerKm"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Price per Kilometer {watchedShippingMethods?.includes('in_house') && <span className="text-destructive">*</span>}</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R</span>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      placeholder="0.00"
+                                      className="pl-7"
+                                      {...field}
+                                      value={field.value || ''}
+                                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                                    />
+                                  </div>
+                                </FormControl>
+                                <FormDescription>
+                                  Cost per kilometer for in-house delivery. Required when in-house delivery is enabled.
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
