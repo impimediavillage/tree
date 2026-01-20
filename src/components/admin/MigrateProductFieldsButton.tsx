@@ -121,7 +121,7 @@ export function MigrateProductFieldsButton() {
                 <ul className="list-disc pl-5 space-y-1 text-sm">
                   <li>Adds <code>createdBy</code> field (vendor's user ID)</li>
                   <li>Adds <code>vendorUserId</code> field (same as createdBy)</li>
-                  <li>Processes all 8 product collections</li>
+                  <li>Processes all 5 product collections</li>
                   <li>Skips products that already have these fields</li>
                   <li>Matches products to users via email and dispensaryId</li>
                 </ul>
@@ -142,14 +142,11 @@ export function MigrateProductFieldsButton() {
             <CardContent>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  'cannabis_products',
-                  'cbd_products',
-                  'hemp_products',
-                  'mushroom_products',
-                  'traditional_medicine_products',
-                  'homeopathy_products',
-                  'permaculture_products',
-                  'apparel_products',
+                  'cannibinoid_store_products',
+                  'traditional_medicine_dispensary_products',
+                  'homeopathy_store_products',
+                  'mushroom_store_products',
+                  'permaculture_store_products',
                 ].map((collection) => (
                   <Badge key={collection} variant="secondary" className="justify-center">
                     {collection}

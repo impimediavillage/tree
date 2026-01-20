@@ -45,16 +45,13 @@ exports.migrateProductCreatorFields = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
 const logger = __importStar(require("firebase-functions/logger"));
-// All product collections
+// All REAL product collections (from src/lib/utils.ts and dispensary pages)
 const PRODUCT_COLLECTIONS = [
-    'cannabis_products',
-    'cbd_products',
-    'hemp_products',
-    'mushroom_products',
-    'traditional_medicine_products',
-    'homeopathy_products',
-    'permaculture_products',
-    'apparel_products',
+    'cannibinoid_store_products',
+    'traditional_medicine_dispensary_products',
+    'homeopathy_store_products',
+    'mushroom_store_products',
+    'permaculture_store_products',
 ];
 /**
  * HTTP Cloud Function to migrate product fields

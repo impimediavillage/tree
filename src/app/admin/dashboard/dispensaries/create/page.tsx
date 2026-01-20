@@ -74,7 +74,6 @@ export default function AdminCreateDispensaryPage() {
       latitude: undefined, longitude: undefined,
       showLocation: true, deliveryRadius: 'none',
       message: '', openTime: '', closeTime: '', originLocker: null,
-      inHouseDeliveryPrice: undefined, pricePerKm: undefined, minimumOrderAmount: undefined, sameDayDeliveryCutoff: '', inHouseDeliveryCutoffTime: '',
       status: 'Approved' as const,
     },
   });
@@ -185,7 +184,21 @@ export default function AdminCreateDispensaryPage() {
 
   async function onSubmit(data: AdminCreateDispensaryFormData) {
     setIsSubmitting(true);
-    const dispensaryData = { ...data, applicationDate: Timestamp.fromDate(new Date()), approvedDate: Timestamp.fromDate(new Date()), originLocker: data.originLocker ?? null, };
+    
+    // Remove undefined values - Firestore doesn't accept them
+    const cleanData: any = {};
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined) {
+        cleanData[key] = value;
+      }
+    });
+    
+    const dispensaryData = { 
+      ...cleanData, 
+      applicationDate: Timestamp.fromDate(new Date()), 
+      approvedDate: Timestamp.fromDate(new Date()), 
+      originLocker: data.originLocker ?? null,
+    };
     try {
       await addDoc(collection(db, 'dispensaries'), dispensaryData);
       toast({ title: "Dispensary Created!", description: `${data.dispensaryName} has been created and approved.` });
@@ -334,119 +347,6 @@ export default function AdminCreateDispensaryPage() {
                       )}
 
                       <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
-                      
-                      {/* In-House Delivery Settings - Show only when in-house is selected */}
-                      {watchedShippingMethods?.includes('in-house') && (
-                        <>
-                          <FormField
-                            control={form.control}
-                            name="inHouseDeliveryPrice"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>In-House Delivery Fee</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R</span>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      className="pl-7"
-                                      {...field}
-                                      value={field.value || ''}
-                                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormDescription>
-                                  Flat fee for in-house delivery. Leave blank if using Per km pricing.
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="minimumOrderAmount"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Minimum Order Amount</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R</span>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      className="pl-7"
-                                      {...field}
-                                      value={field.value || ''}
-                                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormDescription>
-                                  Minimum order value required for delivery. Leave empty for no minimum.
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="pricePerKm"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Price per Kilometer {watchedShippingMethods?.includes('in_house') && <span className="text-destructive">*</span>}</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R</span>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      className="pl-7"
-                                      {...field}
-                                      value={field.value || ''}
-                                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormDescription>
-                                  Cost per kilometer for in-house delivery. Required when in-house delivery is enabled.
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="sameDayDeliveryCutoff"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Same-Day Delivery Cutoff Time</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="time"
-                                    {...field}
-                                    value={field.value || ''}
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  Orders placed before this time qualify for same-day delivery (e.g., 14:00 for 2 PM cutoff).
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </>
-                      )}
                       
                       <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value || ''} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
                   </div>

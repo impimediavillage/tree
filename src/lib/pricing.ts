@@ -42,8 +42,9 @@ export interface CheckoutSummary {
 }
 
 /**
- * Extract base price from dispensary-set price (remove tax)
- * Dispensary enters R115 with 15% tax → Base is R100
+ * Extract base price from dispensary-set price
+ * NOTE: In current simplified logic, dispensary price IS the base price (includes their tax)
+ * This function kept for compatibility but not used in main calculation
  */
 export function extractBasePrice(dispensarySetPrice: number, taxRate: number): number {
   if (taxRate === 0) return dispensarySetPrice;
@@ -72,43 +73,46 @@ export function calculateTax(subtotal: number, taxRate: number): number {
 }
 
 /**
- * Calculate full price breakdown - Commission on BASE price, NO double taxation
- * @param dispensarySetPrice - Price entered by dispensary (INCLUDES their tax already)
- * @param taxRate - Tax rate percentage (e.g., 15 for 15%) - for extracting base only
+ * Calculate full price breakdown - Simple markup on dispensary price
+ * @param dispensarySetPrice - Price entered by dispensary (INCLUDES their tax)
+ * @param taxRate - Tax rate percentage (for reference only, not used in calculation)
  * @param isProductPool - Whether this is a product pool item (5% vs 25% commission)
  * 
- * CORRECT LOGIC: Dispensary price ALREADY includes tax
- * - Dispensary enters: R115 (R100 base + R15 tax already paid)
- * - Extract base: R115 / 1.15 = R100
- * - Commission: R100 × 0.25 = R25 (on base only)
- * - Customer pays: R115 + R25 = R140
+ * SIMPLE LOGIC (Updated):
+ * - Dispensary enters: R115 (this is their payout, tax already included)
+ * - Public store commission: R115 × 0.25 = R28.75
+ * - Product pool commission: R115 × 0.05 = R5.75
+ * - Customer pays: R115 + R28.75 = R143.75 (public) or R115 + R5.75 = R120.75 (pool)
  * 
- * NO additional tax charged - dispensary price already includes their tax!
+ * Revenue split:
+ * - Dispensary gets: R115 (exactly what they entered)
+ * - Platform gets: R28.75 (the commission markup)
+ * - Tax: Already included in dispensary's R115
  */
 export function calculatePriceBreakdown(
   dispensarySetPrice: number,
   taxRate: number = 0,
   isProductPool: boolean = false
 ): PriceBreakdown {
-  // Step 1: Extract base price (for commission calculation)
-  const basePrice = extractBasePrice(dispensarySetPrice, taxRate);
+  // Dispensary price is the base (includes their tax already)
+  const basePrice = dispensarySetPrice;
   
-  // Step 2: Calculate platform commission on BASE price only
+  // Calculate platform commission as percentage of dispensary price
   const commissionRate = isProductPool ? PRODUCT_POOL_COMMISSION_RATE : PLATFORM_COMMISSION_RATE;
-  const commission = basePrice * commissionRate;
+  const commission = dispensarySetPrice * commissionRate;
   
-  // Step 3: Customer pays dispensary price + commission (NO additional tax)
+  // Customer pays dispensary price + commission
   const subtotalBeforeTax = dispensarySetPrice + commission;
   
-  // Step 4: Tax is 0 - dispensary price ALREADY includes their tax
+  // No additional tax - dispensary price already includes tax
   const tax = 0;
   
-  // Step 5: Final customer price
+  // Final price customer pays
   const finalPrice = subtotalBeforeTax;
 
   return {
     dispensarySetPrice,
-    basePrice,
+    basePrice, // Same as dispensarySetPrice
     commission,
     commissionRate,
     subtotalBeforeTax,
@@ -120,11 +124,13 @@ export function calculatePriceBreakdown(
 
 /**
  * Get display price for product cards
- * Shows subtotal (base + commission) without tax
+ * Returns the price customers see = dispensary price + commission markup
+ * - Public store: dispensary price × 1.25 (25% markup)
+ * - Product pool: dispensary price × 1.05 (5% markup)
  */
 export function getDisplayPrice(dispensarySetPrice: number, taxRate: number, isProductPool: boolean = false): number {
   const breakdown = calculatePriceBreakdown(dispensarySetPrice, taxRate, isProductPool);
-  return breakdown.subtotalBeforeTax;
+  return breakdown.finalPrice;
 }
 
 /**
