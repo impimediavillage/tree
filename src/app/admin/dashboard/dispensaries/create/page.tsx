@@ -200,8 +200,44 @@ export default function AdminCreateDispensaryPage() {
       originLocker: data.originLocker ?? null,
     };
     try {
-      await addDoc(collection(db, 'dispensaries'), dispensaryData);
-      toast({ title: "Dispensary Created!", description: `${data.dispensaryName} has been created and approved.` });
+      // 1. Create dispensary document
+      const dispensaryDoc = await addDoc(collection(db, 'dispensaries'), dispensaryData);
+      const dispensaryId = dispensaryDoc.id;
+      
+      // 2. Create owner user account (just like dispensary-signup workflow)
+      toast({ title: "Creating Owner Account...", description: "Setting up dispensary owner authentication." });
+      
+      try {
+        const createDispensaryUserCallable = httpsCallable(functions, 'createDispensaryUser');
+        const result = await createDispensaryUserCallable({ 
+          email: data.ownerEmail, 
+          displayName: data.fullName, 
+          dispensaryId 
+        });
+        
+        const resultData = result.data as { success: boolean; message: string; uid: string };
+        
+        if (resultData.success) {
+          toast({ 
+            title: "Dispensary Created!", 
+            description: `${data.dispensaryName} and owner account have been created successfully.` 
+          });
+        } else {
+          toast({ 
+            title: "Partial Success", 
+            description: "Dispensary created but owner account setup encountered an issue. Please check manually.",
+            variant: "default"
+          });
+        }
+      } catch (userError) {
+        console.error("Error creating owner user:", userError);
+        toast({ 
+          title: "Dispensary Created", 
+          description: "Dispensary saved but owner account creation failed. Please create manually.",
+          variant: "default"
+        });
+      }
+      
       router.push('/admin/dashboard/dispensaries');
     } catch (error) {
       console.error("Error creating dispensary:", error);
