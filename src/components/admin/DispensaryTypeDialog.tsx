@@ -278,7 +278,7 @@ export function DispensaryTypeDialog({
       }
       // If currentImagePath is neither a new upload nor null, it's kept.
 
-      const dataToSave: Omit<DispensaryType, 'id' | 'createdAt' | 'updatedAt'> & {updatedAt: any} = {
+      const dataToSave: any = {
         name: formData.name,
         description: formData.description || null,
         iconPath: currentIconPath, // Use the determined icon path
@@ -286,7 +286,7 @@ export function DispensaryTypeDialog({
         advisorFocusPrompt: formData.advisorFocusPrompt || null,
         recommendedAdvisorIds: formData.recommendedAdvisorIds || [],
         useGenericWorkflow: useGenericWorkflow, // Add generic workflow flag
-        categoryStructure: categoryMetadata || null, // FIXED: Firestore doesn't accept undefined
+        ...(categoryMetadata && { categoryStructure: categoryMetadata }), // Only include if exists
         updatedAt: serverTimestamp(),
       };
 
