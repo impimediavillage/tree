@@ -620,7 +620,7 @@ export default function CategoryStructureBuilder({
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div style={{ width: '100%', height: '600px' }}>
+            <div style={{ width: '100%', height: '900px' }}>
               <ReactFlow
                 nodes={nodes}
                 edges={edges}

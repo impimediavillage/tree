@@ -286,7 +286,7 @@ export function DispensaryTypeDialog({
         advisorFocusPrompt: formData.advisorFocusPrompt || null,
         recommendedAdvisorIds: formData.recommendedAdvisorIds || [],
         useGenericWorkflow: useGenericWorkflow, // Add generic workflow flag
-        categoryStructure: categoryMetadata || undefined, // Add category metadata if available
+        categoryStructure: categoryMetadata || null, // FIXED: Firestore doesn't accept undefined
         updatedAt: serverTimestamp(),
       };
 
