@@ -2,7 +2,7 @@
 
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { baseWellnessSchema, type BaseWellnessFormData } from '@/lib/schemas';
+import { adminCreateDispensarySchema, type AdminCreateDispensaryFormData } from '@/lib/schemas';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,8 +63,8 @@ export default function AdminCreateDispensaryPage() {
   const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
 
-  const form = useForm<BaseWellnessFormData>({
-    resolver: zodResolver(baseWellnessSchema),
+  const form = useForm<AdminCreateDispensaryFormData>({
+    resolver: zodResolver(adminCreateDispensarySchema),
     mode: "onChange",
     defaultValues: {
       fullName: '', phone: '', ownerEmail: '', dispensaryName: '',
@@ -74,7 +74,8 @@ export default function AdminCreateDispensaryPage() {
       latitude: undefined, longitude: undefined,
       showLocation: true, deliveryRadius: 'none',
       message: '', openTime: '', closeTime: '', originLocker: null,
-      inHouseDeliveryPrice: undefined, pricePerKm: undefined, minimumOrderAmount: undefined, sameDayDeliveryCutoff: '', inHouseDeliveryCutoffTime: ''
+      inHouseDeliveryPrice: undefined, pricePerKm: undefined, minimumOrderAmount: undefined, sameDayDeliveryCutoff: '', inHouseDeliveryCutoffTime: '',
+      status: 'Approved' as const,
     },
   });
 
@@ -182,9 +183,9 @@ export default function AdminCreateDispensaryPage() {
     }
   }, [needsOriginLocker, form]);
 
-  async function onSubmit(data: BaseWellnessFormData) {
+  async function onSubmit(data: AdminCreateDispensaryFormData) {
     setIsSubmitting(true);
-    const dispensaryData = { ...data, status: 'Approved' as const, applicationDate: Timestamp.fromDate(new Date()), approvedDate: Timestamp.fromDate(new Date()), originLocker: data.originLocker ?? null, };
+    const dispensaryData = { ...data, applicationDate: Timestamp.fromDate(new Date()), approvedDate: Timestamp.fromDate(new Date()), originLocker: data.originLocker ?? null, };
     try {
       await addDoc(collection(db, 'dispensaries'), dispensaryData);
       toast({ title: "Dispensary Created!", description: `${data.dispensaryName} has been created and approved.` });

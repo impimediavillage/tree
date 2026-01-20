@@ -46,6 +46,8 @@ export const baseWellnessSchema = z.object({
   
   // In-house delivery fields
   inHouseDeliveryPrice: z.number().optional().nullable(),
+  pricePerKm: z.number().optional().nullable(),
+  minimumOrderAmount: z.number().optional().nullable(),
   sameDayDeliveryCutoff: z.string().optional().nullable(),
   inHouseDeliveryCutoffTime: z.string().optional().nullable(),
 });
