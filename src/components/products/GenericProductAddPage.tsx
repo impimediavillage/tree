@@ -71,7 +71,7 @@ export default function GenericProductAddPage({
   const [categoryStructure, setCategoryStructure] = useState<CategoryItem[]>([]);
   const [selectedTopLevelCategory, setSelectedTopLevelCategory] = useState<CategoryItem | null>(null);
   
-  // Rich metadata state (optional - won't break if not present)
+  // ✅ PRESERVED: Metadata for AI search, SEO, semantic relationships
   const [typeMetadata, setTypeMetadata] = useState<{
     meta?: any;
     structuredData?: any;
@@ -136,37 +136,45 @@ export default function GenericProductAddPage({
 
       const data = docSnap.data();
       
-      // SAFE: Extract rich metadata if present (won't break if missing)
-      if (data?.meta || data?.recommendedStructuredData || data?.semanticRelationships) {
+      // ✅ PRESERVED: Load metadata for AI search, SEO, and semantic features
+      if (data?.meta || data?.recommendedStructuredData || data?.semanticRelationships || data?.aiSearchBoost) {
         setTypeMetadata({
           meta: data.meta,
-          structuredData: data.recommendedStructuredData,
+          structuredData: data.recommendedStructuredData || data.structuredData,
           semanticRelationships: data.semanticRelationships,
           aiSearchBoost: data.aiSearchBoost,
           pageBlueprint: data.pageBlueprint
         });
-        console.log('[GenericProductAddPage] Rich metadata loaded:', {
+        console.log('[GenericProductAddPage] Metadata loaded for enhanced features:', {
           hasMeta: !!data.meta,
-          hasStructuredData: !!data.recommendedStructuredData,
-          hasSemantics: !!data.semanticRelationships
+          hasStructuredData: !!(data.recommendedStructuredData || data.structuredData),
+          hasSemantics: !!data.semanticRelationships,
+          hasAIBoost: !!data.aiSearchBoost
         });
       }
       
-      // Navigate through the category path (existing logic - unchanged)
+      // ✅ STANDARDIZED: Navigate to categoriesData.categories using categoryPath
       let categories = data?.categoriesData;
       for (const path of categoryPath) {
         categories = categories?.[path];
       }
 
+      console.log('[GenericProductAddPage] Category structure loaded:', {
+        dispensaryTypeName,
+        categoryPath,
+        categoriesFound: Array.isArray(categories) ? categories.length : 0,
+        sampleCategory: Array.isArray(categories) && categories.length > 0 ? categories[0] : null
+      });
+
       if (Array.isArray(categories)) {
         setCategoryStructure(categories);
-      } else if (typeof categories === 'object') {
-        // Convert object to array
+      } else if (typeof categories === 'object' && categories !== null) {
+        // Fallback: Convert object to array
         setCategoryStructure(Object.values(categories) as CategoryItem[]);
       } else {
         toast({
           title: 'Data Format Error',
-          description: 'Category data is in an unexpected format.',
+          description: `Expected array at categoriesData.${categoryPath.join('.')} but found ${typeof categories}`,
           variant: 'destructive'
         });
       }
@@ -395,7 +403,7 @@ export default function GenericProductAddPage({
                       </FormItem>
                     </div>
 
-                    {/* Rich Metadata Display (SAFE - only shows if metadata exists) */}
+                    {/* ✅ PRESERVED: Metadata viewer for AI/SEO features */}
                     {typeMetadata && selectedTopLevelCategory && (
                       <div className="animate-fade-in-scale-up">
                         <MetadataViewer

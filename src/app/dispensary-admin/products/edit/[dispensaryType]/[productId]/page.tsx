@@ -62,41 +62,19 @@ export default function DynamicEditProductPage() {
 
         const categoriesData = categoriesSnapshot.data()?.categoriesData;
         
-        if (!categoriesData) {
-          setError(`No category data found for "${titleCaseName}".`);
+        if (!categoriesData || !categoriesData.categories) {
+          setError(`No category data found for "${titleCaseName}". Expected structure: categoriesData.categories`);
           setIsLoading(false);
           return;
         }
 
-        // Auto-detect category path
-        let categoryPath: string[] = [];
-        
-        const findCategoryArray = (obj: any, path: string[] = []): string[] | null => {
-          for (const key in obj) {
-            if (Array.isArray(obj[key]) && obj[key].length > 0 && obj[key][0].name) {
-              return [...path, key];
-            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-              const result = findCategoryArray(obj[key], [...path, key]);
-              if (result) return result;
-            }
-          }
-          return null;
-        };
-
-        const detectedPath = findCategoryArray(categoriesData);
-        
-        if (!detectedPath) {
-          setError(`Could not detect category structure for "${titleCaseName}".`);
-          setIsLoading(false);
-          return;
-        }
-
-        categoryPath = detectedPath;
+        // ✅ STANDARDIZED: Always use categoriesData.categories (no auto-detection needed)
+        const categoryPath = ['categories'];
 
         console.log('[DynamicEditProduct] Successfully loaded category structure:', {
           typeName: titleCaseName,
           categoryPath,
-          categoryGroups: Object.keys(categoriesData)
+          topLevelCategories: Array.isArray(categoriesData.categories) ? categoriesData.categories.length : 0
         });
 
         setTypeData({

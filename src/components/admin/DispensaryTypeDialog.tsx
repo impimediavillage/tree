@@ -80,6 +80,14 @@ export function DispensaryTypeDialog({
   const [categoriesJSON, setCategoriesJSON] = React.useState<any>(null);
   const [categoryMetadata, setCategoryMetadata] = React.useState<CategoryStructureMetadata | null>(null);
   const [currentTab, setCurrentTab] = React.useState('basic');
+  
+  // Enhanced Metadata State (AI, SEO, Semantic)
+  const [metaData, setMetaData] = React.useState('');
+  const [structuredData, setStructuredData] = React.useState('');
+  const [recommendedStructuredData, setRecommendedStructuredData] = React.useState('');
+  const [semanticRelationships, setSemanticRelationships] = React.useState('');
+  const [aiSearchBoost, setAiSearchBoost] = React.useState('');
+  const [pageBlueprint, setPageBlueprint] = React.useState('');
 
   const form = useForm<DispensaryTypeFormData>({
     resolver: zodResolver(dispensaryTypeSchema),
@@ -105,6 +113,14 @@ export function DispensaryTypeDialog({
           setCategoriesJSON(data.categoriesData);
           console.log('Loaded existing category structure for', typeName);
         }
+        
+        // Load metadata fields if they exist
+        if (data?.meta) setMetaData(JSON.stringify(data.meta, null, 2));
+        if (data?.structuredData) setStructuredData(JSON.stringify(data.structuredData, null, 2));
+        if (data?.recommendedStructuredData) setRecommendedStructuredData(JSON.stringify(data.recommendedStructuredData, null, 2));
+        if (data?.semanticRelationships) setSemanticRelationships(JSON.stringify(data.semanticRelationships, null, 2));
+        if (data?.aiSearchBoost) setAiSearchBoost(JSON.stringify(data.aiSearchBoost, null, 2));
+        if (data?.pageBlueprint) setPageBlueprint(JSON.stringify(data.pageBlueprint, null, 2));
       }
     } catch (error) {
       console.error('Error fetching existing categories:', error);
@@ -315,9 +331,36 @@ export function DispensaryTypeDialog({
           const functions = getFunctions();
           const createCategoryFn = httpsCallable(functions, 'createCategoryFromTemplate');
           
+          // Parse and include metadata if provided
+          const templateDataWithMetadata: any = { ...categoriesJSON };
+          
+          try {
+            if (metaData.trim()) templateDataWithMetadata.meta = JSON.parse(metaData);
+          } catch (e) { console.warn('Invalid meta JSON, skipping'); }
+          
+          try {
+            if (structuredData.trim()) templateDataWithMetadata.structuredData = JSON.parse(structuredData);
+          } catch (e) { console.warn('Invalid structuredData JSON, skipping'); }
+          
+          try {
+            if (recommendedStructuredData.trim()) templateDataWithMetadata.recommendedStructuredData = JSON.parse(recommendedStructuredData);
+          } catch (e) { console.warn('Invalid recommendedStructuredData JSON, skipping'); }
+          
+          try {
+            if (semanticRelationships.trim()) templateDataWithMetadata.semanticRelationships = JSON.parse(semanticRelationships);
+          } catch (e) { console.warn('Invalid semanticRelationships JSON, skipping'); }
+          
+          try {
+            if (aiSearchBoost.trim()) templateDataWithMetadata.aiSearchBoost = JSON.parse(aiSearchBoost);
+          } catch (e) { console.warn('Invalid aiSearchBoost JSON, skipping'); }
+          
+          try {
+            if (pageBlueprint.trim()) templateDataWithMetadata.pageBlueprint = JSON.parse(pageBlueprint);
+          } catch (e) { console.warn('Invalid pageBlueprint JSON, skipping'); }
+          
           await createCategoryFn({
             dispensaryTypeName: formData.name,
-            templateData: categoriesJSON
+            templateData: templateDataWithMetadata
           });
 
           // Analyze the structure
@@ -610,6 +653,14 @@ export function DispensaryTypeDialog({
                                 <span className="text-purple-500 mt-0.5">▶</span>
                                 <span>Dynamic product add/edit forms</span>
                               </li>
+                              <li className="text-sm text-[#3D2E17]/80 dark:text-slate-300 font-semibold flex items-start gap-2">
+                                <span className="text-blue-500 mt-0.5">▶</span>
+                                <span>AI search optimization & SEO metadata</span>
+                              </li>
+                              <li className="text-sm text-[#3D2E17]/80 dark:text-slate-300 font-semibold flex items-start gap-2">
+                                <span className="text-cyan-500 mt-0.5">▶</span>
+                                <span>Semantic relationships & structured data</span>
+                              </li>
                             </ul>
                             <Button
                               type="button"
@@ -702,6 +753,119 @@ export function DispensaryTypeDialog({
                 />
               </TabsContent>
             )}
+
+            {/* Enhanced Metadata Tab */}
+            {useGenericWorkflow && (
+              <TabsContent value="metadata" className="mt-4 space-y-6">
+                <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-2 border-blue-300/50">
+                  <CardHeader>
+                    <CardTitle className="text-2xl font-black text-[#3D2E17] dark:text-white flex items-center gap-3">
+                      <Sparkles className="h-6 w-6 text-blue-500" />
+                      Enhanced Metadata & AI Features
+                    </CardTitle>
+                    <CardDescription className="text-[#3D2E17]/70 dark:text-slate-300 font-semibold text-base">
+                      Configure AI search optimization, SEO metadata, and semantic relationships for this wellness type
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* SEO Meta */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-[#3D2E17] dark:text-white flex items-center gap-2">
+                        <span className="text-lg">🔍</span> SEO Metadata (JSON)
+                      </label>
+                      <p className="text-xs text-muted-foreground">Page titles, descriptions, keywords for search engines</p>
+                      <Textarea
+                        value={metaData}
+                        onChange={(e) => setMetaData(e.target.value)}
+                        placeholder='{"title": "...", "description": "...", "keywords": [...]}'
+                        className="font-mono text-sm min-h-[100px] bg-white/80 dark:bg-slate-900/80"
+                      />
+                    </div>
+
+                    {/* Structured Data */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-[#3D2E17] dark:text-white flex items-center gap-2">
+                        <span className="text-lg">📊</span> Structured Data (JSON-LD)
+                      </label>
+                      <p className="text-xs text-muted-foreground">Schema.org markup for rich search results</p>
+                      <Textarea
+                        value={structuredData}
+                        onChange={(e) => setStructuredData(e.target.value)}
+                        placeholder='{"@context": "https://schema.org", "@type": "...", ...}'
+                        className="font-mono text-sm min-h-[100px] bg-white/80 dark:bg-slate-900/80"
+                      />
+                    </div>
+
+                    {/* Recommended Structured Data */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-[#3D2E17] dark:text-white flex items-center gap-2">
+                        <span className="text-lg">💡</span> Alternative Structured Data (JSON-LD)
+                      </label>
+                      <p className="text-xs text-muted-foreground">Additional schema.org variations</p>
+                      <Textarea
+                        value={recommendedStructuredData}
+                        onChange={(e) => setRecommendedStructuredData(e.target.value)}
+                        placeholder='{"@context": "https://schema.org", ...}'
+                        className="font-mono text-sm min-h-[100px] bg-white/80 dark:bg-slate-900/80"
+                      />
+                    </div>
+
+                    {/* Semantic Relationships */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-[#3D2E17] dark:text-white flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-purple-500" /> Semantic Relationships (JSON)
+                      </label>
+                      <p className="text-xs text-muted-foreground">Category connections, related concepts, synonyms</p>
+                      <Textarea
+                        value={semanticRelationships}
+                        onChange={(e) => setSemanticRelationships(e.target.value)}
+                        placeholder='{"relatedCategories": [...], "synonyms": {...}, "childrenOf": ...}'
+                        className="font-mono text-sm min-h-[120px] bg-white/80 dark:bg-slate-900/80"
+                      />
+                    </div>
+
+                    {/* AI Search Boost */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-[#3D2E17] dark:text-white flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-yellow-500" /> AI Search Boost (JSON)
+                      </label>
+                      <p className="text-xs text-muted-foreground">Weighting, embeddings, search optimization hints</p>
+                      <Textarea
+                        value={aiSearchBoost}
+                        onChange={(e) => setAiSearchBoost(e.target.value)}
+                        placeholder='{"weightMultiplier": 1.5, "priorityKeywords": [...], "embedding": ...}'
+                        className="font-mono text-sm min-h-[100px] bg-white/80 dark:bg-slate-900/80"
+                      />
+                    </div>
+
+                    {/* Page Blueprint */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-[#3D2E17] dark:text-white flex items-center gap-2">
+                        <span className="text-lg">🎨</span> Page Blueprint (JSON)
+                      </label>
+                      <p className="text-xs text-muted-foreground">UI/UX configurations, layout preferences, theme overrides</p>
+                      <Textarea
+                        value={pageBlueprint}
+                        onChange={(e) => setPageBlueprint(e.target.value)}
+                        placeholder='{"layout": "...", "theme": {...}, "featuredSections": [...]}'
+                        className="font-mono text-sm min-h-[100px] bg-white/80 dark:bg-slate-900/80"
+                      />
+                    </div>
+
+                    {/* Help Text */}
+                    <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-lg p-4">
+                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 flex items-start gap-2">
+                        <span className="text-xl">ℹ️</span>
+                        <span>
+                          All fields are optional. Enter valid JSON objects. Invalid JSON will be skipped during save.
+                          These metadata fields enhance AI-powered search, SEO, and user experience but don't affect core functionality.
+                        </span>
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
           </ScrollArea>
 
           {/* Footer Buttons */}
@@ -727,14 +891,35 @@ export function DispensaryTypeDialog({
                 </Button>
               )}
               {useGenericWorkflow && currentTab === 'categories' && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCurrentTab('basic')}
+                    disabled={isSubmitting}
+                    className="font-bold text-[#3D2E17] dark:text-white"
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" /> Back to Basic Info
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setCurrentTab('metadata')}
+                    disabled={isSubmitting}
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold shadow-lg"
+                  >
+                    Next: Enhanced Metadata <Sparkles className="ml-2 h-4 w-4" />
+                  </Button>
+                </>
+              )}
+              {useGenericWorkflow && currentTab === 'metadata' && (
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setCurrentTab('basic')}
+                  onClick={() => setCurrentTab('categories')}
                   disabled={isSubmitting}
                   className="font-bold text-[#3D2E17] dark:text-white"
                 >
-                  <ChevronLeft className="mr-2 h-4 w-4" /> Back to Basic Info
+                  <ChevronLeft className="mr-2 h-4 w-4" /> Back to Categories
                 </Button>
               )}
               <Button
