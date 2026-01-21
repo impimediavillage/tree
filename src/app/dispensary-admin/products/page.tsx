@@ -68,7 +68,20 @@ export default function WellnessProductsPage() {
         console.log(`[ProductsPage] Fetched ${fetchedProducts.length} products from ${productCollectionName}.`);
     } catch (error: any) {
         console.error(`Error fetching products from ${productCollectionName}:`, error);
-        toast({ title: "Error Fetching Products", description: `Could not load products. Please check console for details.`, variant: "destructive"});
+        
+        // Handle "permission-denied" or "not-found" errors gracefully (new collections don't exist until first document is created)
+        if (error?.code === 'permission-denied' || error?.code === 'not-found' || error?.message?.includes('permissions')) {
+            console.log(`[ProductsPage] Collection "${productCollectionName}" doesn't exist yet or has no products. This is normal for new dispensaries.`);
+            setAllProducts([]);
+            setCategories(['all']);
+        } else {
+            // For other errors, show the toast
+            toast({ 
+                title: "Error Fetching Products", 
+                description: `Could not load products. Please try again or contact support.`, 
+                variant: "destructive"
+            });
+        }
     } finally {
         setIsLoading(false);
     }
