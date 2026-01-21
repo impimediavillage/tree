@@ -470,6 +470,9 @@ export interface OwnerUpdateDispensaryPayload {
   operatingDays: string[];
   shippingMethods: string[];
   deliveryRadius?: string | null;
+  inHouseDeliveryPrice?: number | null;
+  pricePerKm?: number | null;
+  sameDayDeliveryCutoff?: string | null;
   message?: string | null;
   originLocker?: {
     id: string;

@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.lowStockAlert = exports.restoreStockOnOrderCancelled = exports.deductStockOnOrderCreated = exports.activateScheduledAds = exports.cleanupExpiredAds = exports.aggregateDailyAdAnalytics = exports.trackAdConversion = exports.trackAdClick = exports.trackAdImpression = exports.onInfluencerPayoutRequestUpdated = exports.onInfluencerPayoutRequestCreated = exports.onDispensaryPayoutRequestUpdated = exports.onDispensaryPayoutRequestCreated = exports.onTreehousePayoutRequestUpdated = exports.onTreehousePayoutRequestCreated = exports.onPayoutRequestUpdate = exports.onDriverStatsUpdate = exports.onDeliveryStatusUpdate = exports.onInHouseDeliveryCreated = exports.sendAchievementNotification = exports.onShippingStatusChange = exports.onPaymentCompleted = exports.onOrderCreated = exports.analyzeCategoryStructureAndUpdate = exports.deleteCategoryDocument = exports.listCategoryDocuments = exports.createCategoryFromTemplate = exports.copyCategoryStructure = exports.calculateCommissionOnOrderDelivered = exports.getInfluencerStats = exports.processInfluencerCommission = exports.createPudoShipment = exports.createShiplogicShipment = exports.recalculateDispensaryReviewStats = exports.processDispensaryReview = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.migrateProductCreatorFields = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
-exports.sendCrewMemberEmail = exports.onDispensaryStatusChange = exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = void 0;
+exports.sendCrewMemberEmail = exports.onDispensaryStatusChange = exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminDeleteUser = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -928,6 +928,49 @@ exports.adminUpdateUser = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('internal', 'An unexpected error occurred while updating the user.');
     }
 });
+/**
+ * Delete a user account (Firebase Auth + Firestore document)
+ * Only Super Admins can delete users
+ */
+exports.adminDeleteUser = (0, https_1.onCall)({ cors: true }, async (request) => {
+    // Verify Super Admin permission
+    if (!request.auth || request.auth.token.role !== 'Super Admin') {
+        throw new https_1.HttpsError('permission-denied', 'Only Super Admins can delete users.');
+    }
+    const { userId } = request.data;
+    if (!userId) {
+        throw new https_1.HttpsError('invalid-argument', 'User ID is required.');
+    }
+    try {
+        // 1. Delete Firebase Auth user
+        await admin.auth().deleteUser(userId);
+        logger.info(`Deleted Firebase Auth user: ${userId}`);
+        // 2. Delete Firestore user document
+        await db.collection('users').doc(userId).delete();
+        logger.info(`Deleted Firestore user document: ${userId}`);
+        return { success: true, message: 'User successfully deleted.' };
+    }
+    catch (error) {
+        logger.error(`Error deleting user ${userId}:`, error);
+        if (error instanceof https_1.HttpsError) {
+            throw error;
+        }
+        if (error.code === 'auth/user-not-found') {
+            // User might not exist in Auth but could still be in Firestore
+            // Try to delete Firestore document anyway
+            try {
+                await db.collection('users').doc(userId).delete();
+                logger.info(`Deleted orphaned Firestore user document: ${userId}`);
+                return { success: true, message: 'Firestore user document deleted (Auth user not found).' };
+            }
+            catch (firestoreError) {
+                logger.error(`Error deleting Firestore document for ${userId}:`, firestoreError);
+            }
+            throw new https_1.HttpsError('not-found', 'User not found in Firebase Auth.');
+        }
+        throw new https_1.HttpsError('internal', 'An unexpected error occurred while deleting the user.');
+    }
+});
 // ========================================================================================================
 //                                       SHIPPING FUNCTIONS
 // ========================================================================================================
@@ -1391,6 +1434,9 @@ exports.updateDispensaryProfile = (0, https_1.onCall)({ cors: true }, async (req
         operatingDays: data.operatingDays || [],
         shippingMethods: data.shippingMethods || [],
         deliveryRadius: data.deliveryRadius || 'none',
+        inHouseDeliveryPrice: data.inHouseDeliveryPrice !== undefined ? data.inHouseDeliveryPrice : null,
+        pricePerKm: data.pricePerKm !== undefined ? data.pricePerKm : null,
+        sameDayDeliveryCutoff: data.sameDayDeliveryCutoff || null,
         message: data.message || '',
         originLocker: data.originLocker || null,
         storeImage: data.storeImage || null,

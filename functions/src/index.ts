@@ -1053,6 +1053,55 @@ export const adminUpdateUser = onCall(async (request) => {
     }
 });
 
+/**
+ * Delete a user account (Firebase Auth + Firestore document)
+ * Only Super Admins can delete users
+ */
+export const adminDeleteUser = onCall(
+    { cors: true },
+    async (request: CallableRequest<{ userId: string }>) => {
+        // Verify Super Admin permission
+        if (!request.auth || request.auth.token.role !== 'Super Admin') {
+            throw new HttpsError('permission-denied', 'Only Super Admins can delete users.');
+        }
+
+        const { userId } = request.data;
+        if (!userId) {
+            throw new HttpsError('invalid-argument', 'User ID is required.');
+        }
+
+        try {
+            // 1. Delete Firebase Auth user
+            await admin.auth().deleteUser(userId);
+            logger.info(`Deleted Firebase Auth user: ${userId}`);
+
+            // 2. Delete Firestore user document
+            await db.collection('users').doc(userId).delete();
+            logger.info(`Deleted Firestore user document: ${userId}`);
+
+            return { success: true, message: 'User successfully deleted.' };
+        } catch (error: any) {
+            logger.error(`Error deleting user ${userId}:`, error);
+            if (error instanceof HttpsError) {
+                throw error;
+            }
+            if (error.code === 'auth/user-not-found') {
+                // User might not exist in Auth but could still be in Firestore
+                // Try to delete Firestore document anyway
+                try {
+                    await db.collection('users').doc(userId).delete();
+                    logger.info(`Deleted orphaned Firestore user document: ${userId}`);
+                    return { success: true, message: 'Firestore user document deleted (Auth user not found).' };
+                } catch (firestoreError) {
+                    logger.error(`Error deleting Firestore document for ${userId}:`, firestoreError);
+                }
+                throw new HttpsError('not-found', 'User not found in Firebase Auth.');
+            }
+            throw new HttpsError('internal', 'An unexpected error occurred while deleting the user.');
+        }
+    }
+);
+
 // ========================================================================================================
 //                                       SHIPPING FUNCTIONS
 // ========================================================================================================
@@ -1609,6 +1658,9 @@ export const updateDispensaryProfile = onCall({ cors: true }, async (request: Ca
         operatingDays: data.operatingDays || [],
         shippingMethods: data.shippingMethods || [],
         deliveryRadius: data.deliveryRadius || 'none',
+        inHouseDeliveryPrice: data.inHouseDeliveryPrice !== undefined ? data.inHouseDeliveryPrice : null,
+        pricePerKm: data.pricePerKm !== undefined ? data.pricePerKm : null,
+        sameDayDeliveryCutoff: data.sameDayDeliveryCutoff || null,
         message: data.message || '',
         originLocker: data.originLocker || null,
         storeImage: data.storeImage || null,
