@@ -299,6 +299,7 @@ export function DispensaryTypeDialog({
       } else {
         const newDocRef = await addDoc(collection(db, 'dispensaryTypes'), {
           ...dataToSave,
+          isActive: true, // New dispensary types are active by default
           createdAt: serverTimestamp(),
         });
         dispensaryTypeId = newDocRef.id;

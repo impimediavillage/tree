@@ -53,7 +53,11 @@ export default function LeafDashboardOverviewPage() {
         const querySnapshot = await getDocs(q);
         const fetchedTypes: DispensaryType[] = [];
         querySnapshot.forEach((docSnap) => {
-          fetchedTypes.push({ id: docSnap.id, ...docSnap.data() } as DispensaryType);
+          const typeData = docSnap.data() as DispensaryType;
+          // Only show active dispensary types
+          if (typeData.isActive === true) {
+            fetchedTypes.push({ id: docSnap.id, ...typeData });
+          }
         });
         setAllWellnessTypes(fetchedTypes);
       } catch (error) {
