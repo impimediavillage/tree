@@ -298,26 +298,40 @@ export default function AdminDashboardLayout({
           </SidebarContent>
 
           <SidebarFooter className="p-3 border-t">
+            {/* Footer kept minimal - main user menu moved to top ribbon */}
+            <div className="text-center text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+              <p>Admin Panel v1.0</p>
+            </div>
+          </SidebarFooter>
+          <SidebarRail />
+        </Sidebar>
+
+        <main className="flex-1 flex flex-col">
+           {/* Mobile Header */}
+           <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 md:hidden"> 
+            <SidebarTrigger className="md:hidden" />
+            <div className="flex-1">
+              <h1 
+                className="text-lg font-semibold text-foreground"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+              >
+                {getPageTitle()}
+              </h1>
+            </div>
+            <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+            {/* User Menu - Mobile */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-auto p-2 hover:bg-muted/50">
-                  <Avatar className="h-9 w-9 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar className="h-8 w-8">
                     <AvatarImage src={currentUser?.photoURL || undefined} alt={currentUser?.displayName || 'Admin'} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                       {getInitials(currentUser?.displayName, 'SA')}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="ml-2 group-data-[collapsible=icon]:hidden text-left">
-                    <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
-                      {currentUser?.displayName || currentUser?.email?.split('@')[0]}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                      {currentUser?.role}
-                    </p>
-                  </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="start" className="w-56">
+              <DropdownMenuContent side="bottom" align="end" className="w-56">
                 <DropdownMenuLabel>{currentUser?.displayName || 'Admin Profile'}</DropdownMenuLabel>
                 <DropdownMenuSeparatorComponent />
                 <DropdownMenuItem onClick={() => router.push('/')}>
@@ -335,27 +349,58 @@ export default function AdminDashboardLayout({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </SidebarFooter>
-          <SidebarRail />
-        </Sidebar>
-
-        <main className="flex-1 flex flex-col">
-           <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 md:hidden"> 
-            <SidebarTrigger className="md:hidden" />
-            <div className="flex-1">
-              <h1 
-                className="text-lg font-semibold text-foreground"
-                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
-              >
-                {getPageTitle()}
-              </h1>
-            </div>
-            <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
           </header>
           
-          {/* Desktop Top Bar with Notifications */}
-          <div className="hidden md:flex items-center justify-end gap-4 border-b bg-background px-6 py-3">
-            <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+          {/* Desktop Top Ribbon - Full Width */}
+          <div className="hidden md:flex items-center justify-between w-full border-b bg-background/95 backdrop-blur-sm px-6 py-3 sticky top-0 z-40">
+            <h1 
+              className="text-xl font-bold text-foreground"
+              style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >
+              {getPageTitle()}
+            </h1>
+            <div className="flex items-center gap-3">
+              <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+              
+              {/* User Menu - Desktop */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-accent">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={currentUser?.photoURL || undefined} alt={currentUser?.displayName || 'Admin'} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {getInitials(currentUser?.displayName, 'SA')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-left hidden lg:block">
+                      <p className="text-sm font-medium text-foreground">
+                        {currentUser?.displayName || currentUser?.email?.split('@')[0]}
+                      </p>
+                      <p className="text-xs text-muted-foreground uppercase">
+                        {currentUser?.role}
+                      </p>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="end" className="w-56">
+                  <DropdownMenuLabel>{currentUser?.displayName || 'Admin Profile'}</DropdownMenuLabel>
+                  <DropdownMenuSeparatorComponent />
+                  <DropdownMenuItem onClick={() => router.push('/')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Main Site</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparatorComponent />
+                  <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
           <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto"> 
             {children}

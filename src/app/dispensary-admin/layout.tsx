@@ -367,51 +367,10 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
           </nav>
         </ScrollArea>
         <div className="mt-auto p-2 border-t border-border">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start p-2 hover:bg-muted/50">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || 'Owner'} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {getInitials(currentUser.displayName, currentDispensary.dispensaryName?.[0])}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="ml-2 text-left overflow-hidden">
-                    <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
-                      {currentUser.displayName || currentUser.email?.split('@')[0]}
-                    </p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {currentUser.role.replace('Dispensary', '')}
-                    </p>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="start" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none truncate">
-                          {currentUser.displayName || currentUser.email?.split('@')[0]}
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground truncate">
-                          {currentUser.email}
-                        </p>
-                        <p className="text-xs leading-none text-primary/90 mt-1 font-medium">
-                          My Store Panel
-                        </p>
-                      </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparatorComponent />
-                 <DropdownMenuItem onClick={() => router.push('/')}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
-                  <span>Main Site</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparatorComponent />
-                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {/* Footer kept minimal - main user menu moved to top ribbon */}
+          <div className="text-center text-xs text-muted-foreground py-2">
+            <p>Store Panel v1.0</p>
+          </div>
         </div>
     </>
   );
@@ -424,7 +383,8 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
       
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
           <div className="flex flex-1 flex-col min-w-0">
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-2 sm:gap-4 border-b bg-background/80 px-3 sm:px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden"> 
+          {/* Mobile Header */}
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-2 sm:gap-4 border-b bg-background/80 px-3 sm:px-4 backdrop-blur-sm md:hidden"> 
               <SheetTrigger asChild>
                   <Button size="icon" variant="outline" className="md:hidden flex-shrink-0">
                       <Menu className="h-5 w-5" />
@@ -439,15 +399,89 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                       {currentDispensary.dispensaryName}
                   </h1>
               </div>
-              {/* Notification Bell - Mobile */}
-              <div className="flex-shrink-0">
-                <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
-              </div>
+              <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+              {/* User Menu - Mobile */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || 'User'} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {getInitials(currentUser.displayName, currentDispensary.dispensaryName?.[0])}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="end" className="w-56">
+                  <DropdownMenuLabel>{currentUser.displayName || 'Store Panel'}</DropdownMenuLabel>
+                  <DropdownMenuSeparatorComponent />
+                  <DropdownMenuItem onClick={() => router.push('/')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Main Site</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparatorComponent />
+                  <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
           </header>
           
-          {/* Desktop Top Bar with Notifications */}
-          <div className="hidden md:flex items-center justify-end gap-4 border-b bg-background px-6 py-3">
-            <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+          {/* Desktop Top Ribbon - Full Width */}
+          <div className="hidden md:flex items-center justify-between w-full border-b bg-background/95 backdrop-blur-sm px-6 py-3 sticky top-0 z-40">
+            <h1 
+              className="text-xl font-bold text-foreground"
+              style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >
+              {currentDispensary.dispensaryName}
+            </h1>
+            <div className="flex items-center gap-3">
+              <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+              
+              {/* User Menu - Desktop */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-accent">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || 'User'} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {getInitials(currentUser.displayName, currentDispensary.dispensaryName?.[0])}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-left hidden lg:block">
+                      <p className="text-sm font-medium text-foreground">
+                        {currentUser.displayName || currentUser.email?.split('@')[0]}
+                      </p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {currentUser.role.replace('Dispensary', '')}
+                      </p>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="end" className="w-56">
+                  <DropdownMenuLabel>{currentUser.displayName || 'Store Panel'}</DropdownMenuLabel>
+                  <DropdownMenuSeparatorComponent />
+                  <DropdownMenuItem onClick={() => router.push('/')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Main Site</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparatorComponent />
+                  <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
           
           <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
