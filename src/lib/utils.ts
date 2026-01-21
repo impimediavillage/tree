@@ -66,8 +66,10 @@ export const getProductCollectionName = (dispensaryType?: string | null, forAddP
             case 'Permaculture & gardening store':
               return '/dispensary-admin/products/add/permaculture';
             default:
-              console.warn(`[getProductCollectionName] No specific add page for type: ${dispensaryType}. Defaulting.`);
-              return '/dispensary-admin/products/add/thc';
+              // For generic/unknown types, use the dynamic route
+              const sanitizedType = dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_');
+              console.log(`[getProductCollectionName] Using dynamic route for type: ${dispensaryType} -> /dispensary-admin/products/add/${sanitizedType}`);
+              return `/dispensary-admin/products/add/${sanitizedType}`;
         }
     }
 
@@ -84,7 +86,9 @@ export const getProductCollectionName = (dispensaryType?: string | null, forAddP
         case "Permaculture & gardening store":
             return "permaculture_store_products";
         default:
-            console.warn(`[getProductCollectionName] Using fallback 'products' collection for unknown dispensary type: ${dispensaryType}`);
-            return 'products';
+            // For generic/unknown types, generate collection name from the type name
+            const collectionName = dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+            console.log(`[getProductCollectionName] Using dynamic collection for type: ${dispensaryType} -> ${collectionName}`);
+            return collectionName;
     }
 };

@@ -30,38 +30,25 @@ export default function DynamicAddProductPage() {
       }
 
       try {
-        // Convert URL slug back to proper name (e.g., "apothecary" -> "Apothecary")
-        // First, try to find the exact match in dispensaryTypes
-        const typesRef = firestoreDoc(db, 'dispensaryTypes', dispensaryTypeParam);
-        let typeSnapshot = await getDoc(typesRef);
+        // Convert URL slug to title case (e.g., "apothecary_store" -> "Apothecary Store")
+        const decodedParam = decodeURIComponent(dispensaryTypeParam);
+        const titleCaseName = decodedParam
+          .split('_')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
 
-        let actualTypeName = dispensaryTypeParam;
-        
-        // If not found by ID, we need to search by sanitized name
-        if (!typeSnapshot.exists()) {
-          // For now, use the param and capitalize it
-          // In production, you might want to query the collection
-          actualTypeName = dispensaryTypeParam
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-        } else {
-          actualTypeName = typeSnapshot.data()?.name || dispensaryTypeParam;
-        }
+        console.log('[DynamicAddProduct] Looking up dispensary type:', {
+          param: dispensaryTypeParam,
+          decoded: decodedParam,
+          titleCase: titleCaseName
+        });
 
-        // Check if type uses generic workflow
-        if (typeSnapshot.exists() && typeSnapshot.data()?.useGenericWorkflow !== true) {
-          setError(`"${actualTypeName}" does not use the generic workflow system. Please use its custom add page.`);
-          setIsLoading(false);
-          return;
-        }
-
-        // Fetch category structure to determine path
-        const categoriesRef = firestoreDoc(db, 'dispensaryTypeProductCategories', actualTypeName);
+        // Fetch category structure using the title case name (this is how the document ID is stored)
+        const categoriesRef = firestoreDoc(db, 'dispensaryTypeProductCategories', titleCaseName);
         const categoriesSnapshot = await getDoc(categoriesRef);
 
         if (!categoriesSnapshot.exists()) {
-          setError(`Category structure not configured for "${actualTypeName}". Please configure it in the admin panel.`);
+          setError(`Category structure not configured for "${titleCaseName}". Please configure it in the admin panel.`);
           setIsLoading(false);
           return;
         }
@@ -69,7 +56,7 @@ export default function DynamicAddProductPage() {
         const categoriesData = categoriesSnapshot.data()?.categoriesData;
         
         if (!categoriesData) {
-          setError(`No category data found for "${actualTypeName}".`);
+          setError(`No category data found for "${titleCaseName}".`);
           setIsLoading(false);
           return;
         }
@@ -92,15 +79,21 @@ export default function DynamicAddProductPage() {
         const detectedPath = findCategoryArray(categoriesData);
         
         if (!detectedPath) {
-          setError(`Could not detect category structure for "${actualTypeName}".`);
+          setError(`Could not detect category structure for "${titleCaseName}".`);
           setIsLoading(false);
           return;
         }
 
         categoryPath = detectedPath;
 
+        console.log('[DynamicAddProduct] Successfully loaded category structure:', {
+          typeName: titleCaseName,
+          categoryPath,
+          categoryGroups: Object.keys(categoriesData)
+        });
+
         setTypeData({
-          name: actualTypeName,
+          name: titleCaseName,
           categoryPath
         });
         setIsLoading(false);

@@ -261,7 +261,7 @@ export const createCategoryFromTemplate = onCall(
     }
 
     try {
-      logger.info(`Creating category structure for "${dispensaryTypeName}" from template`, {
+      logger.info(`Creating/updating category structure for "${dispensaryTypeName}" from template`, {
         userId: request.auth.uid,
         dispensaryTypeName
       });
@@ -272,29 +272,29 @@ export const createCategoryFromTemplate = onCall(
         .doc(dispensaryTypeName)
         .get();
 
-      if (existingDoc.exists) {
-        throw new HttpsError(
-          'already-exists',
-          `Document "${dispensaryTypeName}" already exists`
-        );
-      }
+      const isUpdate = existingDoc.exists;
 
-      // Create document with template data
-      const docData = {
+      // Create or update document with template data
+      const docData: any = {
         name: dispensaryTypeName,
         categoriesData: templateData,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        createdBy: request.auth.uid,
+        updatedBy: request.auth.uid,
         createdFromTemplate: true
       };
+
+      // Only set createdAt and createdBy for new documents
+      if (!isUpdate) {
+        docData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+        docData.createdBy = request.auth.uid;
+      }
 
       await db
         .collection('dispensaryTypeProductCategories')
         .doc(dispensaryTypeName)
-        .set(docData);
+        .set(docData, { merge: true });
 
-      logger.info(`Successfully created "${dispensaryTypeName}" from template`, {
+      logger.info(`Successfully ${isUpdate ? 'updated' : 'created'} "${dispensaryTypeName}" from template`, {
         userId: request.auth.uid,
         dispensaryTypeName,
         categoryGroups: Object.keys(templateData).length
@@ -302,7 +302,7 @@ export const createCategoryFromTemplate = onCall(
 
       return {
         success: true,
-        message: `Successfully created "${dispensaryTypeName}" from template`,
+        message: `Successfully ${isUpdate ? 'updated' : 'created'} "${dispensaryTypeName}" from template`,
         documentId: dispensaryTypeName
       };
     } catch (error: any) {
