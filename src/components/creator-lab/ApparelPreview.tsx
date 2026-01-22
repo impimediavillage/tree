@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ApparelType } from '@/types/creator-lab';
-import { APPAREL_PRICES } from '@/types/creator-lab';
+import { DEFAULT_APPAREL_RETAIL_PRICES, calculateCustomerPrice, calculateCreatorCommission } from '@/types/creator-lab';
 
 interface ApparelPreviewProps {
   designImageUrl: string;
