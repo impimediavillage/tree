@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Brain, Loader2, Sparkles, Leaf, Heart, Flower, Sun, Moon, Star, Zap, Wind, Droplet, Flame, TreePine, Sprout, Activity, Atom, Dna, Microscope, Beaker, Pill, Stethoscope, Eye, Smile, Users, UserCheck, Waves, Mountain, Globe, Compass, ShieldCheck, HandHelping, ArrowRight, Coins, ShoppingCart, Truck, DollarSign, Gift, ArrowDown, Settings, Briefcase, Palette, Store } from 'lucide-react';
+import { Brain, Loader2, Sparkles, Leaf, Heart, Flower, Sun, Moon, Star, Zap, Wind, Droplet, Flame, TreePine, Sprout, Activity, Atom, Dna, Microscope, Beaker, Pill, Stethoscope, Eye, Smile, Users, UserCheck, Waves, Mountain, Globe, Compass, ShieldCheck, HandHelping, ArrowRight, Coins, ShoppingCart, Truck, DollarSign, Gift, ArrowDown, Settings, Briefcase, Palette, Store, Rocket, Calendar, Share2, Tv, Package } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -188,6 +188,54 @@ export default function HolisticAiHubPage() {
                       <p className="text-sm text-green-800 font-medium">Build your brand, grow your tribe, dominate your niche! This is YOUR stage! 🎯🚀</p>
                     </div>
                     
+                    <div className="p-4 bg-gradient-to-br from-red-500/20 via-orange-500/20 to-pink-500/20 rounded-xl border-2 border-red-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Truck className="h-6 w-6 text-red-700" />
+                        <h3 className="font-extrabold text-lg text-red-900">🚚 DRIVER MANAGEMENT PRO</h3>
+                      </div>
+                      <p className="text-sm text-red-800 font-medium">Manage your own delivery drivers OR use club drivers! Full tracking, route optimization & earnings management! Perfect for stores & clubs! 🏃‍♂️💨</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-sky-500/20 via-blue-500/20 to-cyan-500/20 rounded-xl border-2 border-sky-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Package className="h-6 w-6 text-sky-700" />
+                        <h3 className="font-extrabold text-lg text-sky-900">📦 SMART SHIPPING INTEGRATION</h3>
+                      </div>
+                      <p className="text-sm text-sky-800 font-medium">Courier Guy & Pudo Locker integration! Automated shipping labels, tracking & delivery notifications! Ship anywhere in SA with ease! 🚀📬</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-fuchsia-500/20 via-purple-500/20 to-pink-500/20 rounded-xl border-2 border-fuchsia-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Share2 className="h-6 w-6 text-fuchsia-700" />
+                        <h3 className="font-extrabold text-lg text-fuchsia-900">🌟 SOCIAL SHARE HUB</h3>
+                      </div>
+                      <p className="text-sm text-fuchsia-800 font-medium">Share to ALL social platforms with ONE click! Schedule posts, track engagement, QR codes & leaderboards! Turn shares into sales! 📱✨</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-violet-500/20 via-indigo-500/20 to-purple-500/20 rounded-xl border-2 border-violet-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Palette className="h-6 w-6 text-violet-700" />
+                        <h3 className="font-extrabold text-lg text-violet-900">🎨 CREATOR LAB POWERHOUSE</h3>
+                      </div>
+                      <p className="text-sm text-violet-800 font-medium">Design & sell custom apparel with AI! Your own Treehouse mini-store, earn 25% commission on every sale! No inventory needed! 💰🎨</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-rose-500/20 via-red-500/20 to-orange-500/20 rounded-xl border-2 border-rose-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Tv className="h-6 w-6 text-rose-700" />
+                        <h3 className="font-extrabold text-lg text-rose-900">📺 ADVERTISING PLATFORM</h3>
+                      </div>
+                      <p className="text-sm text-rose-800 font-medium">Promote your products across the ENTIRE platform! Target specific stores, track ROI & boost visibility! Get discovered by thousands! 🎯📣</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-teal-500/20 via-emerald-500/20 to-green-500/20 rounded-xl border-2 border-teal-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-6 w-6 text-teal-700" />
+                        <h3 className="font-extrabold text-lg text-teal-900">📅 EVENT CALENDAR SYSTEM</h3>
+                      </div>
+                      <p className="text-sm text-teal-800 font-medium">Host workshops, product launches & wellness events! Manage bookings, send reminders & build community! Your events, your rules! 🎉👥</p>
+                    </div>
+                    
                     <div className="text-center pt-3">
                       <Button asChild size="lg" className="bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] hover:scale-105 transition-transform w-full text-lg font-black shadow-xl">
                         <Link href="/dispensary-signup">🔥 START YOUR EMPIRE NOW! 🔥</Link>
@@ -322,49 +370,173 @@ export default function HolisticAiHubPage() {
               </Button>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full">Learn About Creator Earnings</Button>
+                  <Button variant="outline" className="w-full hover:scale-105 transition-transform">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Learn About Creator Earnings
+                  </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[650px] max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
-                      <Palette className="h-8 w-8 text-[#006B3E]" />
-                      Creator Lab: Your Path to Earning
-                    </DialogTitle>
-                    <DialogDescription className="text-base">
-                      Turn your creativity into cash! Design custom apparel and earn 25% commission on every sale.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 p-4">
-                    <div className="bg-[#006B3E]/10 p-4 rounded-lg border-2 border-[#006B3E]/30">
-                      <h3 className="font-bold text-lg mb-2 text-[#006B3E]">How It Works:</h3>
-                      <ul className="space-y-3">
-                        {treehouseBenefits.map((benefit, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <benefit.icon className="h-6 w-6 text-[#006B3E] mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{benefit.text}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-2 border-green-500">
-                      <h4 className="font-bold text-lg mb-2 text-green-700 dark:text-green-300">💰 Example Earnings (25% Commission):</h4>
-                      <div className="space-y-2 text-sm">
-                        <p className="flex justify-between"><span>Hoodie Sale (R400):</span> <strong className="text-green-600 dark:text-green-400">R100 for you</strong></p>
-                        <p className="flex justify-between"><span>T-Shirt Sale (R250):</span> <strong className="text-green-600 dark:text-green-400">R62.50 for you</strong></p>
-                        <p className="flex justify-between"><span>Cap Sale (R180):</span> <strong className="text-green-600 dark:text-green-400">R45 for you</strong></p>
-                        <Separator className="my-2" />
-                        <p className="flex justify-between text-base"><span className="font-bold">5 Hoodies Sold:</span> <strong className="text-green-600 dark:text-green-400">R500 - ready to cash out!</strong></p>
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto p-0 border-0">
+                  {/* Magical Header with Gradient */}
+                  <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-6 rounded-t-lg relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('/patterns/dots.svg')] opacity-20"></div>
+                    <DialogHeader className="relative z-10">
+                      <DialogTitle className="text-3xl font-black text-white flex items-center justify-center gap-3 drop-shadow-lg">
+                        <Sparkles className="h-10 w-10 animate-pulse" />
+                        Creator Lab Magic ✨
+                      </DialogTitle>
+                      <DialogDescription className="text-white/90 text-center text-lg font-semibold mt-2">
+                        Turn your creativity into cold hard cash! 🎨💰
+                      </DialogDescription>
+                    </DialogHeader>
+                  </div>
+
+                  <div className="space-y-4 p-6">
+                    {/* Level 1: The Dream - Purple */}
+                    <div className="bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/40 dark:to-purple-800/40 p-5 rounded-xl border-3 border-purple-400 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-purple-500 p-2.5 rounded-lg">
+                          <Palette className="h-6 w-6 text-white" />
+                        </div>
+                        <h3 className="font-black text-xl text-purple-900 dark:text-purple-100">Level 1: Design Your Empire</h3>
                       </div>
-                    </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>Payout System:</strong> Request payouts from your dashboard once you reach R500 minimum. Funds transferred directly to your bank account.
+                      <p className="text-purple-800 dark:text-purple-200 font-semibold leading-relaxed">
+                        🎨 Use our AI-powered Creator Lab to design epic apparel! T-shirts, hoodies, caps - you name it. 
+                        No design skills? No problem! DALL-E 3 AI is your creative sidekick. Just describe your vision and watch magic happen!
                       </p>
                     </div>
-                    <div className="text-center pt-2">
-                      <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] w-full">
-                        <Link href="/auth/signup">Start Creating & Earning</Link>
+
+                    {/* Level 2: The Store - Blue */}
+                    <div className="bg-gradient-to-br from-cyan-100 to-blue-200 dark:from-cyan-900/40 dark:to-blue-800/40 p-5 rounded-xl border-3 border-cyan-400 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-cyan-500 p-2.5 rounded-lg">
+                          <Store className="h-6 w-6 text-white" />
+                        </div>
+                        <h3 className="font-black text-xl text-cyan-900 dark:text-cyan-100">Level 2: Build Your Brand</h3>
+                      </div>
+                      <p className="text-cyan-800 dark:text-cyan-200 font-semibold leading-relaxed mb-2">
+                        🏪 Get your own mini-store with a slick custom URL!
+                      </p>
+                      <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border-2 border-cyan-300 dark:border-cyan-600">
+                        <code className="text-sm font-mono text-cyan-700 dark:text-cyan-300 break-all">
+                          thewellnesstree.co.za/treehouse/store/your-brand
+                        </code>
+                      </div>
+                    </div>
+
+                    {/* Level 3: The Money - Green/Gold */}
+                    <div className="bg-gradient-to-br from-green-100 via-emerald-100 to-teal-100 dark:from-green-900/40 dark:via-emerald-900/40 dark:to-teal-800/40 p-5 rounded-xl border-3 border-green-400 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2.5 rounded-lg animate-pulse">
+                          <DollarSign className="h-6 w-6 text-white" />
+                        </div>
+                        <h3 className="font-black text-xl text-green-900 dark:text-green-100">Level 3: Stack That Cash! 💸</h3>
+                      </div>
+                      <p className="text-green-800 dark:text-green-200 font-bold text-lg mb-4">
+                        Earn 25% commission on EVERY sale. Automatic. No catches. Just pure profit! 🤑
+                      </p>
+                      
+                      {/* Earnings Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border-2 border-green-300">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-2xl">👕</span>
+                            <Badge className="bg-green-600">HOT!</Badge>
+                          </div>
+                          <p className="font-bold text-gray-700 dark:text-gray-200">T-Shirt</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Customer pays: <strong>R625</strong></p>
+                          <p className="text-2xl font-black text-green-600 mt-2">You earn: R125</p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border-2 border-green-300">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-2xl">🧥</span>
+                            <Badge className="bg-orange-600">BIG WIN</Badge>
+                          </div>
+                          <p className="font-bold text-gray-700 dark:text-gray-200">Hoodie</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Customer pays: <strong>R1,250</strong></p>
+                          <p className="text-2xl font-black text-green-600 mt-2">You earn: R250</p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border-2 border-green-300">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-2xl">🧢</span>
+                            <Badge className="bg-blue-600">NICE</Badge>
+                          </div>
+                          <p className="font-bold text-gray-700 dark:text-gray-200">Cap</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Customer pays: <strong>R438</strong></p>
+                          <p className="text-2xl font-black text-green-600 mt-2">You earn: R87.50</p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-yellow-100 to-amber-200 dark:from-yellow-900/60 dark:to-amber-800/60 p-4 rounded-lg shadow-md border-3 border-yellow-500 col-span-1 sm:col-span-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Zap className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                            <p className="font-black text-lg text-yellow-900 dark:text-yellow-100">Quick Math:</p>
+                          </div>
+                          <p className="text-yellow-800 dark:text-yellow-200 font-bold text-xl">
+                            Sell just 2 hoodies = <span className="text-2xl text-yellow-900 dark:text-yellow-50">R500</span> 🎉
+                          </p>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">That's instant payout territory!</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Level 4: The Cashout - Gold */}
+                    <div className="bg-gradient-to-br from-amber-100 to-yellow-200 dark:from-amber-900/40 dark:to-yellow-800/40 p-5 rounded-xl border-3 border-amber-400 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-gradient-to-br from-amber-500 to-yellow-600 p-2.5 rounded-lg">
+                          <Coins className="h-6 w-6 text-white" />
+                        </div>
+                        <h3 className="font-black text-xl text-amber-900 dark:text-amber-100">Level 4: Get Paid! 💳</h3>
+                      </div>
+                      <p className="text-amber-800 dark:text-amber-200 font-semibold leading-relaxed">
+                        💰 Hit R500 minimum? Request payout from your dashboard! Money goes straight to your bank. 
+                        No waiting months, no shady fees. Just your hard-earned cash! 🏦✨
+                      </p>
+                    </div>
+
+                    {/* Boss Mode - Pink/Red */}
+                    <div className="bg-gradient-to-br from-pink-100 to-red-200 dark:from-pink-900/40 dark:to-red-800/40 p-5 rounded-xl border-3 border-pink-400 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-gradient-to-br from-pink-500 to-red-600 p-2.5 rounded-lg">
+                          <Gift className="h-6 w-6 text-white" />
+                        </div>
+                        <h3 className="font-black text-xl text-pink-900 dark:text-pink-100">Boss Mode: Zero Risk! 🎮</h3>
+                      </div>
+                      <ul className="space-y-2 text-pink-800 dark:text-pink-200 font-semibold">
+                        <li className="flex items-start gap-2">
+                          <span className="text-xl">✅</span>
+                          <span>Zero upfront costs - not a cent!</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-xl">✅</span>
+                          <span>We handle printing, shipping, customer service</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-xl">✅</span>
+                          <span>No inventory to manage - stress-free!</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-xl">✅</span>
+                          <span>Featured in Treehouse marketplace - free exposure!</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* CTA Button */}
+                    <div className="text-center pt-4">
+                      <Button 
+                        asChild 
+                        size="lg" 
+                        className="w-full bg-gradient-to-r from-[#006B3E] via-purple-600 to-pink-600 hover:from-[#3D2E17] hover:via-purple-700 hover:to-pink-700 text-white font-black text-lg py-6 shadow-2xl hover:shadow-pink-500/50 transition-all hover:scale-105 active:scale-95"
+                      >
+                        <Link href="/auth/signup">
+                          <Rocket className="mr-2 h-5 w-5" />
+                          Start Your Creator Journey Now! 🚀
+                        </Link>
                       </Button>
+                      <p className="text-sm text-muted-foreground mt-3 font-semibold">
+                        Join hundreds of creators already earning! 🌟
+                      </p>
                     </div>
                   </div>
                 </DialogContent>
@@ -398,47 +570,110 @@ export default function HolisticAiHubPage() {
               </Button>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full">Leaf members benefits</Button>
+                  <Button variant="outline" className="w-full">Store Sign up info</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[650px] max-h-[80vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
-                      <Heart className="h-8 w-8 text-[#006B3E]" />
-                      Wellness Tree Membership
+                    <DialogTitle className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] flex items-center justify-center gap-3">
+                      <Store className="h-10 w-10 text-[#006B3E] animate-pulse" />
+                      Transform Your Wellness Empire!
                     </DialogTitle>
-                    <DialogDescription className="text-base">
-                      One membership, unlimited possibilities. Shop, create, earn, and access wellness guidance - all in one place.
+                    <DialogDescription className="text-base text-center font-semibold">
+                      🚀 Level up your business with South Africa's most EPIC wellness marketplace! 🌟
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 p-4">
-                    <div className="bg-[#006B3E]/10 p-4 rounded-lg border-2 border-[#006B3E]/30">
-                      <h3 className="font-bold text-lg mb-2 text-[#006B3E]">Complete Member Benefits:</h3>
-                      <ul className="space-y-3">
-                        {membershipBenefits.map((benefit, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <benefit.icon className="h-6 w-6 text-[#006B3E] mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{benefit.text}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border-2 border-purple-500">
-                      <h4 className="font-bold text-lg mb-2 text-purple-700 dark:text-purple-300">🎨 Creator Lab Highlights:</h4>
-                      <div className="space-y-2 text-sm">
-                        <p>✓ <strong>AI-Powered Design:</strong> Use DALL-E 3 to generate professional designs</p>
-                        <p>✓ <strong>Your Own Store:</strong> Get a branded URL like thewellnesstree.co.za/treehouse/store/yourname</p>
-                        <p>✓ <strong>25% Commission:</strong> Keep R100 on every R400 hoodie sold</p>
-                        <p>✓ <strong>Dashboard Payouts:</strong> Request payout once you reach R500 minimum</p>
+                  <div className="space-y-3 p-4">
+                    <div className="p-4 bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20 rounded-xl border-2 border-emerald-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ShoppingCart className="h-6 w-6 text-emerald-700" />
+                        <h3 className="font-extrabold text-lg text-emerald-900">🛍️ FULL E-COMMERCE POWERHOUSE</h3>
                       </div>
+                      <p className="text-sm text-emerald-800 font-medium">Product listings, shopping cart, integrated Payfast payments & your OWN public URL! Build your empire online! 💪</p>
                     </div>
-                    <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                      <p className="text-sm text-amber-800 dark:text-amber-200">
-                        <strong>🎁 Signup Bonus:</strong> Get 10 FREE credits to start chatting with AI wellness advisors immediately!
-                      </p>
+                    
+                    <div className="p-4 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-rose-500/20 rounded-xl border-2 border-purple-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-6 w-6 text-purple-700" />
+                        <h3 className="font-extrabold text-lg text-purple-900">🤝 PRODUCT POOL = UNLIMITED INVENTORY</h3>
+                      </div>
+                      <p className="text-sm text-purple-800 font-medium">Share products with other stores & access THOUSANDS of items instantly! No stock? No problem! Private bulk trading too! 🔥</p>
                     </div>
-                    <div className="text-center pt-2">
-                      <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] w-full">
-                        <Link href="/auth/signup">Become a Member Today</Link>
+                    
+                    <div className="p-4 bg-gradient-to-br from-amber-500/20 via-orange-500/20 to-yellow-500/20 rounded-xl border-2 border-amber-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="h-6 w-6 text-amber-700" />
+                        <h3 className="font-extrabold text-lg text-amber-900">💰 GET PAID WEEKLY!</h3>
+                      </div>
+                      <p className="text-sm text-amber-800 font-medium">Direct bank deposits every week! Secure Payfast processing means YOUR MONEY, YOUR WAY! 🤑💸</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-violet-500/20 rounded-xl border-2 border-blue-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Settings className="h-6 w-6 text-blue-700" />
+                        <h3 className="font-extrabold text-lg text-blue-900">⚙️ ULTIMATE CONTROL CENTER</h3>
+                      </div>
+                      <p className="text-sm text-blue-800 font-medium">Manage inventory, orders, customers & analytics from ONE powerful dashboard! You're the boss! 👑</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-green-500/20 via-lime-500/20 to-emerald-500/20 rounded-xl border-2 border-green-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Briefcase className="h-6 w-6 text-green-700" />
+                        <h3 className="font-extrabold text-lg text-green-900">🌍 REACH ALL OF SOUTH AFRICA</h3>
+                      </div>
+                      <p className="text-sm text-green-800 font-medium">Build your brand, grow your tribe, dominate your niche! This is YOUR stage! 🎯🚀</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-red-500/20 via-orange-500/20 to-pink-500/20 rounded-xl border-2 border-red-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Truck className="h-6 w-6 text-red-700" />
+                        <h3 className="font-extrabold text-lg text-red-900">🚚 DRIVER MANAGEMENT PRO</h3>
+                      </div>
+                      <p className="text-sm text-red-800 font-medium">Manage your own delivery drivers OR use club drivers! Full tracking, route optimization & earnings management! Perfect for stores & clubs! 🏃‍♂️💨</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-sky-500/20 via-blue-500/20 to-cyan-500/20 rounded-xl border-2 border-sky-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Package className="h-6 w-6 text-sky-700" />
+                        <h3 className="font-extrabold text-lg text-sky-900">📦 SMART SHIPPING INTEGRATION</h3>
+                      </div>
+                      <p className="text-sm text-sky-800 font-medium">Courier Guy & Pudo Locker integration! Automated shipping labels, tracking & delivery notifications! Ship anywhere in SA with ease! 🚀📬</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-fuchsia-500/20 via-purple-500/20 to-pink-500/20 rounded-xl border-2 border-fuchsia-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Share2 className="h-6 w-6 text-fuchsia-700" />
+                        <h3 className="font-extrabold text-lg text-fuchsia-900">🌟 SOCIAL SHARE HUB</h3>
+                      </div>
+                      <p className="text-sm text-fuchsia-800 font-medium">Share to ALL social platforms with ONE click! Schedule posts, track engagement, QR codes & leaderboards! Turn shares into sales! 📱✨</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-violet-500/20 via-indigo-500/20 to-purple-500/20 rounded-xl border-2 border-violet-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Palette className="h-6 w-6 text-violet-700" />
+                        <h3 className="font-extrabold text-lg text-violet-900">🎨 CREATOR LAB POWERHOUSE</h3>
+                      </div>
+                      <p className="text-sm text-violet-800 font-medium">Design & sell custom apparel with AI! Your own Treehouse mini-store, earn 25% commission on every sale! No inventory needed! 💰🎨</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-rose-500/20 via-red-500/20 to-orange-500/20 rounded-xl border-2 border-rose-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Tv className="h-6 w-6 text-rose-700" />
+                        <h3 className="font-extrabold text-lg text-rose-900">📺 ADVERTISING PLATFORM</h3>
+                      </div>
+                      <p className="text-sm text-rose-800 font-medium">Promote your products across the ENTIRE platform! Target specific stores, track ROI & boost visibility! Get discovered by thousands! 🎯📣</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-teal-500/20 via-emerald-500/20 to-green-500/20 rounded-xl border-2 border-teal-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-6 w-6 text-teal-700" />
+                        <h3 className="font-extrabold text-lg text-teal-900">📅 EVENT CALENDAR SYSTEM</h3>
+                      </div>
+                      <p className="text-sm text-teal-800 font-medium">Host workshops, product launches & wellness events! Manage bookings, send reminders & build community! Your events, your rules! 🎉👥</p>
+                    </div>
+                    
+                    <div className="text-center pt-3">
+                      <Button asChild size="lg" className="bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] hover:scale-105 transition-transform w-full text-lg font-black shadow-xl">
+                        <Link href="/dispensary-signup">🔥 START YOUR EMPIRE NOW! 🔥</Link>
                       </Button>
                     </div>
                   </div>
