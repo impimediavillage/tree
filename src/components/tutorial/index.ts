@@ -15,6 +15,7 @@ export {
 
 // Tutorial content
 export { tutorialContent } from './tutorials/tutorialContent';
+export { leafTutorialContent } from './tutorials/leafTutorialContent';
 
 // Types
 // Tutorial tour step interface

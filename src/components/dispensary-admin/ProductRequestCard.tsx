@@ -2,15 +2,16 @@
 'use client';
 
 import * as React from 'react';
-import type { ProductRequest, NoteData, Product } from '@/types';
+import type { ProductRequest, NoteData, Product, ShippingRate, PUDOLocker } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, arrayUnion, serverTimestamp, getDoc, addDoc, collection, writeBatch, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, serverTimestamp, getDoc, addDoc, collection, writeBatch, deleteDoc, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { calculatePriceBreakdown, PRODUCT_POOL_COMMISSION_RATE } from '@/lib/pricing';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,11 +22,14 @@ import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '../ui/separator';
 import Image from 'next/image';
-import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2, ThumbsUp, ThumbsDown, Trash2 } from 'lucide-react';
+import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2, ThumbsUp, ThumbsDown, Trash2, ShoppingCart, CheckCircle } from 'lucide-react';
 import { getProductCollectionName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Input } from '../ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import type { Order, OrderItem, OrderShipment } from '@/types/order';
 
 
 const addNoteSchema = z.object({
@@ -51,6 +55,12 @@ const getStatusProps = (status: ProductRequest['requestStatus']) => {
 const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequest; type: 'incoming' | 'outgoing'; onUpdate: () => void; }) => {
     const [isOpen, setIsOpen] = React.useState(false);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [showShippingSelection, setShowShippingSelection] = React.useState(false);
+    const [selectedShipping, setSelectedShipping] = React.useState<ShippingRate | null>(null);
+    const [selectedDestinationLocker, setSelectedDestinationLocker] = React.useState<PUDOLocker | null>(null);
+    const [availableShippingMethods, setAvailableShippingMethods] = React.useState<string[]>([]);
+    const [sellerDispensary, setSellerDispensary] = React.useState<any>(null);
+    const [buyerDispensary, setBuyerDispensary] = React.useState<any>(null);
     const { toast } = useToast();
     const { currentUser } = useAuth();
     const notesEndRef = React.useRef<HTMLDivElement>(null);
@@ -67,11 +77,59 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         }
     }, [isOpen, request.notes, request.actualDeliveryDate, form]);
 
+    // Fetch seller's shipping methods when dialog opens
+    React.useEffect(() => {
+        const fetchDispensaryDetails = async () => {
+            if (!isOpen || !showShippingSelection) return;
+            
+            try {
+                const [sellerSnap, buyerSnap] = await Promise.all([
+                    getDoc(doc(db, 'dispensaries', request.productOwnerDispensaryId)),
+                    getDoc(doc(db, 'dispensaries', request.requesterDispensaryId))
+                ]);
+
+                if (sellerSnap.exists() && buyerSnap.exists()) {
+                    const sellerData = sellerSnap.data();
+                    const buyerData = buyerSnap.data();
+                    setSellerDispensary(sellerData);
+                    setBuyerDispensary(buyerData);
+                    setAvailableShippingMethods(sellerData.shippingMethods || []);
+                }
+            } catch (error) {
+                console.error('Error fetching dispensary details:', error);
+                toast({
+                    title: 'Error',
+                    description: 'Could not load shipping options',
+                    variant: 'destructive'
+                });
+            }
+        };
+
+        fetchDispensaryDetails();
+    }, [isOpen, showShippingSelection, request.productOwnerDispensaryId, request.requesterDispensaryId, toast]);
+
     const handleOwnerFinalAccept = async () => {
         if (!request.id) return;
+        
+        // Step 1: Show shipping selection if not already shown
+        if (!showShippingSelection) {
+            setShowShippingSelection(true);
+            return;
+        }
+
+        // Step 2: Validate shipping selection
+        if (!selectedShipping) {
+            toast({
+                title: 'Shipping Required',
+                description: 'Please select a shipping method before finalizing the order.',
+                variant: 'destructive'
+            });
+            return;
+        }
+
         setIsSubmitting(true);
         try {
-            // Fetch both dispensary details to get origin and destination lockers
+            // Fetch both dispensary details
             const [sellerDispensarySnap, buyerDispensarySnap] = await Promise.all([
                 getDoc(doc(db, 'dispensaries', request.productOwnerDispensaryId)),
                 getDoc(doc(db, 'dispensaries', request.requesterDispensaryId))
@@ -84,70 +142,154 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             const sellerDispensary = sellerDispensarySnap.data();
             const buyerDispensary = buyerDispensarySnap.data();
 
-            // Create order data with proper shipping structure matching regular orders
-            const orderData = {
-                ...request,
-                orderDate: serverTimestamp(),
-                requestStatus: 'ordered',
+            // Calculate 5% commission using existing pricing function
+            const tierPrice = request.requestedTier.price;
+            const taxRate = buyerDispensary.taxRate || 0;
+            const priceBreakdown = calculatePriceBreakdown(tierPrice, taxRate, true); // isProductPool = true
+
+            // Generate order number
+            const orderNumber = `POOL-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+            // Create OrderItem structure
+            const orderItem: OrderItem = {
+                id: request.productId,
+                productId: request.productId,
+                name: request.productName,
+                image: request.productImage || '',
+                quantity: request.quantityRequested,
+                price: tierPrice,
+                originalPrice: tierPrice,
+                unit: request.requestedTier.unit,
+                weight: request.requestedTier.weightKgs || 0.5,
+                dispensaryId: request.productOwnerDispensaryId,
+                dispensaryName: request.productOwnerDispensaryName || '',
+                dispensaryType: 'Product Pool',
                 
-                // Add shipping structure
-                originLocker: sellerDispensary.originLocker || null,
-                destinationLocker: request.destinationLocker || buyerDispensary.originLocker || null,
+                // Pricing breakdown with 5% commission
+                dispensarySetPrice: tierPrice,
+                basePrice: priceBreakdown.basePrice,
+                platformCommission: priceBreakdown.commission,
+                commissionRate: PRODUCT_POOL_COMMISSION_RATE,
+                subtotalBeforeTax: priceBreakdown.subtotalBeforeTax,
+                taxAmount: priceBreakdown.basePrice * taxRate * request.quantityRequested,
+                lineTotal: priceBreakdown.finalPrice * request.quantityRequested,
+            };
+
+            // Create OrderShipment structure
+            const orderShipment: OrderShipment = {
+                dispensaryId: request.productOwnerDispensaryId,
+                items: [orderItem],
+                shippingMethod: selectedShipping,
+                status: 'pending',
+                shippingProvider: selectedShipping.provider,
+                originLocker: sellerDispensary.originLocker || undefined,
+                destinationLocker: selectedDestinationLocker || buyerDispensary.originLocker || undefined,
+                statusHistory: [{
+                    status: 'pending',
+                    timestamp: Timestamp.now(),
+                    message: 'Order created from Product Pool negotiation',
+                    updatedBy: currentUser?.uid
+                }]
+            };
+
+            // Calculate totals
+            const subtotal = orderItem.subtotalBeforeTax * orderItem.quantity;
+            const tax = orderItem.taxAmount;
+            const shippingCost = selectedShipping.price || 0;
+            const total = subtotal + tax + shippingCost;
+            const totalDispensaryEarnings = orderItem.basePrice * orderItem.quantity;
+            const totalPlatformCommission = orderItem.platformCommission * orderItem.quantity;
+
+            // Create Order structure - use buyer dispensary as "customer"
+            const orderData: Partial<Order> = {
+                userId: request.requesterUserId, // Buyer user ID
+                orderNumber: orderNumber,
+                items: [orderItem],
+                shippingCost: shippingCost,
                 
-                // Seller info (for shipping from)
-                sellerDispensaryAddress: {
-                    name: sellerDispensary.name || '',
-                    streetAddress: sellerDispensary.address || '',
-                    city: sellerDispensary.city || '',
-                    province: sellerDispensary.province || '',
-                    postalCode: sellerDispensary.postalCode || '',
-                    latitude: sellerDispensary.latitude,
-                    longitude: sellerDispensary.longitude,
-                    contactName: sellerDispensary.contactPerson || '',
-                    contactPhone: sellerDispensary.phone || '',
-                    contactEmail: sellerDispensary.email || '',
-                    originLocker: sellerDispensary.originLocker || null,
+                // Pricing breakdown
+                subtotal: subtotal,
+                tax: tax,
+                taxRate: taxRate,
+                shippingTotal: shippingCost,
+                total: total,
+                currency: buyerDispensary.currency || 'ZAR',
+                
+                // Revenue tracking (5% commission)
+                totalDispensaryEarnings: totalDispensaryEarnings,
+                totalPlatformCommission: totalPlatformCommission,
+                
+                // Payment details (B2B - likely invoice-based)
+                paymentMethod: 'payfast',
+                paymentStatus: 'pending',
+                
+                // Use buyer dispensary details as customer
+                customerDetails: {
+                    name: buyerDispensary.dispensaryName || buyerDispensary.contactName || '',
+                    email: buyerDispensary.contactEmail || '',
+                    phone: buyerDispensary.contactPhone || request.contactPhone || '',
                 },
                 
-                // Buyer info (for shipping to)
-                buyerDispensaryAddress: {
-                    name: buyerDispensary.name || '',
-                    streetAddress: buyerDispensary.address || (typeof request.deliveryAddress === 'string' ? request.deliveryAddress : request.deliveryAddress.streetAddress) || '',
-                    city: buyerDispensary.city || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.city : ''),
-                    province: buyerDispensary.province || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.province : ''),
-                    postalCode: buyerDispensary.postalCode || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.postalCode : ''),
-                    latitude: buyerDispensary.latitude || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.latitude : 0),
-                    longitude: buyerDispensary.longitude || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.longitude : 0),
-                    contactName: request.contactPerson || buyerDispensary.contactPerson || '',
-                    contactPhone: request.contactPhone || buyerDispensary.phone || '',
-                    contactEmail: buyerDispensary.email || '',
-                    destinationLocker: request.destinationLocker || buyerDispensary.originLocker || null,
+                // Use buyer dispensary address as shipping address
+                shippingAddress: {
+                    streetAddress: buyerDispensary.address || buyerDispensary.streetAddress || '',
+                    suburb: buyerDispensary.suburb || '',
+                    city: buyerDispensary.city || '',
+                    province: buyerDispensary.province || '',
+                    postalCode: buyerDispensary.postalCode || '',
+                    country: buyerDispensary.country || 'South Africa',
+                    latitude: buyerDispensary.latitude,
+                    longitude: buyerDispensary.longitude,
                 },
                 
-                // Shipping status tracking
-                shippingStatus: 'pending',
-                shippingProvider: null,
-                trackingNumber: null,
-                trackingUrl: null,
-                labelUrl: null,
-                accessCode: null,
+                // Shipments
+                shipments: {
+                    [request.productOwnerDispensaryId]: orderShipment
+                },
+                
+                // Order metadata
+                orderType: 'dispensary', // Could also be 'pool' if you want a new type
+                status: 'pending',
+                statusHistory: [{
+                    status: 'pending',
+                    timestamp: Timestamp.now(),
+                    message: 'Product Pool order created',
+                    updatedBy: currentUser?.uid
+                }],
+                createdAt: Timestamp.now(),
+                updatedAt: Timestamp.now(),
+                
+                // Stock tracking
+                stockDeducted: false,
             };
             
+            // Save to orders collection (not productPoolOrders)
             const batch = writeBatch(db);
-            const newOrderRef = doc(collection(db, 'productPoolOrders'));
+            const newOrderRef = doc(collection(db, 'orders'));
             batch.set(newOrderRef, orderData);
             
+            // Delete the product request
             const requestRef = doc(db, 'productRequests', request.id);
             batch.delete(requestRef);
             
             await batch.commit();
-            toast({ title: "Order Confirmed!", description: `Order for ${request.productName} has been created with shipping details.` });
+            
+            toast({ 
+                title: "Order Created! 🎉", 
+                description: `Order ${orderNumber} created with ${(PRODUCT_POOL_COMMISSION_RATE * 100).toFixed(0)}% platform commission.` 
+            });
 
             onUpdate();
             setIsOpen(false);
+            setShowShippingSelection(false);
+            setSelectedShipping(null);
         } catch (error) {
             console.error("Error finalizing order:", error);
-            toast({ title: "Finalization Failed", variant: "destructive", description: "Could not create the final order. " + (error as Error).message });
+            toast({ 
+                title: "Order Creation Failed", 
+                variant: "destructive", 
+                description: "Could not create the order. " + (error as Error).message 
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -339,8 +481,147 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                     )}
                                     {type === 'incoming' && request.requestStatus === 'accepted' && request.requesterConfirmed && (
                                          <>
-                                            <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleOwnerFinalAccept} disabled={isSubmitting}>
-                                                <ThumbsUp className="mr-2 h-4 w-4" /> Finalize & Create Order
+                                            {/* Shipping Selection UI */}
+                                            {showShippingSelection && (
+                                                <div className="col-span-full space-y-4 p-4 bg-muted/30 rounded-lg border-2 border-primary/20">
+                                                    <div className="flex items-center gap-2">
+                                                        <Truck className="h-5 w-5 text-primary" />
+                                                        <h4 className="font-semibold text-base">Select Shipping Method</h4>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Choose how this order will be delivered from {request.productOwnerDispensaryName} to {request.requesterDispensaryName}
+                                                    </p>
+                                                    
+                                                    {availableShippingMethods.length === 0 ? (
+                                                        <div className="text-sm text-center text-muted-foreground py-4 bg-background rounded-md border">
+                                                            <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+                                                            <p className="font-semibold">No shipping methods configured</p>
+                                                            <p className="text-xs mt-1">The seller dispensary needs to configure shipping methods in their profile.</p>
+                                                        </div>
+                                                    ) : (
+                                                        <RadioGroup 
+                                                            value={selectedShipping?.id || ''} 
+                                                            onValueChange={(value) => {
+                                                                const method = availableShippingMethods.find(m => m === value);
+                                                                if (method) {
+                                                                    // Create a mock ShippingRate based on the method type
+                                                                    const shippingRate: ShippingRate = {
+                                                                        id: method,
+                                                                        name: method.toUpperCase(),
+                                                                        courier_name: method === 'dtd' ? 'ShipLogic' : method.includes('lt') ? 'PUDO' : method === 'in_house' ? 'In-house Delivery' : 'Collection',
+                                                                        provider: method === 'dtd' ? 'shiplogic' : ['dtl', 'ltd', 'ltl'].includes(method) ? 'pudo' : method === 'in_house' ? 'in_house' : 'collection',
+                                                                        label: method.toUpperCase(),
+                                                                        rate: 0,
+                                                                        price: 0, // Will be calculated by shipping service
+                                                                        serviceType: method,
+                                                                        estimatedDays: '2-5 business days',
+                                                                    };
+                                                                    setSelectedShipping(shippingRate);
+                                                                }
+                                                            }}
+                                                            className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                                                        >
+                                                            {availableShippingMethods.map((method) => {
+                                                                const methodLabels: Record<string, string> = {
+                                                                    'dtd': 'Door-to-Door Courier',
+                                                                    'dtl': 'Door-to-Locker',
+                                                                    'ltd': 'Locker-to-Door',
+                                                                    'ltl': 'Locker-to-Locker',
+                                                                    'collection': 'Collection from Store',
+                                                                    'in_house': 'In-house Delivery'
+                                                                };
+                                                                
+                                                                const isLockerMethod = ['dtl', 'ltd', 'ltl'].includes(method);
+                                                                
+                                                                return (
+                                                                    <div key={method}>
+                                                                        <Label 
+                                                                            htmlFor={`shipping-${method}`}
+                                                                            className="flex items-center space-x-3 border-2 rounded-md p-3 cursor-pointer hover:bg-accent has-[:checked]:bg-accent has-[:checked]:border-primary transition-all"
+                                                                        >
+                                                                            <RadioGroupItem value={method} id={`shipping-${method}`} />
+                                                                            <div className="flex-1">
+                                                                                <p className="font-semibold text-sm">{methodLabels[method] || method}</p>
+                                                                                {isLockerMethod && (
+                                                                                    <p className="text-xs text-muted-foreground">PUDO Locker service</p>
+                                                                                )}
+                                                                            </div>
+                                                                        </Label>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </RadioGroup>
+                                                    )}
+                                                    
+                                                    {/* Locker information for LTL/DTL/LTD */}
+                                                    {selectedShipping && ['dtl', 'ltd', 'ltl'].includes(selectedShipping.id) && (
+                                                        <div className="space-y-3 p-3 bg-background rounded-md border">
+                                                            <h5 className="font-semibold text-sm flex items-center gap-2">
+                                                                <Package className="h-4 w-4" />
+                                                                Locker Details
+                                                            </h5>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                                                <div className="space-y-1">
+                                                                    <p className="text-xs text-muted-foreground">Origin Locker (Seller)</p>
+                                                                    {sellerDispensary?.originLocker ? (
+                                                                        <div className="p-2 bg-green-50 border border-green-200 rounded">
+                                                                            <p className="font-semibold text-xs text-green-800">{sellerDispensary.originLocker.pudoName}</p>
+                                                                            <p className="text-xs text-green-700">{sellerDispensary.originLocker.address}</p>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-xs text-orange-600">⚠️ Not configured</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <p className="text-xs text-muted-foreground">Destination Locker (Buyer)</p>
+                                                                    {buyerDispensary?.originLocker ? (
+                                                                        <div className="p-2 bg-blue-50 border border-blue-200 rounded">
+                                                                            <p className="font-semibold text-xs text-blue-800">{buyerDispensary.originLocker.pudoName}</p>
+                                                                            <p className="text-xs text-blue-700">{buyerDispensary.originLocker.address}</p>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-xs text-orange-600">⚠️ Not configured</p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground italic">
+                                                                💡 Both dispensaries' origin lockers will be used for this delivery
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {selectedShipping && (
+                                                        <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                                                            <CheckCircle className="h-4 w-4 text-green-600" />
+                                                            <p className="text-sm text-green-800">
+                                                                <span className="font-semibold">Shipping method selected:</span> {selectedShipping.label}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            
+                                            <Button 
+                                                className="bg-green-600 hover:bg-green-700 text-white" 
+                                                onClick={handleOwnerFinalAccept} 
+                                                disabled={isSubmitting || (showShippingSelection && !selectedShipping)}
+                                            >
+                                                {isSubmitting ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        Creating Order...
+                                                    </>
+                                                ) : showShippingSelection ? (
+                                                    <>
+                                                        <ShoppingCart className="mr-2 h-4 w-4" />
+                                                        Confirm & Create Order with 5% Commission
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <ThumbsUp className="mr-2 h-4 w-4" />
+                                                        Finalize & Create Order
+                                                    </>
+                                                )}
                                             </Button>
                                             <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>
                                                 <ThumbsDown className="mr-2 h-4 w-4" /> Reject Order

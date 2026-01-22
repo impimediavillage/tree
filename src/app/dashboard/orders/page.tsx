@@ -142,7 +142,7 @@ function OrderHistoryContent() {
   }
 
   return (
-    <div className="container py-8 px-4 max-w-7xl mx-auto">
+    <div className="container py-8 px-4 max-w-7xl mx-auto" data-tour="orders-nav">
       {/* Password Update Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent className="sm:max-w-md bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-2 border-green-200">
@@ -220,7 +220,7 @@ function OrderHistoryContent() {
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="active" className="space-y-6">
+          <Tabs defaultValue="active" className="space-y-6" data-tour="order-filters">
             <TabsList className="grid w-full max-w-md mx-auto md:mx-0 grid-cols-2 h-12">
               <TabsTrigger value="active" className="text-base font-semibold">
                 Active {activeOrders.length > 0 && `(${activeOrders.length})`}
@@ -243,11 +243,13 @@ function OrderHistoryContent() {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {activeOrders.map(order => (
+                  {activeOrders.map((order, index) => (
                     <OrderCard 
                       key={order.id} 
                       order={order}
                       onClick={() => setSelectedOrder(order)}
+                      data-tour={index === 0 ? "order-card" : undefined}
+                    />
                     />
                   ))}
                 </div>

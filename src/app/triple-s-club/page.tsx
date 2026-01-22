@@ -161,7 +161,7 @@ export default function TripleSClubPage() {
           
           <div className="space-y-8">
             {/* Opportunity 1: Home Growers */}
-            <div className="bg-[#006B3E]/10 border-2 border-[#006B3E] rounded-lg p-6">
+            <div className="bg-[#006B3E]/10 border-2 border-[#006B3E] rounded-lg p-6" data-tour="monthly-credits">
               <div className="flex items-center gap-3 mb-4">
                 <Leaf className="h-8 w-8 text-[#006B3E]" />
                 <h2 className="text-2xl font-black text-[#006B3E]">For Home Growers & Cultivators</h2>
@@ -189,7 +189,7 @@ export default function TripleSClubPage() {
             </div>
 
             {/* Opportunity 2: Cannabis Stores */}
-            <div className="bg-[#3D2E17]/10 border-2 border-[#3D2E17] rounded-lg p-6">
+            <div className="bg-[#3D2E17]/10 border-2 border-[#3D2E17] rounded-lg p-6" data-tour="exclusive-products">
               <div className="flex items-center gap-3 mb-4">
                 <Store className="h-8 w-8 text-[#3D2E17]" />
                 <h2 className="text-2xl font-black text-[#3D2E17]">For Cannabis Stores & Dispensaries</h2>
@@ -217,7 +217,7 @@ export default function TripleSClubPage() {
             </div>
 
             {/* Opportunity 3: Existing Clubs */}
-            <div className="bg-[#006B3E]/10 border-2 border-[#006B3E] rounded-lg p-6">
+            <div className="bg-[#006B3E]/10 border-2 border-[#006B3E] rounded-lg p-6" data-tour="tier-progress">
               <div className="flex items-center gap-3 mb-4">
                 <Palette className="h-8 w-8 text-[#006B3E]" />
                 <h2 className="text-2xl font-black text-[#006B3E]">For Existing Canna Clubs</h2>
@@ -294,7 +294,7 @@ export default function TripleSClubPage() {
             </Button>
           </div>
           
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4" data-tour="referral-rewards">
             {currentStickerImages.map((imagePath, index) => (
               <div
                 key={`${imagePath}-${index}`}
@@ -343,7 +343,7 @@ export default function TripleSClubPage() {
 
   // Main page
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background p-4" data-tour="triple-s-nav">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-2">
@@ -366,6 +366,7 @@ export default function TripleSClubPage() {
             <Button
               onClick={() => setShowHowToJoin(true)}
               className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#90EE90] text-white font-bold px-6 py-3 transition-all duration-200 transform hover:scale-105"
+              data-tour="membership-tier"
             >
               <Leaf className="mr-2 h-5 w-5" />
               How to Join
@@ -374,6 +375,7 @@ export default function TripleSClubPage() {
             <Button
               onClick={() => window.location.href = '/dispensary-signup'}
               className="bg-[#3D2E17] hover:bg-[#006B3E] active:bg-[#90EE90] text-white font-bold px-6 py-3 transition-all duration-200 transform hover:scale-105"
+              data-tour="club-benefits"
             >
               <Store className="mr-2 h-5 w-5" />
               Sign Up Store
@@ -382,6 +384,7 @@ export default function TripleSClubPage() {
             <Button
               onClick={() => setShowStickerSets(true)}
               className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#90EE90] text-white font-bold px-6 py-3 transition-all duration-200 transform hover:scale-105"
+              data-tour="club-store"
             >
               <Palette className="mr-2 h-5 w-5" />
               View Sticker Sets
@@ -393,7 +396,7 @@ export default function TripleSClubPage() {
           </p>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0" data-tour="community-feed">
           {currentImages.map((imagePath, index) => (
             <div
               key={`${imagePath}-${index}`}

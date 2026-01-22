@@ -157,7 +157,7 @@ export default function AdvisorChatPage() {
       </div>
 
       {/* Chat Interface */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8" data-tour="chat-interface">
         {currentUser ? (
           <AdvisorChatInterface advisor={advisor} />
         ) : (

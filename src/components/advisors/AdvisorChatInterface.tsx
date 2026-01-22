@@ -272,7 +272,7 @@ export default function AdvisorChatInterface({ advisor }: AdvisorChatInterfacePr
       </div>
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" data-tour="conversation-history">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center">
             <div className="space-y-2">
@@ -323,6 +323,7 @@ export default function AdvisorChatInterface({ advisor }: AdvisorChatInterfacePr
                     size="sm"
                     className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 hover:text-green-800"
                     onClick={() => window.location.href = `/dispensaries/near-me?advisor=${advisor.slug}`}
+                    data-tour="advisor-suggestions"
                   >
                     <MapPin className="mr-2 h-4 w-4" />
                     Find Near Me
@@ -348,7 +349,7 @@ export default function AdvisorChatInterface({ advisor }: AdvisorChatInterfacePr
       {/* Input Area */}
       <div className="border-t p-4">
         {currentUser && (currentUser.credits || 0) < estimatedCost && (
-          <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+          <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2" data-tour="earn-credits">
             <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="text-amber-800 font-medium">Low Credits</p>

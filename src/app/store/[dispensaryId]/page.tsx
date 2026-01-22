@@ -285,10 +285,10 @@ export default function DispensaryStorePage() {
         )}
 
         {/* Search and Category Filters */
-        <Card className="mb-6 border-2 bg-muted/50 border-border/50">
+        <Card className="mb-6 border-2 bg-muted/50 border-border/50" data-tour="product-filters">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
+              <div className="relative flex-1" data-tour="search-products">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="text"
@@ -347,12 +347,13 @@ export default function DispensaryStorePage() {
                     </p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filteredProducts.flatMap(product => 
+                    {filteredProducts.flatMap((product, productIndex) => 
                       product.priceTiers.map((tier, tierIndex) => (
                         <PublicProductCard
                           key={`${product.id}-tier-${tierIndex}`}
                           product={product}
                           tier={tier}
+                          data-tour={productIndex === 0 && tierIndex === 0 ? "product-card" : undefined}
                         />
                       ))
                     )}

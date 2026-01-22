@@ -86,7 +86,7 @@ export default function LeafDashboardOverviewPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-tour="leaf-dashboard">
       <Card className="shadow-md bg-muted/50 border-primary/20">
         <CardHeader>
           <CardTitle 
@@ -110,7 +110,7 @@ export default function LeafDashboardOverviewPage() {
       ) : (
         <>
           {preferredWellnessTypes.length > 0 && (
-            <section>
+            <section data-tour="browse-dispensaries">
               <div className="flex justify-between items-center mb-6">
                   <h2 
                     className="text-xl sm:text-2xl font-bold text-foreground flex items-center"
@@ -120,11 +120,12 @@ export default function LeafDashboardOverviewPage() {
                   </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {preferredWellnessTypes.map((type) => (
+                {preferredWellnessTypes.map((type, index) => (
                   <DispensaryTypeCard 
                     key={type.id} 
                     dispensaryType={type} 
-                    basePath="/dashboard/leaf/dispensaries" 
+                    basePath="/dashboard/leaf/dispensaries"
+                    {...(index === 0 && { 'data-tour': 'dispensary-card' })}
                   />
                 ))}
               </div>
@@ -151,11 +152,12 @@ export default function LeafDashboardOverviewPage() {
                   )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {otherWellnessTypes.map((type) => (
+                {preferredWellnessTypes.map((type, index) => (
                   <DispensaryTypeCard 
                     key={type.id} 
                     dispensaryType={type} 
-                    basePath="/dashboard/leaf/dispensaries" 
+                    basePath="/dashboard/leaf/dispensaries"
+                    data-tour={index === 0 ? "dispensary-card" : undefined}
                   />
                 ))}
               </div>

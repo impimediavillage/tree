@@ -7,6 +7,7 @@ import type { ProductCategory } from '@/types/creator-lab';
 interface CategoryFilterButtonsProps {
   selectedCategory: ProductCategory | null;
   onCategorySelect: (category: ProductCategory) => void;
+  'data-tour'?: string;
 }
 
 const categories: Array<{
@@ -22,12 +23,12 @@ const categories: Array<{
   { value: 'Resin', label: 'Resin', icon: Droplet, description: 'Resin Art & Coasters' },
 ];
 
-export function CategoryFilterButtons({ selectedCategory, onCategorySelect }: CategoryFilterButtonsProps) {
+export function CategoryFilterButtons({ selectedCategory, onCategorySelect, 'data-tour': dataTour }: CategoryFilterButtonsProps) {
   // Temporarily hidden categories (not deleted, just hidden)
   const hiddenCategories = ['Art', 'Metalwork', 'Furniture', 'Resin'];
   
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8" data-tour={dataTour}>
       {categories.map((category) => {
         const Icon = category.icon;
         const isSelected = selectedCategory === category.value;

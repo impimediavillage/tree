@@ -4,15 +4,26 @@ import React from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { TutorialTour } from './TutorialTour';
 import { tutorialContent } from './tutorials/tutorialContent';
+import { leafTutorialContent } from './tutorials/leafTutorialContent';
 
-export function TutorialManager() {
+interface TutorialManagerProps {
+  userType?: 'dispensary' | 'leaf';
+}
+
+export function TutorialManager({ userType = 'dispensary' }: TutorialManagerProps) {
   const { activeTutorial } = useTutorial();
 
-  if (!activeTutorial || !tutorialContent[activeTutorial as keyof typeof tutorialContent]) {
+  if (!activeTutorial) {
     return null;
   }
 
-  const steps = tutorialContent[activeTutorial as keyof typeof tutorialContent];
+  // Select content based on user type
+  const content = userType === 'leaf' ? leafTutorialContent : tutorialContent;
+  const steps = content[activeTutorial as keyof typeof content];
+
+  if (!steps) {
+    return null;
+  }
 
   return (
     <TutorialTour

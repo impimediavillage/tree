@@ -307,7 +307,7 @@ export default function CreatorLabPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F5F3EF] to-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#F5F3EF] to-white" data-tour="creator-lab-nav">
       {/* Header with White Opacity Background (no blur) */}
       <div className="relative">
         <div className="absolute inset-0 bg-white/80" />
@@ -374,6 +374,7 @@ export default function CreatorLabPage() {
         <CategoryFilterButtons
           selectedCategory={selectedCategory}
           onCategorySelect={handleCategorySelect}
+          data-tour="apparel-types"
         />
 
         {/* Dynamic ADD NEW Button */}
@@ -383,6 +384,7 @@ export default function CreatorLabPage() {
               onClick={handleAddNew}
               size="lg"
               className="h-16 md:h-20 px-8 md:px-12 bg-[#006B3E] hover:bg-[#005230] text-white font-extrabold text-lg md:text-xl shadow-lg w-full sm:w-auto"
+              data-tour="customize-design"
             >
               <Wand2 className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3" />
               <Plus className="h-6 w-6 md:h-8 md:w-8 mr-1 md:mr-2" />
@@ -422,7 +424,7 @@ export default function CreatorLabPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6" data-tour="design-gallery">
                 {myProducts.map((product) => (
                   <Card key={product.id} className="border-2 border-[#5D4E37]/30 overflow-hidden">
                     {/* Image Section - Show both design and model if available */}

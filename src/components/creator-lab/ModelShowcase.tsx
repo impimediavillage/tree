@@ -182,6 +182,7 @@ export function ModelShowcase({
                 placeholder="A confident young person in an urban coffee shop, wearing this black cap with the design..."
                 rows={4}
                 className="resize-none border-2 border-[#5D4E37]/30 focus:border-[#006B3E]"
+                data-tour="ai-generator"
               />
               <p className="text-xs text-[#5D4E37]">
                 📸 Describe the person, setting, and mood. We'll place your {apparelType} on them!
@@ -208,7 +209,7 @@ export function ModelShowcase({
 
             {/* Generated Model Preview */}
             {generatedModelImage && (
-              <div className="border-4 border-[#006B3E] rounded-lg p-4 bg-[#006B3E]/5">
+              <div className="border-4 border-[#006B3E] rounded-lg p-4 bg-[#006B3E]/5" data-tour="preview-3d">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-bold text-[#3D2E17]">Your Model Showcase:</p>
                   <Button

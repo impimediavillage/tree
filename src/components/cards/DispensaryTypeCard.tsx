@@ -24,9 +24,10 @@ interface DispensaryTypeCardProps {
   dispensaryType: DispensaryType;
   basePath: string;
   delay?: number;
+  'data-tour'?: string;
 }
 
-export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: DispensaryTypeCardProps) {
+export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0, 'data-tour': dataTour }: DispensaryTypeCardProps) {
   const { name, description, storeCount } = dispensaryType;
   
   // Banner image for the top of the card
@@ -75,6 +76,7 @@ export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: Disp
         className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-muted/50 border-border/50 overflow-hidden animate-fade-in-scale-up"
         style={{ animationDelay: `${delay}ms`, animationFillMode: 'backwards' }}
         data-ai-hint={`dispensary type ${name.toLowerCase()}`}
+        data-tour={dataTour}
     >
       {/* Image at top with h-64 like AI advisor cards */}
       {imageUrl && (

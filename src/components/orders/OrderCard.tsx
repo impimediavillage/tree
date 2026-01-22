@@ -87,9 +87,10 @@ interface OrderCardProps {
   onRateExperience?: (order: Order) => void;
   onUpdateStatus?: (orderId: string, dispensaryId: string, newStatus: ShippingStatus) => Promise<void>;
   isDispensaryView?: boolean;
+  'data-tour'?: string;
 }
 
-export function OrderCard({ order, onClick, selected = false, onSelect, showSelection = false, onRateExperience, onUpdateStatus, isDispensaryView = false }: OrderCardProps) {
+export function OrderCard({ order, onClick, selected = false, onSelect, showSelection = false, onRateExperience, onUpdateStatus, isDispensaryView = false, 'data-tour': dataTour }: OrderCardProps) {
   const router = useRouter();
   const [dispensaries, setDispensaries] = useState<Record<string, { name: string; type: string; storeImage?: string | null; storeIcon?: string | null; }>>({});
   const [isLoadingDispensaries, setIsLoadingDispensaries] = useState(true);
@@ -187,6 +188,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
     <div 
       className={`group rounded-xl border-2 bg-card text-card-foreground shadow-lg hover:shadow-xl hover:border-primary/50 transition-all duration-200 ${selected ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
       onClick={() => onSelect && showSelection ? onSelect(order.id) : onClick?.()}
+      data-tour={dataTour}
     >
       <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-5">
         {/* Header */}
@@ -229,6 +231,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
               'secondary'
             }
             className="text-[10px] sm:text-xs font-extrabold flex-shrink-0"
+            data-tour="order-status"
           >
             {statusDescriptions[order.status as keyof typeof statusDescriptions] || statusDescriptions.pending}
           </Badge>
@@ -517,6 +520,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                 router.push(`/orders/${order.id}/track`);
               }}
               className="flex-1 font-extrabold border-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-sm animate-pulse"
+              data-tour="track-order"
             >
               <Navigation className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
               <span className="hidden sm:inline">Track Live 📍</span>
@@ -532,6 +536,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                 onRateExperience(order);
               }}
               className="flex-1 font-extrabold border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 hover:from-yellow-100 hover:to-amber-100 text-yellow-900 hover:text-yellow-950 text-sm"
+              data-tour="review-order"
             >
               <Star className="mr-2 h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-600" />
               <span className="hidden sm:inline">Rate Experience</span>

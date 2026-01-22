@@ -24,9 +24,10 @@ interface PublicProductCardProps {
   requestCount?: number;
   totalRequestedByUser?: number;
   isProductPool?: boolean; // Indicates if this is from Product Pool (5% commission vs 25%)
+  'data-tour'?: string;
 }
 
-export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct, requestStatus, requestCount, totalRequestedByUser = 0, isProductPool = false }: PublicProductCardProps) {
+export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct, requestStatus, requestCount, totalRequestedByUser = 0, isProductPool = false, 'data-tour': dataTour }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [isDesignPackOpen, setIsDesignPackOpen] = React.useState(false);
@@ -267,6 +268,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                 disabled={tierStock <= 0 || !canAddToCart}
                 onClick={handleAddToCartClick}
                 aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+                data-tour="add-to-cart"
             >
                 <ShoppingCart className="mr-2 h-6 w-6" />
                 {tierStock <= 0 ? 'Out of Stock' : 'Add to Cart'}
@@ -282,6 +284,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-muted/50 border-border/50 group animate-fade-in-scale-up"
           style={{ animationFillMode: 'backwards' }}
           data-ai-hint={dataAiHintProduct}
+          data-tour={dataTour}
       >
         <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-muted/30 group">
           {isThcProduct && randomSticker ? (

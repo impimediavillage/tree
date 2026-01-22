@@ -117,6 +117,7 @@ export function ProductDetailsModal({
               placeholder="e.g., Unity Vibes Cap"
               className="border-2 border-[#5D4E37]/30 focus:border-[#006B3E]"
               maxLength={60}
+              data-tour="size-selector"
             />
             <p className="text-xs text-[#5D4E37]">{productName.length}/60 characters</p>
           </div>
@@ -174,6 +175,7 @@ export function ProductDetailsModal({
             onClick={handleComplete}
             disabled={!productName.trim() || !creatorName.trim()}
             className="bg-[#006B3E] hover:bg-[#005230] font-extrabold"
+            data-tour="save-design"
           >
             Continue to Treehouse 🌳
           </Button>

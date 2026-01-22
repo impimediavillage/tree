@@ -19,6 +19,10 @@ import {
   Users,
   CreditCard,
   Truck,
+  Store,
+  Brain,
+  Palette,
+  Crown,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,9 +38,10 @@ interface Tutorial {
   points: number;
   category: 'Core' | 'Advanced' | 'Pro Tips';
   prerequisites?: string[];
+  userType?: 'dispensary' | 'leaf';
 }
 
-const TUTORIALS: Tutorial[] = [
+const DISPENSARY_TUTORIALS: Tutorial[] = [
   {
     id: 'product-management',
     title: 'Product Management',
@@ -118,7 +123,72 @@ const TUTORIALS: Tutorial[] = [
     category: 'Pro Tips',
   },
 ];
+LEAF_TUTORIALS: Tutorial[] = [
+  {
+    id: 'browse-shop',
+    title: 'Browse & Shop',
+    description: 'Discover how to find products, use filters, and shop like a pro!',
+    icon: <Store className="h-6 w-6" />,
+interface TutorialLauncherProps {
+  userType?: 'dispensary' | 'leaf';
+}
 
+export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherProps) {
+  const { showLauncher, closeLauncher, startTutorial, tutorialProgress, achievements, totalPoints } = useTutorial();
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+
+  const categories = ['All', 'Core', 'Advanced', 'Pro Tips'];
+
+  // Select tutorials based on user type
+  const TUTORIALS = userType === 'leaf' ? LEAF_TUTORIALS : DISPENSARY_TUTORIALS
+  },
+  {
+    id: 'ai-advisors',
+    title: 'AI Wellness Advisors',
+    description: 'Chat with AI experts for free personalized cannabis and wellness advice!',
+    icon: <Brain className="h-6 w-6" />,
+    duration: '5 min',
+    difficulty: 'Beginner',
+    points: 100,
+    category: 'Core',
+    userType: 'leaf',
+  },
+  {
+    id: 'creator-lab',
+    title: 'The Creator Lab',
+    description: 'Design custom apparel with cannabis-inspired art and AI-generated designs!',
+    icon: <Palette className="h-6 w-6" />,
+    duration: '5 min',
+    difficulty: 'Intermediate',
+    points: 125,
+    category: 'Advanced',
+    userType: 'leaf',
+  },
+  {
+    id: 'orders-tracking',
+    title: 'Orders & Tracking',
+    description: 'Track your purchases, manage deliveries, and leave reviews!',
+    icon: <Package className="h-6 w-6" />,
+    duration: '4 min',
+    difficulty: 'Beginner',
+    points: 100,
+    category: 'Core',
+    userType: 'leaf',
+  },
+  {
+    id: 'triple-s-club',
+    title: 'Triple S Club',
+    description: 'Unlock exclusive benefits, events, and VIP perks as a club member!',
+    icon: <Crown className="h-6 w-6" />,
+    duration: '6 min',
+    difficulty: 'Intermediate',
+    points: 150,
+    category: 'Pro Tips',
+    userType: 'leaf',
+  },
+];
+
+const 
 const DIFFICULTY_COLORS = {
   Beginner: 'bg-green-500',
   Intermediate: 'bg-yellow-500',
@@ -137,10 +207,12 @@ export function TutorialLauncher() {
       : TUTORIALS.filter(t => t.category === selectedCategory);
 
   const completedCount = Object.values(tutorialProgress).filter(p => p.completed).length;
-  const progressPercentage = (completedCount / TUTORIALS.length) * 100;
-
-  const isTutorialLocked = (tutorial: Tutorial): boolean => {
-    if (!tutorial.prerequisites) return false;
+  const progressPercent{userType === 'leaf' ? 'Wellness Explorer Academy' : 'Tutorial Academy'}
+                  </h1>
+                  <p className="text-xl text-purple-200 max-w-2xl mx-auto">
+                    {userType === 'leaf' 
+                      ? 'Master shopping, AI advisors, and exclusive club benefits!' 
+                      : 'Master your dispensary dashboard with fun, interactive tutorials!'}
     return tutorial.prerequisites.some(
       prereq => !tutorialProgress[prereq]?.completed
     );

@@ -56,7 +56,7 @@ const AdvisorsPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4" data-tour="ai-advisors-nav">
       <div className="mb-8 bg-muted/50 border border-border/50 rounded-lg p-8 shadow-lg">
         <h1 className="text-4xl font-extrabold mb-2 flex items-center gap-2 text-[#3D2E17]">
           <Brain className="h-14 w-14 text-[#006B3E]" />
@@ -65,7 +65,7 @@ const AdvisorsPage = () => {
         <p className="text-[#3D2E17] text-lg font-extrabold">
           Consult with our specialized AI advisors for personalized wellness guidance.
           {currentUser && (
-            <span className="ml-2">
+            <span className="ml-2" data-tour="credits-balance">
               Your credits: <span className="text-2xl font-black text-green-800">{currentUser.credits ?? 0}</span>
             </span>
           )}
@@ -80,9 +80,9 @@ const AdvisorsPage = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {advisors.map((advisor) => (
-            <AdvisorCard key={advisor.id} advisor={advisor} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="advisor-gallery">
+          {advisors.map((advisor, index) => (
+            <AdvisorCard key={advisor.id} advisor={advisor} data-tour={index === 0 ? "advisor-card" : undefined} />
           ))}
         </div>
       )}

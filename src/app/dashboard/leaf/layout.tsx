@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { NotificationBell, NotificationCenter } from '@/components/notifications';
+import { TutorialLauncher, TutorialManager, TutorialTriggerButton } from '@/components/tutorial';
 
 interface NavItem {
   title: string;
@@ -267,6 +268,11 @@ export default function LeafDashboardLayout({
           {children}
         </main>
       </div>
+      
+      {/* Tutorial System Components */}
+      <TutorialLauncher userType="leaf" />
+      <TutorialManager userType="leaf" />
+      <TutorialTriggerButton />
       
       {/* Notification Center Drawer */}
       <NotificationCenter 

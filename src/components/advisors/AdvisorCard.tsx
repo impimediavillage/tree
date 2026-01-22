@@ -12,9 +12,10 @@ import type { AIAdvisor } from '@/types';
 
 interface AdvisorCardProps {
   advisor: AIAdvisor;
+  'data-tour'?: string;
 }
 
-export const AdvisorCard: React.FC<AdvisorCardProps> = ({ advisor }) => {
+export const AdvisorCard: React.FC<AdvisorCardProps> = ({ advisor, 'data-tour': dataTour }) => {
   const renderIcon = (iconName: string) => {
     const IconComponent = (LucideIcons as any)[iconName];
     if (IconComponent) {
@@ -55,7 +56,7 @@ export const AdvisorCard: React.FC<AdvisorCardProps> = ({ advisor }) => {
   const imageUrl = getImageUrl(advisor);
 
   return (
-    <Card className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-muted/50 border-border/50 overflow-hidden">
+    <Card className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-muted/50 border-border/50 overflow-hidden" data-tour={dataTour}>
       {imageUrl && (
         <div className="relative h-64 w-full bg-muted overflow-hidden">
           <Image
@@ -107,7 +108,7 @@ export const AdvisorCard: React.FC<AdvisorCardProps> = ({ advisor }) => {
       </CardContent>
 
       <CardFooter className="border-t pt-4">
-        <Button asChild className="w-full font-bold bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white">
+        <Button asChild className="w-full font-bold bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white" data-tour="start-chat">
           <Link href={`/advisors/${advisor.slug}`}>
             Consult Advisor
             <ArrowRight className="ml-2 h-5 w-5" />
