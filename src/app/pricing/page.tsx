@@ -4,7 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Truck, Loader2, Palette, Gift, Heart, Sparkles, Leaf, DollarSign } from 'lucide-react';
+import { Truck, Loader2, Palette, Gift, Heart, Sparkles, Leaf, DollarSign, Zap, Star, Trophy, Rocket, TrendingUp, Users, Crown, Share2, Megaphone, Brain } from 'lucide-react';
 import type { CreditPackage } from '@/types';
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -153,28 +153,185 @@ export default function PublicCreditsPage() {
     <>
       <div className="container mx-auto py-12 px-4 md:px-6 lg:px-8">
         <PageHeader 
-            title="Fuel Your Creative Journey"
-            description={<p>Credits are your key to unlocking a universe of creative potential. Use them to generate stunning AI-powered designs, get expert advice, and bring your wellness ideas to life.</p>}
+            title={
+              <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+                🚀 Fuel Your Creative Empire! 💎
+              </span>
+            }
+            description={
+              <p className="text-xl font-bold">
+                Credits are your <span className="text-purple-600">secret weapon</span> to unlock <span className="text-pink-600">AI superpowers</span>, 
+                create <span className="text-orange-600">epic designs</span>, and build your <span className="text-green-600">wellness empire</span>! 
+                Let's get that bag! 💰✨
+              </p>
+            }
         >
-            <div className="mt-6 flex flex-col sm:flex-row gap-4 items-center justify-center">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 items-center justify-center">
                 <Button 
                     size="lg" 
-                    className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl px-8 py-3"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-2xl px-8 py-6 text-lg font-black"
                     onClick={() => router.push('/dashboard/advisors')}
                 >
                     <Sparkles className="mr-2 h-6 w-6" />
-                    Explore AI Advisors
+                    Meet Your AI Squad
                 </Button>
                 {currentUser && !authLoading && (
-                    <div className="bg-muted/50 border border-border/50 rounded-lg p-4 shadow-inner">
-                        <p className="text-lg text-foreground">
-                            Your current balance: 
-                            <span className="font-bold text-primary ml-2">{currentUser.credits}</span> credits
+                    <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border-2 border-emerald-400 rounded-xl p-4 shadow-lg">
+                        <p className="text-lg font-black text-foreground">
+                            💰 Your Balance: 
+                            <span className="text-3xl font-black text-emerald-600 ml-2">{currentUser.credits}</span> 
+                            <span className="text-sm font-bold text-muted-foreground ml-1">credits</span>
                         </p>
                     </div>
                 )}
             </div>
         </PageHeader>
+
+        {/* Colorful Benefits Showcase - Game Style */}
+        <div className="mb-16 space-y-6">
+          <h2 className="text-4xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 mb-8">
+            💎 Why Credits Are Your Superpower! 💎
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Treehouse Creator Lab */}
+            <div className="p-6 bg-gradient-to-br from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-xl border-3 border-violet-400/40 shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-3 rounded-xl">
+                  <Palette className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-black text-violet-900 dark:text-violet-100">🎨 TREEHOUSE CREATOR LAB</h3>
+              </div>
+              <p className="text-violet-800 dark:text-violet-200 font-bold text-lg mb-3">
+                Drop R50, create FIRE apparel, earn REAL cash! 💰
+              </p>
+              <ul className="space-y-2 text-violet-700 dark:text-violet-300 font-semibold">
+                <li className="flex items-start gap-2">
+                  <Zap className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span>Just <strong>R50</strong> to design your first P.O.D. apparel!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Star className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span>Get your own <strong>mini Treehouse store</strong> URL!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Trophy className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span>Earn <strong>25% commission</strong> on EVERY sale! Cha-ching! 🤑</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Rocket className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span>We print, ship & handle customers. You just <strong>CASH OUT</strong>!</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* AI Advisors */}
+            <div className="p-6 bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-indigo-500/20 rounded-xl border-3 border-cyan-400/40 shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-3 rounded-xl">
+                  <Brain className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-black text-cyan-900 dark:text-cyan-100">🤖 AI ADVISOR ARMY</h3>
+              </div>
+              <p className="text-cyan-800 dark:text-cyan-200 font-bold text-lg mb-3">
+                Your wellness knowledge cheat code! 🧠✨
+              </p>
+              <ul className="space-y-2 text-cyan-700 dark:text-cyan-300 font-semibold">
+                <li className="flex items-start gap-2">
+                  <Sparkles className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span><strong>Deep research LMs</strong> for mushrooms, herbs, nutrition & more!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Zap className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span>Get <strong>instant answers</strong> to your wellness questions!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Heart className="h-5 w-5 mt-0.5 text-red-500 flex-shrink-0" />
+                  <span>Connect with <strong>real practitioners</strong> via "Find near me"!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Gift className="h-5 w-5 mt-0.5 text-pink-500 flex-shrink-0" />
+                  <span><strong>10 FREE credits</strong> on signup - no card needed!</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Influencer Program */}
+            <div className="p-6 bg-gradient-to-br from-pink-500/20 via-rose-500/20 to-red-500/20 rounded-xl border-3 border-pink-400/40 shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-3 rounded-xl">
+                  <Megaphone className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-black text-pink-900 dark:text-pink-100">📣 INFLUENCER HUSTLE</h3>
+              </div>
+              <p className="text-pink-800 dark:text-pink-200 font-bold text-lg mb-3">
+                Turn your followers into PROFIT! 💸
+              </p>
+              <ul className="space-y-2 text-pink-700 dark:text-pink-300 font-semibold">
+                <li className="flex items-start gap-2">
+                  <Crown className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span>Share store links, earn <strong>commission on sales</strong>!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <TrendingUp className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0" />
+                  <span><strong>Analytics dashboard</strong> tracks your hustle!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Users className="h-5 w-5 mt-0.5 text-blue-500 flex-shrink-0" />
+                  <span>Build your <strong>wellness empire</strong> with credits!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Rocket className="h-5 w-5 mt-0.5 text-purple-500 flex-shrink-0" />
+                  <span>More credits = <strong>More content = More MONEY</strong>! 🔥</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Credit Benefits */}
+            <div className="p-6 bg-gradient-to-br from-emerald-500/20 via-green-500/20 to-teal-500/20 rounded-xl border-3 border-emerald-400/40 shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-3 rounded-xl animate-pulse">
+                  <DollarSign className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-black text-emerald-900 dark:text-emerald-100">💰 CREDIT FLEX</h3>
+              </div>
+              <p className="text-emerald-800 dark:text-emerald-200 font-bold text-lg mb-3">
+                Your wallet's new best friend! 🤝
+              </p>
+              <ul className="space-y-2 text-emerald-700 dark:text-emerald-300 font-semibold">
+                <li className="flex items-start gap-2">
+                  <Zap className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span><strong>Buy in bulk, save BIG!</strong> Check those bonus credits!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Share2 className="h-5 w-5 mt-0.5 text-blue-500 flex-shrink-0" />
+                  <span>Use across <strong>ALL features</strong> - AI, Creator Lab, MORE!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Heart className="h-5 w-5 mt-0.5 text-red-500 flex-shrink-0" />
+                  <span><strong>Never expire!</strong> Use at your own pace, no rush!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Trophy className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                  <span><strong>Secure payments</strong> via PayFast - safe & ez!</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Call to Action Banner */}
+          <div className="mt-8 p-8 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 rounded-xl shadow-2xl text-center">
+            <h3 className="text-3xl font-black text-white mb-3 drop-shadow-lg">
+              🎮 Level Up Your Wellness Game! 🎮
+            </h3>
+            <p className="text-xl text-white/90 font-bold mb-4">
+              Credits unlock EVERYTHING. Creator earnings, AI wisdom, influencer flex - it's all yours!
+            </p>
+            <p className="text-lg text-white/80 font-semibold">
+              👇 Pick your power-up package below! 👇
+            </p>
+          </div>
+        </div>
 
         {isLoadingPackages ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -211,39 +368,91 @@ export default function PublicCreditsPage() {
               return (
                 <Card 
                   key={pkg.id} 
-                  className="flex flex-col shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-muted/50 text-card-foreground border border-border/50 hover:border-primary/60"
+                  className="flex flex-col shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-card via-card to-muted border-2 border-primary/20 hover:border-primary/60 hover:scale-[1.03] relative overflow-hidden group"
                   data-ai-hint={`credit package ${pkg.name.toLowerCase()}`}
                 >
-                  <CardHeader className="pb-4 text-card-foreground rounded-t-lg">
-                    <CardTitle className="text-2xl font-black text-center">{pkg.name}</CardTitle>
-                     <p className="text-4xl font-black text-center text-accent my-3 drop-shadow-sm">
-                      {pkg.price.toFixed(2)} <span className="text-xl font-bold text-foreground/80">{pkg.currency}</span>
-                    </p>
-                    <div className="text-xl text-center font-bold">
-                        <span className="text-3xl font-black text-green-800 drop-shadow-sm">{pkg.credits}</span>
-                        <span className="text-foreground font-bold"> Credits</span>
-                        {pkg.bonusCredits && pkg.bonusCredits > 0 && (
-                             <Badge variant="default" className="ml-2 bg-accent hover:bg-accent/90 text-accent-foreground font-bold">+{pkg.bonusCredits} Bonus</Badge>
-                        )}
+                  {/* Animated Background Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  {/* Bonus Badge */}
+                  {pkg.bonusCredits && pkg.bonusCredits > 0 && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-black text-sm px-3 py-1 shadow-lg animate-pulse">
+                        🔥 +{pkg.bonusCredits} BONUS!
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  <CardHeader className="pb-4 text-card-foreground rounded-t-lg relative z-10">
+                    <CardTitle className="text-3xl font-black text-center bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+                      {pkg.name}
+                    </CardTitle>
+                    <div className="text-center my-4">
+                      <div className="inline-block p-4 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-2xl border-2 border-emerald-400/40">
+                        <p className="text-5xl font-black text-emerald-600 dark:text-emerald-400 drop-shadow-sm">
+                          R{pkg.price.toFixed(0)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="inline-flex items-baseline gap-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 px-4 py-2 rounded-full border-2 border-purple-300 dark:border-purple-700">
+                        <span className="text-4xl font-black text-purple-700 dark:text-purple-300">{pkg.credits}</span>
+                        <span className="text-xl font-bold text-purple-600 dark:text-purple-400">Credits</span>
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex-grow flex flex-col px-6">
-                    {pkg.description && <p className="text-sm font-bold text-foreground/90 mb-5 text-center line-clamp-2 h-10">{pkg.description}</p>}
-                    <ul className="space-y-3 mb-6 text-sm font-bold flex-grow">
-                      {packageFeatures.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-3 text-foreground">
-                          <feature.icon className="h-10 w-10 text-green-800" />
-                          <span>{feature.text}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  
+                  <CardContent className="flex-grow flex flex-col px-6 relative z-10">
+                    {pkg.description && (
+                      <p className="text-sm font-bold text-center mb-5 text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/50">
+                        {pkg.description}
+                      </p>
+                    )}
+                    
+                    <div className="space-y-3 mb-6 flex-grow">
+                      <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-lg border-l-4 border-cyan-500">
+                        <Brain className="h-6 w-6 text-cyan-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm font-bold text-foreground">Unlock <strong className="text-cyan-600">ALL AI Advisors</strong> - wellness wisdom on tap!</span>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg border-l-4 border-purple-500">
+                        <Palette className="h-6 w-6 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm font-bold text-foreground"><strong className="text-purple-600">Creator Lab</strong> access - design & earn 25% forever!</span>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border-l-4 border-green-500">
+                        <Gift className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm font-bold text-foreground">List designs in <strong className="text-green-600">Treehouse store</strong> - passive income unlocked!</span>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg border-l-4 border-orange-500">
+                        <Truck className="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm font-bold text-foreground"><strong className="text-orange-600">Courier Guy & Pudo</strong> shipping - SA-wide delivery!</span>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-pink-500/10 to-rose-500/10 rounded-lg border-l-4 border-pink-500">
+                        <Heart className="h-6 w-6 text-pink-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm font-bold text-foreground">Shop <strong className="text-pink-600">natural wellness</strong> products - support the movement!</span>
+                      </div>
+                    </div>
+                    
                     <Button 
                       size="lg"
-                      className="mt-auto w-full bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg font-bold py-6 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                      className="mt-auto w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white text-lg font-black py-7 transition-all duration-200 transform hover:scale-[1.05] active:scale-[0.98] shadow-xl hover:shadow-2xl border-2 border-white/20"
                       onClick={() => handlePurchase(pkg)}
                       disabled={isLoading}
                     >
-                      {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : `Purchase Now`}
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="mr-2 h-6 w-6" />
+                          POWER UP NOW! 🚀
+                        </>
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
