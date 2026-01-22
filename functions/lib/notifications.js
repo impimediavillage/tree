@@ -305,16 +305,7 @@ exports.onPaymentCompleted = (0, firestore_1.onDocumentUpdated)('orders/{orderId
     const orderId = event.params.orderId;
     v2_1.logger.info(`💳 Payment completed for order: ${orderId}`);
     try {
-        // Prevent duplicate notifications
-        const existingPaymentNotifications = await db.collection('notifications')
-            .where('orderId', '==', orderId)
-            .where('type', '==', 'payment')
-            .limit(1)
-            .get();
-        if (!existingPaymentNotifications.empty) {
-            v2_1.logger.info(`Payment notifications already sent for order ${orderId}, skipping`);
-            return;
-        }
+        // Prevent duplicate notifications using deterministic IDs
         // Notify each dispensary owner
         const dispensaryIds = Object.keys(afterData.shipments || {});
         for (const dispensaryId of dispensaryIds) {
@@ -325,7 +316,16 @@ exports.onPaymentCompleted = (0, firestore_1.onDocumentUpdated)('orders/{orderId
                 .get();
             if (!ownerQuery.empty) {
                 const ownerId = ownerQuery.docs[0].id;
-                await db.collection('notifications').add({
+                // Use deterministic ID: {orderId}_{dispensaryId}_payment
+                const notificationId = `${orderId}_${dispensaryId}_payment`;
+                const notificationRef = db.collection('notifications').doc(notificationId);
+                // Check if notification already exists
+                const existingNotif = await notificationRef.get();
+                if (existingNotif.exists) {
+                    v2_1.logger.info(`Payment notification already sent for dispensary ${dispensaryId}, skipping`);
+                    continue;
+                }
+                await notificationRef.set({
                     userId: ownerId,
                     recipient_role: 'DispensaryOwner',
                     type: 'payment',
@@ -347,22 +347,32 @@ exports.onPaymentCompleted = (0, firestore_1.onDocumentUpdated)('orders/{orderId
         }
         // Notify customer
         if (afterData.userId) {
-            await db.collection('notifications').add({
-                userId: afterData.userId,
-                recipient_role: 'LeafUser',
-                type: 'payment',
-                title: 'Payment Confirmed! ✅',
-                message: `Your payment for order #${afterData.orderNumber} has been processed successfully.`,
-                priority: 'medium',
-                sound: 'success-chime',
-                read: false,
-                orderId: orderId,
-                orderNumber: afterData.orderNumber,
-                amount: afterData.total,
-                currency: afterData.currency,
-                actionUrl: `/dashboard/leaf/orders/${orderId}`,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
+            // Use deterministic ID: {orderId}_customer_payment
+            const customerNotificationId = `${orderId}_customer_payment`;
+            const customerNotificationRef = db.collection('notifications').doc(customerNotificationId);
+            // Check if notification already exists
+            const existingCustomerNotif = await customerNotificationRef.get();
+            if (!existingCustomerNotif.exists) {
+                await customerNotificationRef.set({
+                    userId: afterData.userId,
+                    recipient_role: 'LeafUser',
+                    type: 'payment',
+                    title: 'Payment Confirmed! ✅',
+                    message: `Your payment for order #${afterData.orderNumber} has been processed successfully.`,
+                    priority: 'medium',
+                    sound: 'success-chime',
+                    read: false,
+                    orderId: orderId,
+                    orderNumber: afterData.orderNumber,
+                    amount: afterData.total,
+                    currency: afterData.currency,
+                    actionUrl: `/dashboard/leaf/orders/${orderId}`,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            }
+            else {
+                v2_1.logger.info(`Payment notification already sent to customer for order ${orderId}, skipping`);
+            }
         }
     }
     catch (error) {
@@ -390,15 +400,13 @@ exports.onShippingStatusChange = (0, firestore_1.onDocumentUpdated)('orders/{ord
         v2_1.logger.info(`🚚 Shipping status changed: ${beforeShipment.status} -> ${afterShipment.status}`);
         try {
             const newStatus = afterShipment.status;
-            // Prevent duplicate shipping notifications for same status
-            const existingShipmentNotifs = await db.collection('notifications')
-                .where('orderId', '==', orderId)
-                .where('type', '==', 'shipment')
-                .where('metadata.status', '==', newStatus)
-                .where('metadata.dispensaryId', '==', dispensaryId)
-                .limit(1)
-                .get();
-            if (!existingShipmentNotifs.empty) {
+            // Use deterministic notification ID to prevent duplicates
+            // Format: {orderId}_{dispensaryId}_{status}
+            const notificationId = `${orderId}_${dispensaryId}_${newStatus}`;
+            const notificationRef = db.collection('notifications').doc(notificationId);
+            // Check if notification already exists
+            const existingNotif = await notificationRef.get();
+            if (existingNotif.exists) {
                 v2_1.logger.info(`Shipping notification already sent for order ${orderId}, status ${newStatus}, skipping`);
                 continue;
             }
@@ -465,7 +473,7 @@ exports.onShippingStatusChange = (0, firestore_1.onDocumentUpdated)('orders/{ord
             }
             // Notify customer
             if (afterData.userId) {
-                await db.collection('notifications').add({
+                await notificationRef.set({
                     userId: afterData.userId,
                     recipient_role: 'LeafUser',
                     type: 'shipment',

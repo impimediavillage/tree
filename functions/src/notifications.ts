@@ -309,17 +309,7 @@ export const onPaymentCompleted = onDocumentUpdated('orders/{orderId}', async (e
   logger.info(`💳 Payment completed for order: ${orderId}`);
 
   try {
-    // Prevent duplicate notifications
-    const existingPaymentNotifications = await db.collection('notifications')
-      .where('orderId', '==', orderId)
-      .where('type', '==', 'payment')
-      .limit(1)
-      .get();
-    
-    if (!existingPaymentNotifications.empty) {
-      logger.info(`Payment notifications already sent for order ${orderId}, skipping`);
-      return;
-    }
+    // Prevent duplicate notifications using deterministic IDs
     
     // Notify each dispensary owner
     const dispensaryIds = Object.keys(afterData.shipments || {});
@@ -334,7 +324,18 @@ export const onPaymentCompleted = onDocumentUpdated('orders/{orderId}', async (e
       if (!ownerQuery.empty) {
         const ownerId = ownerQuery.docs[0].id;
         
-        await db.collection('notifications').add({
+        // Use deterministic ID: {orderId}_{dispensaryId}_payment
+        const notificationId = `${orderId}_${dispensaryId}_payment`;
+        const notificationRef = db.collection('notifications').doc(notificationId);
+        
+        // Check if notification already exists
+        const existingNotif = await notificationRef.get();
+        if (existingNotif.exists) {
+          logger.info(`Payment notification already sent for dispensary ${dispensaryId}, skipping`);
+          continue;
+        }
+        
+        await notificationRef.set({
           userId: ownerId,
           recipient_role: 'DispensaryOwner',
           type: 'payment',
@@ -357,22 +358,32 @@ export const onPaymentCompleted = onDocumentUpdated('orders/{orderId}', async (e
 
     // Notify customer
     if (afterData.userId) {
-      await db.collection('notifications').add({
-        userId: afterData.userId,
-        recipient_role: 'LeafUser',
-        type: 'payment',
-        title: 'Payment Confirmed! ✅',
-        message: `Your payment for order #${afterData.orderNumber} has been processed successfully.`,
-        priority: 'medium',
-        sound: 'success-chime',
-        read: false,
-        orderId: orderId,
-        orderNumber: afterData.orderNumber,
-        amount: afterData.total,
-        currency: afterData.currency,
-        actionUrl: `/dashboard/leaf/orders/${orderId}`,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      // Use deterministic ID: {orderId}_customer_payment
+      const customerNotificationId = `${orderId}_customer_payment`;
+      const customerNotificationRef = db.collection('notifications').doc(customerNotificationId);
+      
+      // Check if notification already exists
+      const existingCustomerNotif = await customerNotificationRef.get();
+      if (!existingCustomerNotif.exists) {
+        await customerNotificationRef.set({
+          userId: afterData.userId,
+          recipient_role: 'LeafUser',
+          type: 'payment',
+          title: 'Payment Confirmed! ✅',
+          message: `Your payment for order #${afterData.orderNumber} has been processed successfully.`,
+          priority: 'medium',
+          sound: 'success-chime',
+          read: false,
+          orderId: orderId,
+          orderNumber: afterData.orderNumber,
+          amount: afterData.total,
+          currency: afterData.currency,
+          actionUrl: `/dashboard/leaf/orders/${orderId}`,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } else {
+        logger.info(`Payment notification already sent to customer for order ${orderId}, skipping`);
+      }
     }
 
   } catch (error) {
@@ -406,16 +417,14 @@ export const onShippingStatusChange = onDocumentUpdated('orders/{orderId}', asyn
     try {
       const newStatus = afterShipment.status;
       
-      // Prevent duplicate shipping notifications for same status
-      const existingShipmentNotifs = await db.collection('notifications')
-        .where('orderId', '==', orderId)
-        .where('type', '==', 'shipment')
-        .where('metadata.status', '==', newStatus)
-        .where('metadata.dispensaryId', '==', dispensaryId)
-        .limit(1)
-        .get();
+      // Use deterministic notification ID to prevent duplicates
+      // Format: {orderId}_{dispensaryId}_{status}
+      const notificationId = `${orderId}_${dispensaryId}_${newStatus}`;
+      const notificationRef = db.collection('notifications').doc(notificationId);
       
-      if (!existingShipmentNotifs.empty) {
+      // Check if notification already exists
+      const existingNotif = await notificationRef.get();
+      if (existingNotif.exists) {
         logger.info(`Shipping notification already sent for order ${orderId}, status ${newStatus}, skipping`);
         continue;
       }
@@ -485,7 +494,7 @@ export const onShippingStatusChange = onDocumentUpdated('orders/{orderId}', asyn
 
       // Notify customer
       if (afterData.userId) {
-        await db.collection('notifications').add({
+        await notificationRef.set({
           userId: afterData.userId,
           recipient_role: 'LeafUser',
           type: 'shipment',

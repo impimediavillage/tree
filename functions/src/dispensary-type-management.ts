@@ -369,7 +369,7 @@ export const createCategoryFromTemplate = onCall(
       logger.info(`Successfully ${isUpdate ? 'updated' : 'created'} "${dispensaryTypeName}" with normalized structure`, {
         userId: request.auth.uid,
         dispensaryTypeName,
-        topLevelCategories: Array.isArray(normalizedData.categories) ? normalizedData.categories.length : 0
+        topLevelCategories: Array.isArray(normalized.categoriesData.categories) ? normalized.categoriesData.categories.length : 0
       });
 
       return {

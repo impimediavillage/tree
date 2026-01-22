@@ -147,6 +147,63 @@ function analyzeCategoryStructure(categoriesData) {
     };
 }
 /**
+ * Normalizes the category navigation structure while PRESERVING all metadata
+ * Ensures categoriesData.categories exists for navigation, keeps metadata intact
+ */
+function normalizeToStandardStructure(inputData) {
+    if (!inputData || typeof inputData !== 'object') {
+        return {
+            categoriesData: { categories: [] },
+            metadata: {}
+        };
+    }
+    // ✅ PRESERVE: Extract metadata fields to keep them
+    const metadata = {};
+    if (inputData.meta)
+        metadata.meta = inputData.meta;
+    if (inputData.structuredData)
+        metadata.structuredData = inputData.structuredData;
+    if (inputData.recommendedStructuredData)
+        metadata.recommendedStructuredData = inputData.recommendedStructuredData;
+    if (inputData.semanticRelationships)
+        metadata.semanticRelationships = inputData.semanticRelationships;
+    if (inputData.aiSearchBoost)
+        metadata.aiSearchBoost = inputData.aiSearchBoost;
+    if (inputData.pageBlueprint)
+        metadata.pageBlueprint = inputData.pageBlueprint;
+    // Extract the category navigation structure
+    let rawCategories = inputData;
+    if (inputData.categoriesData) {
+        // Already has categoriesData wrapper
+        rawCategories = inputData.categoriesData;
+    }
+    else if (inputData.categories) {
+        // Has direct categories array
+        rawCategories = { categories: inputData.categories };
+    }
+    else {
+        // Remove metadata keys to find the category structure
+        const { meta, structuredData, recommendedStructuredData, semanticRelationships, aiSearchBoost, pageBlueprint, ...rest } = inputData;
+        rawCategories = rest;
+    }
+    // Ensure we have a categories array
+    let categoriesArray = [];
+    if (Array.isArray(rawCategories)) {
+        categoriesArray = rawCategories;
+    }
+    else if (rawCategories?.categories && Array.isArray(rawCategories.categories)) {
+        categoriesArray = rawCategories.categories;
+    }
+    else if (typeof rawCategories === 'object' && rawCategories !== null) {
+        // Convert object values to array
+        categoriesArray = Object.values(rawCategories).filter(v => typeof v === 'object');
+    }
+    return {
+        categoriesData: { categories: categoriesArray },
+        metadata
+    };
+}
+/**
  * Copy category structure from one dispensary type to another
  */
 exports.copyCategoryStructure = (0, https_1.onCall)({ cors: true }, async (request) => {
@@ -251,10 +308,22 @@ exports.createCategoryFromTemplate = (0, https_1.onCall)({ cors: true }, async (
             .doc(dispensaryTypeName)
             .get();
         const isUpdate = existingDoc.exists;
-        // Create or update document with template data
+        // ✅ NORMALIZE: Ensure standard navigation structure while PRESERVING metadata
+        const normalized = normalizeToStandardStructure(templateData);
+        logger.info(`Normalized category structure for "${dispensaryTypeName}"`, {
+            inputKeys: Object.keys(templateData),
+            outputStructure: {
+                hasCategoriesData: true,
+                hasCategories: !!normalized.categoriesData.categories,
+                categoryCount: Array.isArray(normalized.categoriesData.categories) ? normalized.categoriesData.categories.length : 0,
+                metadataFields: Object.keys(normalized.metadata)
+            }
+        });
+        // Create or update document with CLEAN navigation + PRESERVED metadata
         const docData = {
             name: dispensaryTypeName,
-            categoriesData: templateData,
+            categoriesData: normalized.categoriesData, // ← Standardized navigation structure
+            ...normalized.metadata, // ← PRESERVED: meta, structuredData, semanticRelationships, etc.
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedBy: request.auth.uid,
             createdFromTemplate: true
@@ -268,10 +337,10 @@ exports.createCategoryFromTemplate = (0, https_1.onCall)({ cors: true }, async (
             .collection('dispensaryTypeProductCategories')
             .doc(dispensaryTypeName)
             .set(docData, { merge: true });
-        logger.info(`Successfully ${isUpdate ? 'updated' : 'created'} "${dispensaryTypeName}" from template`, {
+        logger.info(`Successfully ${isUpdate ? 'updated' : 'created'} "${dispensaryTypeName}" with normalized structure`, {
             userId: request.auth.uid,
             dispensaryTypeName,
-            categoryGroups: Object.keys(templateData).length
+            topLevelCategories: Array.isArray(normalized.categoriesData.categories) ? normalized.categoriesData.categories.length : 0
         });
         return {
             success: true,
