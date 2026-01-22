@@ -277,9 +277,9 @@
 - Motivates performance growth
 - Gamified progression
 
-#### 4. **Automatic Weekly Payouts**
+#### 4. **Automatic Monthly Payouts**
 - Industry standard: Monthly manual payouts
-- **Our advantage**: Every Friday automatic
+- **Our advantage**: First of month automatic
 - Minimum R500 threshold
 - Instant processing
 
@@ -324,7 +324,7 @@
 ### Competitive Advantage
 - **First** South African wellness marketplace with full influencer system
 - **Most generous** commission structure (20% max)
-- **Most automated** payout system (weekly)
+- **Most automated** payout system (monthly)
 - **Most gamified** interface (XP, badges, trees)
 
 ---

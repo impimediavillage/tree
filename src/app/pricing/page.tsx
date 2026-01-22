@@ -155,13 +155,13 @@ export default function PublicCreditsPage() {
         <PageHeader 
             title={
               <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
-                🚀 Fuel Your Creative Empire! 💎
+                🚀 Fuel Your Creative Universe! 💎
               </span>
             }
             description={
               <p className="text-xl font-bold">
                 Credits are your <span className="text-purple-600">secret weapon</span> to unlock <span className="text-pink-600">AI superpowers</span>, 
-                create <span className="text-orange-600">epic designs</span>, and build your <span className="text-green-600">wellness empire</span>! 
+                create <span className="text-orange-600">epic designs</span>, and build your <span className="text-green-600">wellness universe</span>! 
                 Let's get that bag! 💰✨
               </p>
             }
@@ -278,7 +278,7 @@ export default function PublicCreditsPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Users className="h-5 w-5 mt-0.5 text-blue-500 flex-shrink-0" />
-                  <span>Build your <strong>wellness empire</strong> with credits!</span>
+                  <span>Build your <strong>wellness universe</strong> with credits!</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Rocket className="h-5 w-5 mt-0.5 text-purple-500 flex-shrink-0" />

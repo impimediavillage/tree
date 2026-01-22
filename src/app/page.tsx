@@ -142,7 +142,7 @@ export default function HolisticAiHubPage() {
                   <DialogHeader>
                     <DialogTitle className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] flex items-center justify-center gap-3">
                       <Store className="h-10 w-10 text-[#006B3E] animate-pulse" />
-                      Transform Your Wellness Empire!
+                      Transform Your Wellness Universe!
                     </DialogTitle>
                     <DialogDescription className="text-base text-center font-semibold">
                       🚀 Level up your business with South Africa's most EPIC wellness marketplace! 🌟
@@ -154,7 +154,7 @@ export default function HolisticAiHubPage() {
                         <ShoppingCart className="h-6 w-6 text-emerald-700" />
                         <h3 className="font-extrabold text-lg text-emerald-900">🛍️ FULL E-COMMERCE POWERHOUSE</h3>
                       </div>
-                      <p className="text-sm text-emerald-800 font-medium">Product listings, shopping cart, integrated Payfast payments & your OWN public URL! Build your empire online! 💪</p>
+                      <p className="text-sm text-emerald-800 font-medium">Product listings, shopping cart, integrated Payfast payments & your OWN public URL! Build your universe online! 💪</p>
                     </div>
                     
                     <div className="p-4 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-rose-500/20 rounded-xl border-2 border-purple-400/40 shadow-lg">
@@ -239,7 +239,7 @@ export default function HolisticAiHubPage() {
                     
                     <div className="text-center pt-3">
                       <Button asChild size="lg" className="bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] hover:scale-105 transition-transform w-full text-lg font-black shadow-xl">
-                        <Link href="/dispensary-signup">🔥 START YOUR EMPIRE NOW! 🔥</Link>
+                        <Link href="/dispensary-signup">🔥 START YOUR UNIVERSE NOW! 🔥</Link>
                       </Button>
                     </div>
                   </div>
@@ -398,7 +398,7 @@ export default function HolisticAiHubPage() {
                         <div className="bg-purple-500 p-2.5 rounded-lg">
                           <Palette className="h-6 w-6 text-white" />
                         </div>
-                        <h3 className="font-black text-xl text-purple-900 dark:text-purple-100">Level 1: Design Your Empire</h3>
+                        <h3 className="font-black text-xl text-purple-900 dark:text-purple-100">Level 1: Design Your Universe</h3>
                       </div>
                       <p className="text-purple-800 dark:text-purple-200 font-semibold leading-relaxed">
                         🎨 Use our AI-powered Creator Lab to design epic apparel! T-shirts, hoodies, caps - you name it. 
@@ -577,7 +577,7 @@ export default function HolisticAiHubPage() {
                   <DialogHeader>
                     <DialogTitle className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] flex items-center justify-center gap-3">
                       <Store className="h-10 w-10 text-[#006B3E] animate-pulse" />
-                      Transform Your Wellness Empire!
+                      Transform Your Wellness Universe!
                     </DialogTitle>
                     <DialogDescription className="text-base text-center font-semibold">
                       🚀 Level up your business with South Africa's most EPIC wellness marketplace! 🌟
@@ -589,7 +589,7 @@ export default function HolisticAiHubPage() {
                         <ShoppingCart className="h-6 w-6 text-emerald-700" />
                         <h3 className="font-extrabold text-lg text-emerald-900">🛍️ FULL E-COMMERCE POWERHOUSE</h3>
                       </div>
-                      <p className="text-sm text-emerald-800 font-medium">Product listings, shopping cart, integrated Payfast payments & your OWN public URL! Build your empire online! 💪</p>
+                      <p className="text-sm text-emerald-800 font-medium">Product listings, shopping cart, integrated Payfast payments & your OWN public URL! Build your universe online! 💪</p>
                     </div>
                     
                     <div className="p-4 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-rose-500/20 rounded-xl border-2 border-purple-400/40 shadow-lg">
@@ -674,7 +674,7 @@ export default function HolisticAiHubPage() {
                     
                     <div className="text-center pt-3">
                       <Button asChild size="lg" className="bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] hover:scale-105 transition-transform w-full text-lg font-black shadow-xl">
-                        <Link href="/dispensary-signup">🔥 START YOUR EMPIRE NOW! 🔥</Link>
+                        <Link href="/dispensary-signup">🔥 START YOUR UNIVERSE NOW! 🔥</Link>
                       </Button>
                     </div>
                   </div>

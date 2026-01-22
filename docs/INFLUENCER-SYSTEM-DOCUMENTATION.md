@@ -23,8 +23,8 @@ Influencers progress through 5 tiers based on monthly sales:
 - **Tribe Engagement Bonus**: +3% for active community management
 - **Seasonal Campaigns**: Up to +5% during special promotions
 
-### 3. **Automatic Weekly Payouts**
-- Runs every Friday at midnight (SAST)
+### 3. **Automatic Monthly Payouts**
+- Runs on the 1st of each month at midnight (SAST)
 - Minimum payout: R500
 - Methods: PayFast, Bank Transfer, or Wellness Credits
 - Instant processing for approved influencers
