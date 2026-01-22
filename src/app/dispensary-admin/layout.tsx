@@ -20,7 +20,6 @@ import { Badge } from '@/components/ui/badge';
 import { DispensaryAdminProvider } from '@/contexts/DispensaryAdminContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NotificationBell, NotificationCenter } from '@/components/notifications';
-import { SocialShareHub } from '@/components/social-share/SocialShareHub';
 
 interface NavItem {
   title: string;
@@ -49,7 +48,7 @@ const managementSidebarNavItems: NavItem[] = [
   { title: 'Category Manager', href: '/dispensary-admin/category-manager', icon: FolderTree, ownerOnly: true, dispensaryTypeOnly: 'Mushroom store' },
   { title: 'Events Calendar', href: '/dispensary-admin/events', icon: Calendar, ownerOnly: true },
   { title: 'Advertising', href: '/dispensary-admin/advertising', icon: Tv, ownerOnly: true },
-  { title: 'Social Share Hub', href: '#social-share', icon: Share2, ownerOnly: true },
+  { title: 'Social Share Hub', href: '/dispensary-admin/social-share', icon: Share2, ownerOnly: true },
   { title: 'Payouts', href: '/dispensary-admin/payouts', icon: DollarSign },
   { title: 'Credits', href: '/dispensary-admin/credits', icon: CreditCard },
   { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Palette },
@@ -80,7 +79,6 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensary, isDispensaryOwner, isDispensaryStaff, isVendor, isDriver, isInHouseStaff, logout } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showNotificationCenter, setShowNotificationCenter] = useState(false);
-  const [showSocialShareHub, setShowSocialShareHub] = useState(false);
   
   useEffect(() => {
     if (!authLoading && !canAccessDispensaryPanel) {
@@ -105,12 +103,6 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
     if (href === '#notifications') {
       e.preventDefault();
       setShowNotificationCenter(true);
-      setIsMobileSidebarOpen(false);
-      return false;
-    }
-    if (href === '#social-share') {
-      e.preventDefault();
-      setShowSocialShareHub(true);
       setIsMobileSidebarOpen(false);
       return false;
     }
@@ -505,12 +497,6 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
       <NotificationCenter 
         isOpen={showNotificationCenter} 
         onClose={() => setShowNotificationCenter(false)} 
-      />
-      
-      {/* Social Share Hub Dialog */}
-      <SocialShareHub 
-        isOpen={showSocialShareHub}
-        onOpenChange={setShowSocialShareHub}
       />
     </div>
   );

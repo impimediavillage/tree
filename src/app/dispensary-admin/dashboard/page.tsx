@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { SocialShareHub } from '@/components/social-share/SocialShareHub';
 import { ProfileCompletionDialog, checkProfileCompleteness } from '@/components/dispensary-admin/ProfileCompletionDialog';
 import { InfluencerOnboarding } from '@/components/influencer/InfluencerOnboarding';
 
@@ -54,7 +53,6 @@ export default function WellnessAdminOverviewPage() {
   const { currentDispensary, loading: authLoading } = useAuth();
   const router = useRouter();
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
-  const [showShareHub, setShowShareHub] = useState(false);
   const [showInfluencerOnboarding, setShowInfluencerOnboarding] = useState(false);
 
   useEffect(() => {
@@ -119,7 +117,7 @@ export default function WellnessAdminOverviewPage() {
               </p>
             </div>
             <Button
-              onClick={() => setShowShareHub(true)}
+              onClick={() => router.push('/dispensary-admin/social-share')}
               size="lg"
               className="bg-gradient-to-r from-[#006B3E] to-[#3D2E17] hover:from-[#3D2E17] hover:to-[#006B3E] text-white font-black px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
@@ -237,12 +235,6 @@ export default function WellnessAdminOverviewPage() {
         isOpen={showWelcomeDialog}
         onOpenChange={setShowWelcomeDialog}
         dispensary={currentDispensary}
-      />
-
-      {/* Social Share Hub Dialog */}
-      <SocialShareHub 
-        isOpen={showShareHub} 
-        onOpenChange={setShowShareHub}
       />
 
       {/* Influencer Onboarding Dialog */}
