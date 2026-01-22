@@ -64,8 +64,13 @@ export function ApparelPreview({ designImageUrl, selectedType, onAddToCart }: Ap
             ))}
           </TabsList>
 
-          {apparelTypes.map((type) => (
-            <TabsContent key={type} value={type} className="space-y-4">
+          {apparelTypes.map((type) => {
+            const retailPrice = DEFAULT_APPAREL_RETAIL_PRICES[type];
+            const customerPrice = calculateCustomerPrice(retailPrice);
+            const commission = calculateCreatorCommission(retailPrice);
+            
+            return (
+            <TabsContent key={type} value={type} className="space-y-4 mt-4">
               {/* Mockup preview */}
               {getApparelMockup(type)}
 
@@ -78,7 +83,7 @@ export function ApparelPreview({ designImageUrl, selectedType, onAddToCart }: Ap
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-extrabold text-[#006B3E]">R{customerPrice.toFixed(2)}</p>
-                    <p className="text-xs text-[#5D4E37] font-semibold">You earn: R{commission}</p>
+                    <p className="text-xs text-[#5D4E37] font-semibold">You earn: R{commission.toFixed(2)}</p>
                   </div>
                 </div>
 
