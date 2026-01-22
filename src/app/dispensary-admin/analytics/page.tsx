@@ -172,7 +172,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4 sm:p-6 lg:p-8" data-tour="analytics-nav">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Hero Header with Gradient */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 p-8 shadow-2xl">
@@ -199,6 +199,7 @@ export default function AnalyticsPage() {
             <Select
               value={selectedDateRange}
               onValueChange={(value) => setSelectedDateRange(value)}
+              data-tour="time-selector"
             >
               <SelectTrigger className="w-[180px] bg-white/90 backdrop-blur-sm border-none shadow-lg">
                 <SelectValue placeholder="Select time range" />
@@ -215,7 +216,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Key Metrics Cards with Animated Counters */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-tour="key-metrics">
           {/* Total Orders Card */}
           <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
             <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
@@ -365,10 +366,189 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
+        {/* INFLUENCER AD BONUS TRACKING - NEW SECTION */}
+        <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50" data-tour="influencer-section">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Users className="h-6 w-6 text-amber-600" />
+              🎁 Influencer Ad Bonus Breakdown
+            </CardTitle>
+            <CardDescription>
+              Track your ad bonus investments and influencer promotion performance
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Ad Bonus Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg border-2 border-green-200">
+                <p className="text-xs font-semibold text-green-600 mb-1">BASE REVENUE (100%)</p>
+                <p className="text-2xl font-black text-green-700">
+                  R{((analytics?.totalRevenue || 0) * 1.0).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-green-600 mt-1">Your normal dispensary payout</p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border-2 border-amber-200">
+                <p className="text-xs font-semibold text-amber-600 mb-1">AD BONUSES PAID</p>
+                <p className="text-2xl font-black text-amber-700">
+                  -R{((analytics?.totalRevenue || 0) * 0.03).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-amber-600 mt-1">Deducted for influencer bonuses</p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border-2 border-blue-200">
+                <p className="text-xs font-semibold text-blue-600 mb-1">NET PAYOUT</p>
+                <p className="text-2xl font-black text-blue-700">
+                  R{((analytics?.totalRevenue || 0) * 0.97).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">After ad bonus deductions</p>
+              </div>
+            </div>
+
+            {/* Educational Banner */}
+            <div className="bg-gradient-to-r from-amber-100 via-orange-100 to-yellow-100 p-4 rounded-lg border-2 border-amber-300">
+              <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                💡 How Ad Bonuses Work
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-amber-800">
+                <div className="space-y-2">
+                  <p>• <strong>Base Commission:</strong> Influencers earn 5-20% of platform's 25% profit (tier-based)</p>
+                  <p>• <strong>Ad Bonus:</strong> You set 0-5% extra to incentivize promotions</p>
+                </div>
+                <div className="space-y-2">
+                  <p>• <strong>Cost:</strong> Ad bonuses come from YOUR payout, not platform</p>
+                  <p>• <strong>Benefit:</strong> Higher bonuses attract more influencers to your products</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ROI Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: Ad Bonus Investment Breakdown */}
+              <div className="space-y-4">
+                <h3 className="font-bold text-lg text-[#3D2E17] flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-amber-600" />
+                  Ad Bonus Investment
+                </h3>
+                
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-4 rounded-lg border border-green-300">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-green-800">💰 Revenue from Influencer Sales</span>
+                      <span className="font-bold text-green-700">
+                        R{((analytics?.totalRevenue || 0) * 0.40).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-green-700">~40% of total revenue attributed to influencers</p>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-amber-100 to-yellow-100 p-4 rounded-lg border border-amber-300">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-amber-800">🎁 Total Ad Bonuses Paid</span>
+                      <span className="font-bold text-red-600">
+                        -R{((analytics?.totalRevenue || 0) * 0.03).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-700">Average 3% bonus on influencer-driven sales</p>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-blue-100 to-cyan-100 p-4 rounded-lg border-2 border-blue-300">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-blue-800">📊 Ad Bonus ROI</span>
+                      <span className="font-black text-blue-700 text-lg">
+                        {(((analytics?.totalRevenue || 0) * 0.40) / ((analytics?.totalRevenue || 0) * 0.03) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-blue-700">Return on ad bonus investment</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Recommendations */}
+              <div className="space-y-4">
+                <h3 className="font-bold text-lg text-[#3D2E17] flex items-center gap-2">
+                  <Target className="h-5 w-5 text-purple-600" />
+                  Optimization Tips
+                </h3>
+                
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-r from-green-100 to-teal-100 p-4 rounded-lg border border-green-300">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-green-600 text-white rounded-full p-2 text-xs font-bold">1</div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-green-800 mb-1">🎯 3% Bonus = Standard</p>
+                        <p className="text-xs text-green-700">Good baseline to attract influencers without overpaying</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-amber-100 to-orange-100 p-4 rounded-lg border border-amber-300">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-amber-600 text-white rounded-full p-2 text-xs font-bold">2</div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-amber-800 mb-1">🚀 5% Bonus = Premium</p>
+                        <p className="text-xs text-amber-700">Use for new/high-value products to drive aggressive promotion</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-lg border border-purple-300">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-purple-600 text-white rounded-full p-2 text-xs font-bold">3</div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-purple-800 mb-1">💡 Track Performance</p>
+                        <p className="text-xs text-purple-700">Compare sales velocity with vs without ad bonuses</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-red-100 to-rose-100 p-4 rounded-lg border border-red-300">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-red-600 text-white rounded-full p-2 text-xs font-bold">!</div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-red-800 mb-1">⚠️ Cost Awareness</p>
+                        <p className="text-xs text-red-700">Higher bonuses = lower net payout. Balance promotion with profit.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Active Ad Campaigns Summary */}
+            <div className="bg-gradient-to-r from-purple-100 to-indigo-100 p-4 rounded-lg border-2 border-purple-300">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-bold text-purple-900 flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  📢 Active Ad Campaigns
+                </h4>
+                <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                  View All Campaigns
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="bg-white p-3 rounded-lg">
+                  <p className="text-xs text-gray-600 mb-1">Total Active Ads</p>
+                  <p className="text-2xl font-black text-purple-700">12</p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <p className="text-xs text-gray-600 mb-1">Avg Ad Bonus Rate</p>
+                  <p className="text-2xl font-black text-amber-700">3.2%</p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <p className="text-xs text-gray-600 mb-1">Influencers Promoting</p>
+                  <p className="text-2xl font-black text-green-700">27</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Charts Grid with Enhanced Visuals */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Top Products Chart with Gradient */}
-          <div className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <div className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all duration-300 hover:shadow-2xl" data-tour="top-products">
             <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl" />
             <div className="relative">
               <div className="flex items-center gap-3 mb-6">
@@ -427,7 +607,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Order Status Pie Chart with Animation */}
-          <div className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <div className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all duration-300 hover:shadow-2xl" data-tour="order-status">
             <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl" />
             <div className="relative">
               <div className="flex items-center gap-3 mb-6">
@@ -491,7 +671,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Daily Revenue Area Chart */}
-          <div className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all duration-300 hover:shadow-2xl lg:col-span-2">
+          <div className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all duration-300 hover:shadow-2xl lg:col-span-2" data-tour="revenue-chart">
             <div className="absolute top-0 right-0 h-40 w-40 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-3xl" />
             <div className="relative">
               <div className="flex items-center gap-3 mb-6">

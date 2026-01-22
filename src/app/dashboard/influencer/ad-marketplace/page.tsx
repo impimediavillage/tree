@@ -145,11 +145,21 @@ export default function InfluencerAdMarketplacePage() {
                 <p className="text-white/80 text-sm font-medium">Your Promotions</p>
                 <p className="text-3xl font-extrabold text-white">{selections.length}</p>
               </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 space-y-1">
                 <p className="text-white/80 text-sm font-medium">Total Earnings</p>
                 <p className="text-3xl font-extrabold text-white">
-                  R{selections.reduce((sum, s) => sum + s.performance.commission, 0).toFixed(0)}
+                  R{selections.reduce((sum, s) => sum + (s.performance.totalCommission || s.performance.commission || 0), 0).toFixed(0)}
                 </p>
+                <div className="flex gap-3 text-xs mt-2">
+                  <div className="bg-emerald-500/30 px-2 py-1 rounded">
+                    <span className="text-white/70">Base: </span>
+                    <span className="font-bold text-white">R{selections.reduce((sum, s) => sum + (s.performance.baseCommission || 0), 0).toFixed(0)}</span>
+                  </div>
+                  <div className="bg-amber-500/30 px-2 py-1 rounded">
+                    <span className="text-white/70">Bonus: </span>
+                    <span className="font-bold text-white">R{selections.reduce((sum, s) => sum + (s.performance.adBonus || 0), 0).toFixed(0)}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -362,9 +372,25 @@ export default function InfluencerAdMarketplacePage() {
                           <h3 className="text-2xl font-black text-[#5D4E37] mb-2">
                             {selection.adTitle}
                           </h3>
-                          <p className="text-sm text-[#5D4E37]/70 mb-4">
-                            🏪 {selection.dispensaryName} • {selection.commissionRate}% Commission
-                          </p>
+                          <div className="flex items-center gap-3 mb-4">
+                            <span className="text-sm text-[#5D4E37]/70">🏪 {selection.dispensaryName}</span>
+                            <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-100 to-green-100 px-3 py-1 rounded-full border border-emerald-300">
+                              <span className="text-xs font-bold text-emerald-700">
+                                💰 {selection.influencerTierRate || 10}% Base
+                              </span>
+                              {selection.adBonusRate > 0 && (
+                                <>
+                                  <span className="text-emerald-600">+</span>
+                                  <span className="text-xs font-bold text-amber-700">
+                                    🎁 {selection.adBonusRate}% Bonus
+                                  </span>
+                                </>
+                              )}
+                              <span className="text-xs font-black text-green-800">
+                                = {selection.commissionRate}% Total
+                              </span>
+                            </div>
+                          </div>
                           
                           <div className="grid grid-cols-4 gap-4 mb-4">
                             <div>
@@ -388,8 +414,13 @@ export default function InfluencerAdMarketplacePage() {
                             <div>
                               <p className="text-xs text-[#5D4E37]/50 font-semibold">Earned</p>
                               <p className="text-2xl font-black text-orange-600">
-                                R{selection.performance.commission.toFixed(0)}
+                                R{(selection.performance.totalCommission || selection.performance.commission || 0).toFixed(0)}
                               </p>
+                              {selection.performance.adBonus > 0 && (
+                                <p className="text-[10px] text-amber-600 font-semibold mt-0.5">
+                                  +R{selection.performance.adBonus.toFixed(0)} bonus
+                                </p>
+                              )}
                             </div>
                           </div>
                           

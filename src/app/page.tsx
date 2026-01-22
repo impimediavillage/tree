@@ -322,7 +322,7 @@ export default function HolisticAiHubPage() {
                         <Star className="h-6 w-6 text-green-700" />
                         <h3 className="font-extrabold text-lg text-green-900">🌟 BECOME AN INFLUENCER!</h3>
                       </div>
-                      <p className="text-sm text-green-800 font-medium">Join our influencer program! Promote brands you LOVE & earn BIG! Turn your passion into PROFIT! 💎🔥</p>
+                      <p className="text-sm text-green-800 font-medium">Join our influencer program! Earn 1.25-5% of every sale (from platform's 25% profit) based on your tier! Plus up to 5% ad bonuses! Turn your passion into PROFIT! 💎🔥</p>
                     </div>
                     
                     <div className="bg-gradient-to-r from-yellow-200/50 to-amber-200/50 p-3 rounded-lg border-2 border-yellow-400/60 shadow-md">

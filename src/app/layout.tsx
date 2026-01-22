@@ -15,6 +15,7 @@ import BackgroundVideo from '@/components/layout/BackgroundVideo';
 import { Toaster as HotToaster } from 'react-hot-toast'; // For notification toasts
 import { SoundSystemInitializer } from '@/components/notifications/SoundSystemInitializer';
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
+import { TutorialProvider } from '@/contexts/TutorialContext';
 
 export const metadata: Metadata = {
   title: 'The Wellness Tree - AI-Powered Wellness Hub - ',
@@ -49,20 +50,22 @@ export default function RootLayout({
       <body className={`antialiased flex flex-col min-h-screen bg-transparent text-foreground`}>
        <BackgroundVideo />
         <AuthProvider>
-          <CartProvider> {/* Wrap with CartProvider */}
-            <ReferralProvider> {/* Wrap with ReferralProvider for influencer tracking */}
-              <SoundSystemInitializer /> {/* Initialize notification sounds */}
-              <Header />
-              <main className="flex-grow">
-                {children}
-              </main>
-              <Footer />
-              <CartDrawer /> {/* Add CartDrawer here to be accessible globally */}
-              <NotificationPermissionPrompt /> {/* Push notification permission prompt */}
-              <Toaster />
-              <HotToaster position="top-right" /> {/* For animated notification toasts */}
-            </ReferralProvider>
-          </CartProvider>
+          <TutorialProvider> {/* Tutorial system with gamification */}
+            <CartProvider> {/* Wrap with CartProvider */}
+              <ReferralProvider> {/* Wrap with ReferralProvider for influencer tracking */}
+                <SoundSystemInitializer /> {/* Initialize notification sounds */}
+                <Header />
+                <main className="flex-grow">
+                  {children}
+                </main>
+                <Footer />
+                <CartDrawer /> {/* Add CartDrawer here to be accessible globally */}
+                <NotificationPermissionPrompt /> {/* Push notification permission prompt */}
+                <Toaster />
+                <HotToaster position="top-right" /> {/* For animated notification toasts */}
+              </ReferralProvider>
+            </CartProvider>
+          </TutorialProvider>
         </AuthProvider>
       </body>
     </html>

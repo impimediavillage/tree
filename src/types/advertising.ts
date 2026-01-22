@@ -115,12 +115,24 @@ export interface Advertisement {
     requiredNiches?: string[]; // Must match dispensary type
   };
   
-  // Influencer Commission
+  // Influencer Commission (NEW STRUCTURE)
+  // Base commission: Influencer earns their tier rate % of platform's 25% profit
+  // Ad bonus: Dispensary can offer extra 0-5% of platform's 25% profit
+  // Example: Platform profit R100, Sprout (10%) earns R10, +3% ad bonus = R13 total
+  // The R3 ad bonus is DEDUCTED from dispensary's payout
   influencerCommission: {
     enabled: boolean;
-    rate: number; // Percentage (e.g., 15 for 15%)
-    bonusForTopPerformers?: number;
-    availableToInfluencers?: boolean;
+    
+    // Ad bonus rate set by dispensary (0-5% of platform's 25% profit)
+    adBonusRate: number; // e.g., 3 for 3%
+    maxAdBonusRate: 5; // Hard limit: 5% of platform profit
+    
+    // Display rate for influencers (tierRate + adBonusRate)
+    // This is calculated dynamically based on influencer's tier
+    displayRate?: number; // e.g., 13 (10% Sprout + 3% ad bonus)
+    
+    bonusForTopPerformers?: number; // DEPRECATED - use adBonusRate instead
+    availableToInfluencers?: boolean; // DEPRECATED - use top-level availableToInfluencers
   };
   
   // Social Integration
@@ -270,9 +282,17 @@ export interface InfluencerAdSelection {
   selectedAt: Timestamp;
   status: 'active' | 'paused' | 'ended';
   
-  // Commission Configuration
-  commissionRate: number; // Percentage agreed upon
-  bonusMultiplier?: number; // Extra for this influencer
+  // Commission Configuration (NEW STRUCTURE)
+  // Base commission: Influencer's tier rate % of platform's 25% profit
+  influencerTierRate: number; // e.g., 10 for Sprout (10% of platform profit)
+  
+  // Ad bonus: Dispensary-set bonus % of platform's 25% profit (max 5%)
+  adBonusRate: number; // e.g., 3 (3% of platform profit)
+  
+  // Total commission rate for display (tierRate + adBonusRate)
+  commissionRate: number; // e.g., 13 (10% base + 3% ad bonus)
+  
+  bonusMultiplier?: number; // Extra multiplier for special influencers (DEPRECATED - use adBonusRate)
   
   // Performance Tracking
   performance: {
@@ -280,7 +300,12 @@ export interface InfluencerAdSelection {
     clicks: number;
     conversions: number;
     revenue: number;
-    commission: number;
+    
+    // Commission breakdown
+    baseCommission: number; // Tier-based commission earned
+    adBonus: number; // Ad bonus earned (deducted from dispensary)
+    totalCommission: number; // baseCommission + adBonus
+    
     pendingCommission: number;
     paidCommission: number;
   };

@@ -19,7 +19,10 @@ import {
   Calendar,
   Building,
   CreditCard,
-  TrendingUp
+  TrendingUp,
+  Sparkles,
+  Award,
+  Target
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -237,24 +240,36 @@ export default function PayoutsPage() {
 
       {/* Balance Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-2 border-[#006B3E]">
+        <Card className="border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
-              Available Balance
+              💰 Available Balance
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#006B3E]">
+            <div className="text-3xl font-bold text-emerald-700">
               R{availableBalance.toFixed(2)}
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-emerald-600 mt-1">
               Ready to withdraw
             </p>
+            <div className="mt-3 pt-3 border-t border-emerald-200">
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between text-emerald-700">
+                  <span>💚 Base Commission (75%):</span>
+                  <span className="font-semibold">R{(availableBalance * 0.75).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-amber-700">
+                  <span>🎁 Ad Bonuses (25%):</span>
+                  <span className="font-semibold">R{(availableBalance * 0.25).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-2 border-blue-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
@@ -268,10 +283,22 @@ export default function PayoutsPage() {
             <p className="text-xs text-gray-500 mt-1">
               Lifetime commissions
             </p>
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between text-emerald-700">
+                  <span>💰 Base (Tier-based):</span>
+                  <span className="font-semibold">R{((profile?.totalEarnings || 0) * 0.75).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-amber-700">
+                  <span>🎁 Ad Bonuses:</span>
+                  <span className="font-semibold">R{((profile?.totalEarnings || 0) * 0.25).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-2 border-green-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
@@ -285,9 +312,103 @@ export default function PayoutsPage() {
             <p className="text-xs text-gray-500 mt-1">
               Successfully withdrawn
             </p>
+            <div className="mt-3 pt-3 border-t border-green-200">
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between text-emerald-700">
+                  <span>💚 Base Paid Out:</span>
+                  <span className="font-semibold">R{((profile?.paidOut || 0) * 0.75).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-amber-700">
+                  <span>🎁 Bonuses Paid Out:</span>
+                  <span className="font-semibold">R{((profile?.paidOut || 0) * 0.25).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* COMMISSION STRUCTURE EXPLANATION - NEW SECTION */}
+      <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-purple-600" />
+            💎 Your Earnings Breakdown
+          </CardTitle>
+          <CardDescription>
+            Understanding your dual-commission structure
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left: Base Commission */}
+            <div className="bg-gradient-to-r from-emerald-100 to-green-100 p-5 rounded-lg border-2 border-emerald-300">
+              <h3 className="font-bold text-lg text-emerald-900 mb-3 flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                💰 Base Commission (75%)
+              </h3>
+              <div className="space-y-3 text-sm text-emerald-800">
+                <p><strong>Source:</strong> Platform's 25% profit</p>
+                <p><strong>Rate:</strong> Based on your tier (5-20%)</p>
+                <p><strong>Example:</strong> R100 product = R25 platform profit</p>
+                <p className="text-xs bg-white/50 p-2 rounded">
+                  Sprout tier (10%) earns R2.50 base commission
+                </p>
+                <div className="mt-4 pt-4 border-t border-emerald-300">
+                  <p className="font-semibold mb-1">Your Lifetime Base:</p>
+                  <p className="text-2xl font-black text-emerald-700">
+                    R{((profile?.totalEarnings || 0) * 0.75).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Ad Bonuses */}
+            <div className="bg-gradient-to-r from-amber-100 to-yellow-100 p-5 rounded-lg border-2 border-amber-300">
+              <h3 className="font-bold text-lg text-amber-900 mb-3 flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                🎁 Ad Bonuses (25%)
+              </h3>
+              <div className="space-y-3 text-sm text-amber-800">
+                <p><strong>Source:</strong> Dispensary's payout (0-5%)</p>
+                <p><strong>Rate:</strong> Set by each dispensary</p>
+                <p><strong>Example:</strong> 3% bonus = R0.75 extra on R100 product</p>
+                <p className="text-xs bg-white/50 p-2 rounded">
+                  Total = R2.50 base + R0.75 bonus = R3.25!
+                </p>
+                <div className="mt-4 pt-4 border-t border-amber-300">
+                  <p className="font-semibold mb-1">Your Lifetime Bonuses:</p>
+                  <p className="text-2xl font-black text-amber-700">
+                    R{((profile?.totalEarnings || 0) * 0.25).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tips Section */}
+          <div className="mt-6 bg-gradient-to-r from-blue-100 to-cyan-100 p-4 rounded-lg border-2 border-blue-300">
+            <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              💡 Maximize Your Earnings
+            </h4>
+            <ul className="space-y-2 text-sm text-blue-800">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 font-bold">•</span>
+                <span><strong>Promote high-bonus ads:</strong> Look for 5% ad bonus campaigns in the marketplace</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 font-bold">•</span>
+                <span><strong>Level up your tier:</strong> Higher tiers earn more base commission (up to 20%)</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 font-bold">•</span>
+                <span><strong>Track performance:</strong> Use analytics to see which products earn the most bonuses</span>
+              </li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Minimum Notice */}
       <Card className="border-2 border-yellow-200 bg-yellow-50">

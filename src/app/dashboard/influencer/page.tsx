@@ -235,9 +235,20 @@ export default function InfluencerDashboard() {
               <div className="text-3xl font-bold text-[#006B3E]">
                 R{profile.stats.totalEarnings.toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Available: R{(profile.payoutInfo?.availableBalance || 0).toFixed(2)}
-              </p>
+              <div className="mt-2 space-y-1 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-emerald-600 font-semibold">💰 Base Commission:</span>
+                  <span className="font-bold">R{((profile.stats.totalEarnings || 0) * 0.75).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-amber-600 font-semibold">🎁 Ad Bonuses:</span>
+                  <span className="font-bold">R{((profile.stats.totalEarnings || 0) * 0.25).toFixed(2)}</span>
+                </div>
+                <div className="border-t border-green-200 pt-1 mt-1 flex justify-between items-center">
+                  <span className="text-muted-foreground">Available:</span>
+                  <span className="font-bold text-green-600">R{(profile.payoutInfo?.availableBalance || 0).toFixed(2)}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

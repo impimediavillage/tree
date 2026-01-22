@@ -188,9 +188,9 @@ export default function WellnessProductsPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 md:p-8">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 md:p-8" data-tour="product-list">
       {/* Header */}
-      <div className="p-4 sm:p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+      <div className="p-4 sm:p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg" data-tour="products-nav">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
             <Package className="h-10 w-10 sm:h-14 sm:w-14 text-[#006B3E] flex-shrink-0" />
@@ -199,7 +199,7 @@ export default function WellnessProductsPage() {
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage all products for your wellness store</p>
             </div>
           </div>
-          <Button asChild className="w-full sm:w-auto shrink-0">
+          <Button asChild className="w-full sm:w-auto shrink-0" data-tour="add-product-btn">
             <Link href={addProductPath}>
               <PlusCircle className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">Add New Product</span>
@@ -209,7 +209,7 @@ export default function WellnessProductsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-muted/50 shadow-sm">
+      <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-muted/50 shadow-sm" data-tour="product-filters">
         <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
             <Input
@@ -221,7 +221,7 @@ export default function WellnessProductsPage() {
             />
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory} data-tour="product-categories">
             <SelectTrigger className="w-full sm:w-[220px] text-sm sm:text-base">
                 <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
@@ -244,7 +244,7 @@ export default function WellnessProductsPage() {
       {displayItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 py-3 sm:py-6">
           {displayItems.map((item) => (
-            <ProductCard key={item.key} product={item.product} tier={item.tier} onDelete={handleDeleteProduct} />
+            <ProductCard key={item.key} product={item.product} tier={item.tier} onDelete={handleDeleteProduct} data-tour={item.key === displayItems[0].key ? "product-card" : undefined} />
           ))}
         </div>
       ) : (

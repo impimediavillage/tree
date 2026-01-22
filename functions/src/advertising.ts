@@ -181,10 +181,23 @@ export const trackAdConversion = onDocumentCreated('orders/{orderId}', async (ev
       const selectionDoc = selectionQuery.docs[0];
       const selection = selectionDoc.data();
 
-      // Calculate commission
+      // Calculate commission from PLATFORM PROFIT (25% of order total)
+      // Ad bonus (dispensary-set, max 5%) is also from platform's 25%
       const orderTotal = order.total || 0;
-      const commissionRate = selection.commissionRate / 100;
-      const commissionAmount = orderTotal * commissionRate;
+      const platformProfit = order.totalPlatformCommission || (orderTotal * 0.25); // 25% of order
+      const adBonusRate = selection.adBonusRate || 0; // Dispensary-set ad bonus (max 5%)
+      const adBonusAmount = platformProfit * (adBonusRate / 100); // Ad bonus from platform profit
+      
+      // Influencer also gets their base tier commission (from platform profit)
+      const influencerTierRate = selection.influencerTierRate || 10; // Their tier rate
+      const baseCommissionAmount = platformProfit * (influencerTierRate / 100);
+      
+      // Total influencer earns: base tier commission + ad bonus
+      const totalInfluencerCommission = baseCommissionAmount + adBonusAmount;
+      
+      // Ad bonus is deducted from dispensary payout
+      const dispensaryPayout = order.totalDispensaryEarnings || 0;
+      const dispensaryAfterAdBonus = dispensaryPayout - adBonusAmount;
 
       // Create conversion record
       await db.collection('adConversions').add({
@@ -193,8 +206,22 @@ export const trackAdConversion = onDocumentCreated('orders/{orderId}', async (ev
         influencerId: selection.influencerId,
         trackingCode,
         orderTotal,
-        commissionRate: selection.commissionRate,
-        commissionAmount,
+        platformProfit,
+        dispensaryId: selection.dispensaryId,
+        dispensaryName: selection.dispensaryName,
+        
+        // Commission breakdown
+        baseCommissionRate: influencerTierRate,
+        baseCommissionAmount,
+        adBonusRate,
+        adBonusAmount,
+        totalInfluencerCommission,
+        
+        // Dispensary impact
+        dispensaryPayoutBefore: dispensaryPayout,
+        dispensaryPayoutAfter: dispensaryAfterAdBonus,
+        dispensaryAdBonusDeduction: adBonusAmount,
+        
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
 
@@ -202,7 +229,9 @@ export const trackAdConversion = onDocumentCreated('orders/{orderId}', async (ev
       await selectionDoc.ref.update({
         'performance.conversions': admin.firestore.FieldValue.increment(1),
         'performance.revenue': admin.firestore.FieldValue.increment(orderTotal),
-        'performance.commission': admin.firestore.FieldValue.increment(commissionAmount),
+        'performance.baseCommission': admin.firestore.FieldValue.increment(baseCommissionAmount),
+        'performance.adBonus': admin.firestore.FieldValue.increment(adBonusAmount),
+        'performance.totalCommission': admin.firestore.FieldValue.increment(totalInfluencerCommission),
         lastConversionAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
@@ -224,16 +253,28 @@ export const trackAdConversion = onDocumentCreated('orders/{orderId}', async (ev
         });
       }
 
-      // Update influencer earnings
-      const influencerRef = db.collection('influencerProfiles').doc(selection.influencerId);
+      // Update influencer earnings (base + ad bonus)
+      const influencerRef = db.collection('influencers').doc(selection.influencerId);
       await influencerRef.update({
-        'earnings.totalEarnings': admin.firestore.FieldValue.increment(commissionAmount),
-        'earnings.pendingEarnings': admin.firestore.FieldValue.increment(commissionAmount),
+        'earnings.totalEarnings': admin.firestore.FieldValue.increment(totalInfluencerCommission),
+        'earnings.pendingEarnings': admin.firestore.FieldValue.increment(totalInfluencerCommission),
+        'earnings.adBonusEarned': admin.firestore.FieldValue.increment(adBonusAmount),
+      });
+      
+      // Track dispensary cost of ad bonus
+      const dispensaryRef = db.collection('dispensaries').doc(selection.dispensaryId);
+      await dispensaryRef.update({
+        'analytics.adBonusPaid': admin.firestore.FieldValue.increment(adBonusAmount),
+        'analytics.influencerAdConversions': admin.firestore.FieldValue.increment(1),
       });
 
-      console.log(`Conversion tracked: ${commissionAmount} commission for influencer ${selection.influencerId}`);
+      console.log(`Conversion tracked for influencer ${selection.influencerId}:`);
+      console.log(`  - Base commission (${influencerTierRate}% of R${platformProfit.toFixed(2)}): R${baseCommissionAmount.toFixed(2)}`);
+      console.log(`  - Ad bonus (${adBonusRate}% of R${platformProfit.toFixed(2)}): R${adBonusAmount.toFixed(2)}`);
+      console.log(`  - Total influencer earns: R${totalInfluencerCommission.toFixed(2)}`);
+      console.log(`  - Dispensary payout reduced by: R${adBonusAmount.toFixed(2)}`);
       
-      return { success: true };
+      return { success: true, commission: totalInfluencerCommission, adBonus: adBonusAmount };
     } catch (error) {
       console.error('Error tracking conversion:', error);
       return null;

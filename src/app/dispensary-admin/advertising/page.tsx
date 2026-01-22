@@ -43,7 +43,7 @@ export default function DispensaryAdvertisingPage() {
   const endedAds = ads.filter(ad => ad.status === 'ended');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4 sm:p-6 lg:p-8" data-tour="advertising-nav">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Hero Header */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 p-8 shadow-2xl">
@@ -68,7 +68,7 @@ export default function DispensaryAdvertisingPage() {
             </div>
             
             <Link href="/dispensary-admin/advertising/create">
-              <Button size="lg" className="bg-white text-purple-600 hover:bg-white/90 font-bold shadow-lg hover:shadow-xl transition-all">
+              <Button size="lg" className="bg-white text-purple-600 hover:bg-white/90 font-bold shadow-lg hover:shadow-xl transition-all" data-tour="create-campaign">
                 <Plus className="h-5 w-5 mr-2" />
                 Create New Ad
               </Button>
@@ -78,7 +78,7 @@ export default function DispensaryAdvertisingPage() {
 
         {/* Performance Dashboard */}
         {!analyticsLoading && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-tour="campaign-analytics">
             {/* Total Impressions */}
             <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
               <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
@@ -178,7 +178,7 @@ export default function DispensaryAdvertisingPage() {
         )}
 
         {/* Ad Management Tabs */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-[#5D4E37]/10">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-[#5D4E37]/10" data-tour="active-campaigns">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-[#5D4E37]">Your Ad Campaigns</h2>
             <div className="flex gap-2">

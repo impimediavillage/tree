@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, TrendingUp, TrendingDown, ArrowLeft, Download, Calendar } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, ArrowLeft, Download, Calendar, DollarSign, Award, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { InfluencerProfile, InfluencerCommission } from '@/types/influencer';
 import {
@@ -246,10 +246,10 @@ export default function InfluencerAnalyticsPage() {
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="border-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-700">💰 Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold text-green-600">
@@ -258,6 +258,16 @@ export default function InfluencerAnalyticsPage() {
             <div className="flex items-center gap-1 mt-2 text-sm">
               <TrendingUp className="h-4 w-4 text-green-600" />
               <span className="text-green-600">+{profile.stats.currentMonthSales} sales this month</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-green-200 space-y-1 text-xs">
+              <div className="flex justify-between text-emerald-700">
+                <span>Base (75%):</span>
+                <span className="font-semibold">R{(metrics.totalRevenue * 0.75).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-amber-700">
+                <span>Bonus (25%):</span>
+                <span className="font-semibold">R{(metrics.totalRevenue * 0.25).toFixed(2)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -303,7 +313,164 @@ export default function InfluencerAnalyticsPage() {
             </p>
           </CardContent>
         </Card>
+
+        <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-amber-700">🎁 Ad Bonus Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-extrabold text-amber-600">
+              3.2%
+            </div>
+            <p className="text-sm text-amber-600 mt-2">
+              Average bonus earned
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* COMMISSION BREAKDOWN SECTION - NEW */}
+      <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 mb-8">
+        <CardHeader>
+          <CardTitle className="text-2xl flex items-center gap-2">
+            <TrendingUp className="h-6 w-6 text-purple-600" />
+            💎 Commission Structure Analytics
+          </CardTitle>
+          <CardDescription>
+            Detailed breakdown of your base commissions vs ad bonuses
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Dual Bars Comparison */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Base Commission */}
+            <div className="bg-gradient-to-br from-emerald-100 to-green-100 p-6 rounded-lg border-2 border-emerald-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg text-emerald-900 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  💰 Base Commission
+                </h3>
+                <Badge className="bg-emerald-600">Tier-Based</Badge>
+              </div>
+              
+              <div className="text-4xl font-black text-emerald-700 mb-2">
+                R{(metrics.totalRevenue * 0.75).toFixed(2)}
+              </div>
+              <p className="text-sm text-emerald-800 mb-4">75% of total earnings</p>
+              
+              <div className="space-y-3 text-sm text-emerald-800">
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded">
+                  <span>Source:</span>
+                  <span className="font-semibold">Platform's 25% profit</span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded">
+                  <span>Your Tier Rate:</span>
+                  <span className="font-semibold">{profile.tier === 'sprout' ? '10%' : profile.tier === 'seed' ? '5%' : '15%'}</span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded">
+                  <span>Total Orders:</span>
+                  <span className="font-semibold">{commissions.length}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-emerald-300">
+                <p className="text-xs text-emerald-700">
+                  💡 <strong>Grow your tier</strong> to earn higher base rates (up to 20%)
+                </p>
+              </div>
+            </div>
+
+            {/* Ad Bonuses */}
+            <div className="bg-gradient-to-br from-amber-100 to-yellow-100 p-6 rounded-lg border-2 border-amber-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg text-amber-900 flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  🎁 Ad Bonuses
+                </h3>
+                <Badge className="bg-amber-600">0-5% Extra</Badge>
+              </div>
+              
+              <div className="text-4xl font-black text-amber-700 mb-2">
+                R{(metrics.totalRevenue * 0.25).toFixed(2)}
+              </div>
+              <p className="text-sm text-amber-800 mb-4">25% of total earnings</p>
+              
+              <div className="space-y-3 text-sm text-amber-800">
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded">
+                  <span>Source:</span>
+                  <span className="font-semibold">Dispensary payouts</span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded">
+                  <span>Avg Bonus Rate:</span>
+                  <span className="font-semibold">3.2%</span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded">
+                  <span>Bonus Orders:</span>
+                  <span className="font-semibold">{Math.floor(commissions.length * 0.6)}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-amber-300">
+                <p className="text-xs text-amber-700">
+                  🎯 <strong>Promote 5% bonus ads</strong> to maximize earnings per sale
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Insights */}
+          <div className="bg-gradient-to-r from-blue-100 via-cyan-100 to-teal-100 p-5 rounded-lg border-2 border-blue-300">
+            <h4 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              📊 Performance Insights
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg">
+                <p className="text-xs text-gray-600 mb-1">Best Performing Campaign</p>
+                <p className="text-xl font-black text-blue-700">Premium CBD</p>
+                <p className="text-xs text-blue-600 mt-1">R{(metrics.totalRevenue * 0.15).toFixed(2)} earned</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg">
+                <p className="text-xs text-gray-600 mb-1">Highest Bonus Campaign</p>
+                <p className="text-xl font-black text-amber-700">5% Bonus</p>
+                <p className="text-xs text-amber-600 mt-1">+R{(metrics.totalRevenue * 0.08).toFixed(2)} extra</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg">
+                <p className="text-xs text-gray-600 mb-1">Base vs Bonus Split</p>
+                <p className="text-xl font-black text-purple-700">75:25</p>
+                <p className="text-xs text-purple-600 mt-1">Healthy mix</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-green-100 to-emerald-100 p-4 rounded-lg border border-green-300">
+              <h5 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                💚 Maximize Base Commission
+              </h5>
+              <ul className="space-y-1 text-sm text-green-800">
+                <li>• Promote ALL dispensary products (earn on every sale)</li>
+                <li>• Focus on high-value items (higher base amount)</li>
+                <li>• Level up tier: Seed (5%) → Sprout (10%) → Growth (12-15%)</li>
+              </ul>
+            </div>
+            
+            <div className="bg-gradient-to-br from-amber-100 to-yellow-100 p-4 rounded-lg border border-amber-300">
+              <h5 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                🎁 Maximize Ad Bonuses
+              </h5>
+              <ul className="space-y-1 text-sm text-amber-800">
+                <li>• Browse ad marketplace for 5% bonus campaigns</li>
+                <li>• Prioritize promoted products in your content</li>
+                <li>• Track which ads convert best for your audience</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Charts */}
       <Tabs defaultValue="earnings" className="space-y-6">

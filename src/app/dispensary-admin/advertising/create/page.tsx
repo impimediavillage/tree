@@ -490,7 +490,7 @@ export default function CreateAdPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg" data-tour="product-bundle">
                   <div>
                     <Label className="font-bold text-[#5D4E37]">
                       Create Product Bundle
@@ -846,7 +846,7 @@ export default function CreateAdPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg" data-tour="targeting">
                   <div>
                     <Label className="font-bold text-[#5D4E37]">
                       Make Available to Influencers
@@ -864,27 +864,108 @@ export default function CreateAdPage() {
                 </div>
 
                 {adData.availableToInfluencers && (
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <Label className="font-bold text-[#5D4E37]">
-                      Influencer Commission Rate (%)
-                    </Label>
-                    <Input
-                      type="number"
-                      value={adData.influencerCommission?.rate}
-                      onChange={(e) => setAdData({
-                        ...adData,
-                        influencerCommission: {
-                          ...adData.influencerCommission!,
-                          rate: parseInt(e.target.value) || 0
-                        }
-                      })}
-                      className="mt-2"
-                      min={0}
-                      max={50}
-                    />
-                    <p className="text-xs text-[#5D4E37]/70 mt-1">
-                      Influencers earn this percentage on sales they drive
-                    </p>
+                  <div className="space-y-4">
+                    {/* Educational Banner */}
+                    <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border-2 border-emerald-200">
+                      <h4 className="font-bold text-emerald-900 mb-2 flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        💡 How Influencer Commission Works
+                      </h4>
+                      <div className="text-sm text-emerald-800 space-y-1">
+                        <p>• <strong>Base Commission:</strong> Influencers earn their tier rate (5-20%) from the platform's 25% profit</p>
+                        <p>• <strong>Ad Bonus (You Set):</strong> Offer 0-5% extra to incentivize promotion (deducted from your payout)</p>
+                        <p>• <strong>Example:</strong> R100 product → Platform profit R25 → Sprout (10%) earns R2.50 base</p>
+                        <p>• <strong>With 3% Bonus:</strong> Influencer earns R2.50 + R0.75 = R3.25 total (you pay the R0.75)</p>
+                      </div>
+                    </div>
+
+                    {/* Ad Bonus Rate Input */}
+                    <div className="p-4 bg-amber-50 rounded-lg border-2 border-amber-200" data-tour="ad-bonus-rate">
+                      <Label className="font-bold text-[#5D4E37] flex items-center gap-2">
+                        <Gift className="h-4 w-4" />
+                        🎁 Ad Bonus Rate (Optional)
+                      </Label>
+                      <p className="text-sm text-[#5D4E37]/70 mb-3">
+                        Offer influencers an extra incentive to promote YOUR ad specifically
+                      </p>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <Input
+                            type="number"
+                            value={adData.influencerCommission?.adBonusRate || 0}
+                            onChange={(e) => {
+                              const value = Math.min(5, Math.max(0, parseInt(e.target.value) || 0));
+                              setAdData({
+                                ...adData,
+                                influencerCommission: {
+                                  ...adData.influencerCommission!,
+                                  adBonusRate: value,
+                                  enabled: true
+                                }
+                              });
+                            }}
+                            className="text-lg font-bold"
+                            min={0}
+                            max={5}
+                            step={0.5}
+                          />
+                        </div>
+                        <div className="text-3xl font-black text-amber-600">%</div>
+                      </div>
+                      
+                      {/* Visual Slider */}
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs text-[#5D4E37]/70 mb-1">
+                          <span>0% (No Bonus)</span>
+                          <span className="font-bold text-amber-600">
+                            {adData.influencerCommission?.adBonusRate || 0}%
+                          </span>
+                          <span>5% (Max)</span>
+                        </div>
+                        <Progress 
+                          value={(adData.influencerCommission?.adBonusRate || 0) * 20} 
+                          className="h-2"
+                        />
+                      </div>
+
+                      {/* Impact Calculator */}
+                      <div className="mt-4 p-3 bg-white rounded border border-amber-200" data-tour="bonus-calculator">
+                        <p className="text-xs font-bold text-[#5D4E37] mb-2">💰 Cost Impact (per R100 product sold):</p>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <p className="text-[#5D4E37]/60">Your Normal Payout:</p>
+                            <p className="font-bold text-green-700">R100.00</p>
+                          </div>
+                          <div>
+                            <p className="text-[#5D4E37]/60">With {adData.influencerCommission?.adBonusRate || 0}% Bonus:</p>
+                            <p className="font-bold text-amber-700">
+                              R{(100 - ((adData.influencerCommission?.adBonusRate || 0) * 0.25)).toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[#5D4E37]/60">Bonus Cost:</p>
+                            <p className="font-bold text-red-600">
+                              -R{((adData.influencerCommission?.adBonusRate || 0) * 0.25).toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[#5D4E37]/60">Influencer Gets:</p>
+                            <p className="font-bold text-emerald-600">
+                              +R{((adData.influencerCommission?.adBonusRate || 0) * 0.25).toFixed(2)} extra
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Recommendations */}
+                      <div className="mt-3 space-y-1 text-xs">
+                        <p className="font-bold text-[#5D4E37]">📊 Recommendations:</p>
+                        <p className="text-green-700">• <strong>3%:</strong> Sweet spot - influencers earn 30% more, you lose R0.75 per sale</p>
+                        <p className="text-amber-700">• <strong>5%:</strong> Maximum - for high-margin products or aggressive campaigns</p>
+                        <p className="text-blue-700">• <strong>0%:</strong> No bonus - influencers still earn base tier commission</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 

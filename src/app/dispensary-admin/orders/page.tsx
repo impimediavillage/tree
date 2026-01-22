@@ -450,7 +450,7 @@ export default function DispensaryOrdersPage() {
   };
 
   return (
-    <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
+    <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6" data-tour="orders-nav">
       <Card className="bg-muted/50 border-border/50">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
@@ -480,7 +480,7 @@ export default function DispensaryOrdersPage() {
         </CardHeader>
       </Card>
 
-      <Card className="bg-muted/50 border-border/50">
+      <Card className="bg-muted/50 border-border/50" data-tour="order-filters">
         <CardContent className="p-3 sm:p-4 md:pt-6">
           <OrderFilters
             searchTerm={searchTerm}
@@ -501,15 +501,16 @@ export default function DispensaryOrdersPage() {
         selectedOrders={selectedOrders}
         onSelectionChange={setSelectedOrders}
         orders={filteredOrders}
+        data-tour="bulk-update"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4" data-tour="order-tabs">
         {isLoading ? (
           <div className="col-span-full flex justify-center items-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : filteredOrders.length > 0 ? (
-          filteredOrders.map(order => (
+          filteredOrders.map((order, index) => (
             <OrderCard
               key={order.id}
               order={order}
@@ -529,6 +530,7 @@ export default function DispensaryOrdersPage() {
               showSelection={true}
               onUpdateStatus={updateOrderStatus}
               isDispensaryView={true}
+              data-tour={index === 0 ? "order-card" : undefined}
             />
           ))
         ) : (
@@ -547,6 +549,7 @@ export default function DispensaryOrdersPage() {
         onArchive={handleArchiveOrder}
         onUnarchive={handleUnarchiveOrder}
         onDelete={handleDeleteOrder}
+        data-tour="order-details"
       />
     </div>
   );

@@ -101,7 +101,7 @@ export default function DispensaryAdminSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
+    <div className="container mx-auto py-8 px-4 max-w-4xl" data-tour="settings-nav">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#3D2E17] mb-2">Notification Settings</h1>
         <p className="text-muted-foreground">
@@ -111,7 +111,7 @@ export default function DispensaryAdminSettingsPage() {
 
       <div className="space-y-6">
         {/* Notification Channels */}
-        <Card className="border-[#3D2E17]/20">
+        <Card className="border-[#3D2E17]/20" data-tour="notification-settings">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-[#006B3E]" />
@@ -174,7 +174,7 @@ export default function DispensaryAdminSettingsPage() {
 
         {/* Sound Volume */}
         {preferences.enableSounds && (
-          <Card className="border-[#3D2E17]/20">
+          <Card className="border-[#3D2E17]/20" data-tour="profile-section">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Volume2 className="h-5 w-5 text-[#006B3E]" />

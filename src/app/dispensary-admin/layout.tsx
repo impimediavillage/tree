@@ -20,6 +20,9 @@ import { Badge } from '@/components/ui/badge';
 import { DispensaryAdminProvider } from '@/contexts/DispensaryAdminContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NotificationBell, NotificationCenter } from '@/components/notifications';
+import { TutorialLauncher } from '@/components/tutorial/TutorialLauncher';
+import { TutorialManager } from '@/components/tutorial/TutorialManager';
+import { TutorialTriggerButton } from '@/components/tutorial/TutorialTriggerButton';
 
 interface NavItem {
   title: string;
@@ -498,6 +501,11 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
         isOpen={showNotificationCenter} 
         onClose={() => setShowNotificationCenter(false)} 
       />
+      
+      {/* Tutorial System Components */}
+      <TutorialLauncher />
+      <TutorialManager />
+      <TutorialTriggerButton />
     </div>
   );
 }

@@ -804,6 +804,194 @@ export default function FinancialHubPage() {
                 </Card>
               </div>
 
+              {/* COMMISSION STRUCTURE BREAKDOWN - NEW SECTION */}
+              <Card className="border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <DollarSign className="h-6 w-6 text-emerald-600" />
+                    💰 Commission Structure Breakdown
+                  </CardTitle>
+                  <CardDescription>
+                    Dual-tier commission system: Platform profit (25%) distribution
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Platform Profit Overview */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-4 rounded-lg border-2 border-blue-200">
+                      <p className="text-xs font-semibold text-blue-600 mb-1">TOTAL PLATFORM PROFIT (25%)</p>
+                      <p className="text-2xl font-black text-blue-700">
+                        R{(metrics.totalRevenue * 0.25).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">25% of all dispensary sales</p>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg border-2 border-emerald-200">
+                      <p className="text-xs font-semibold text-emerald-600 mb-1">INFLUENCER BASE COMMISSIONS</p>
+                      <p className="text-2xl font-black text-emerald-700">
+                        R{(metrics.influencerCommissions * 0.75 || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-emerald-600 mt-1">Tier-based (5-20% of platform profit)</p>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg border-2 border-amber-200">
+                      <p className="text-xs font-semibold text-amber-600 mb-1">INFLUENCER AD BONUSES</p>
+                      <p className="text-2xl font-black text-amber-700">
+                        R{(metrics.influencerCommissions * 0.25 || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-amber-600 mt-1">Paid by dispensaries (max 5%)</p>
+                    </div>
+                  </div>
+
+                  {/* Detailed Breakdown */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left: Platform Revenue Flow */}
+                    <div className="space-y-4">
+                      <h3 className="font-bold text-lg text-[#3D2E17] flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                        Platform Revenue Flow
+                      </h3>
+                      
+                      <div className="space-y-3">
+                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-4 rounded-lg border border-green-300">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-semibold text-green-800">💵 Gross Platform Profit (25%)</span>
+                            <span className="font-bold text-green-700">
+                              R{(metrics.totalRevenue * 0.25).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-green-700">Total 25% commission collected from all sales</p>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-emerald-100 to-teal-100 p-4 rounded-lg border border-emerald-300">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-semibold text-emerald-800">💰 Influencer Base Paid Out</span>
+                            <span className="font-bold text-red-600">
+                              -R{(metrics.influencerCommissions * 0.75 || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-emerald-700">Tier-based commissions (Seed 5% → Forest 20%)</p>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-blue-100 to-cyan-100 p-4 rounded-lg border-2 border-blue-300">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-semibold text-blue-800">🏦 Net Platform Revenue</span>
+                            <span className="font-black text-blue-700 text-lg">
+                              R{((metrics.totalRevenue * 0.25) - (metrics.influencerCommissions * 0.75 || 0)).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-blue-700">Platform keeps after base influencer commissions</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Influencer Earnings Breakdown */}
+                    <div className="space-y-4">
+                      <h3 className="font-bold text-lg text-[#3D2E17] flex items-center gap-2">
+                        <Users className="h-5 w-5 text-purple-600" />
+                        Influencer Earnings Breakdown
+                      </h3>
+                      
+                      <div className="space-y-3">
+                        <div className="bg-gradient-to-r from-emerald-100 to-green-100 p-4 rounded-lg border border-emerald-300">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-semibold text-emerald-800">💚 Base Commission (Platform Pays)</span>
+                            <span className="font-bold text-emerald-700">
+                              R{(metrics.influencerCommissions * 0.75 || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-emerald-700">From platform's 25% profit pool</p>
+                          <div className="mt-2 space-y-1 text-xs text-emerald-600">
+                            <p>• Seed (5%): ~{((metrics.influencerCommissions * 0.75 || 0) * 0.05).toFixed(2)}</p>
+                            <p>• Sprout (10%): ~{((metrics.influencerCommissions * 0.75 || 0) * 0.40).toFixed(2)}</p>
+                            <p>• Growth-Forest (12-20%): ~{((metrics.influencerCommissions * 0.75 || 0) * 0.55).toFixed(2)}</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-amber-100 to-yellow-100 p-4 rounded-lg border border-amber-300">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-semibold text-amber-800">🎁 Ad Bonuses (Dispensaries Pay)</span>
+                            <span className="font-bold text-amber-700">
+                              +R{(metrics.influencerCommissions * 0.25 || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-amber-700">Deducted from dispensary payouts (0-5% max)</p>
+                          <p className="text-xs text-amber-600 mt-1">⚠️ Not from platform profit!</p>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-lg border-2 border-purple-300">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-semibold text-purple-800">💎 Total Influencer Earnings</span>
+                            <span className="font-black text-purple-700 text-lg">
+                              R{metrics.influencerCommissions.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-purple-700">Base + Bonuses = Total paid this period</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dispensary Impact */}
+                  <div className="bg-gradient-to-r from-orange-100 to-red-100 p-4 rounded-lg border-2 border-orange-300">
+                    <h3 className="font-bold text-lg text-orange-900 mb-3 flex items-center gap-2">
+                      <Store className="h-5 w-5" />
+                      💼 Dispensary Payout Impact
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-xs font-semibold text-orange-700 mb-1">Normal Payout (100%)</p>
+                        <p className="text-xl font-black text-orange-800">
+                          R{metrics.dispensaryRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-red-700 mb-1">Ad Bonuses Deducted</p>
+                        <p className="text-xl font-black text-red-600">
+                          -R{(metrics.influencerCommissions * 0.25 || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-green-700 mb-1">Net Dispensary Payout</p>
+                        <p className="text-xl font-black text-green-700">
+                          R{(metrics.dispensaryRevenue - (metrics.influencerCommissions * 0.25 || 0)).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-orange-700 mt-3">
+                      💡 Ad bonuses are voluntary (0-5%) and only apply to sales driven by influencer ad promotions
+                    </p>
+                  </div>
+
+                  {/* ROI Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-4 rounded-lg border-2 border-cyan-200">
+                      <p className="text-xs font-semibold text-cyan-600 mb-1">INFLUENCER-DRIVEN REVENUE</p>
+                      <p className="text-2xl font-black text-cyan-700">
+                        R{metrics.influencerRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-cyan-600 mt-1">Sales attributed to influencers</p>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg border-2 border-purple-200">
+                      <p className="text-xs font-semibold text-purple-600 mb-1">PROGRAM ROI</p>
+                      <p className="text-2xl font-black text-purple-700">
+                        {metrics.influencerROI.toFixed(0)}%
+                      </p>
+                      <p className="text-xs text-purple-600 mt-1">Revenue vs commissions paid</p>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg border-2 border-green-200">
+                      <p className="text-xs font-semibold text-green-600 mb-1">PLATFORM PROFIT MARGIN</p>
+                      <p className="text-2xl font-black text-green-700">
+                        {(((metrics.totalRevenue * 0.25) - (metrics.influencerCommissions * 0.75 || 0)) / (metrics.totalRevenue * 0.25) * 100).toFixed(1)}%
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">After base commissions</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Revenue Breakdown */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-2 border-[#006B3E]">
