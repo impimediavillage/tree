@@ -100,7 +100,8 @@ export default function HolisticAiHubPage() {
         <>
         <PageHeader 
             title="The Wellness Tree"
-            description={<p>Your holistic wellness hub. Get Wellness assistance instantly and learn - plan - grow with our holistic and informative AI advisors.</p>}
+            description={<p>Your natural wellness hub. 
+              Shop natural products, and connect with a network of health stores, herbal apocatherys, and wellness practitioners, Naturally...</p>}
         >
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg font-semibold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-300">
@@ -126,7 +127,7 @@ export default function HolisticAiHubPage() {
                 Join Our Growing Ecosystem
               </h2>
               <p className="text-lg font-semibold text-[#3D2E17] mt-2">
-                Create you own Cannabinoid store, Permaculture / Organic farming store, Homeopathy store, Traditional Medicine store, or Mushroom store.
+                Create a store or canna club for FREE. No subscriptions,Full order tracking, Driver management, Social, hub, Rich analytics, Events Calander and more...
               </p>
             </div>
             <div className="mt-8 space-y-4 text-center">
@@ -251,10 +252,10 @@ export default function HolisticAiHubPage() {
           <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
             <div className="text-center">
               <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
-                Need Wellness information now?
+                Become a Leaf user?
               </h2>
               <p className="text-lg font-semibold text-[#3D2E17] mt-2">
-                Get instant access now. Sign up as Leaf user and get 10 free credits to get vital wellness info. Remember to connect with a real practitioner as AI can make mistakes.
+                Get instant access now. FREE P.O.D store, an engaging influencer program to earn cash, and 10 free credits to use our LM'S. order tracking and driver tracking with PUDO, COURIER GUY, and store managed driver teams.
               </p>
             </div>
             <div className="mt-8 space-y-4 text-center">
