@@ -92,9 +92,21 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
           isTreehouse: isTreehouseOrder
         });
 
-        // Calculate commissions for Treehouse orders
-        const platformCommission = isTreehouseOrder ? Math.round(groupTotal * PLATFORM_COMMISSION_RATE) : undefined;
-        const creatorCommission = isTreehouseOrder ? Math.round(groupTotal * CREATOR_COMMISSION_RATE) : undefined;
+        // Calculate commissions for Treehouse orders - NEW PRICING MODEL
+        // For Treehouse: customer pays retailPrice * 1.25
+        // Creator gets: retailPrice * 0.25
+        // Platform gets: retailPrice (covers basePrice + profit)
+        let platformCommission, creatorCommission, totalRetailPrice, totalBasePrice;
+        
+        if (isTreehouseOrder) {
+          // Each item price is already customerPrice (retailPrice * 1.25)
+          // We need to extract retailPrice to calculate commission
+          totalRetailPrice = Math.round(groupSubtotal / 1.25); // Reverse to get retailPrice
+          creatorCommission = Math.round(totalRetailPrice * CREATOR_COMMISSION_RATE); // 25% of retailPrice
+          platformCommission = totalRetailPrice; // Platform gets the full retailPrice
+          // Note: basePrice should come from product data, defaulting to 80% of retailPrice
+          totalBasePrice = Math.round(totalRetailPrice * 0.8);
+        }
 
         // Get creator info from first item (all items in Treehouse order should have same creator)
         const creatorId = isTreehouseOrder ? groupItems[0]?.creatorId : undefined;

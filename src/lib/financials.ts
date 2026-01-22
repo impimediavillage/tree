@@ -101,6 +101,9 @@ export async function calculatePlatformFinancials(
       
       // Categorize by order type
       if (order.orderType === 'treehouse') {
+        // NEW PRICING MODEL for Treehouse:
+        // totalPlatformCommission should be the retailPrice (platform revenue)
+        // Platform profit = retailPrice - basePrice (calculated in order processing)
         treehouseCommission += order.totalPlatformCommission;
       } else {
         // Check items for commission rates

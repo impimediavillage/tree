@@ -272,18 +272,30 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
   
   // Convert CartItems to OrderItems with accurate pricing breakdown
   const orderItems: OrderItem[] = items.map(item => {
-    // For Treehouse orders, use simple pricing (no commission breakdown needed here)
+    // For Treehouse orders, use new pricing model
+    // item.price is customerPrice (retailPrice * 1.25)
     if (params.orderType === 'treehouse') {
+      const retailPrice = Math.round((item.price / 1.25) * 100) / 100;
+      const basePrice = Math.round(retailPrice * 0.8 * 100) / 100; // Default: 80% of retailPrice
+      const creatorCommission = Math.round(retailPrice * 0.25 * 100) / 100;
+      
       return {
         ...item,
         originalPrice: item.price,
-        dispensarySetPrice: item.price,
-        basePrice: item.price,
-        platformCommission: 0, // Handled at order level for Treehouse
-        commissionRate: 0,
+        dispensarySetPrice: item.price,      // Customer price
+        basePrice: retailPrice,              // Platform gets retailPrice
+        platformCommission: creatorCommission, // Creator gets 25% of retailPrice
+        commissionRate: 0.25,
         subtotalBeforeTax: item.price * item.quantity,
         taxAmount: 0,
-        lineTotal: item.price * item.quantity
+        lineTotal: item.price * item.quantity,
+        // Store pricing breakdown in metadata
+        metadata: {
+          retailPrice,
+          actualBasePrice: basePrice,
+          creatorCommission,
+          platformProfit: retailPrice - basePrice
+        }
       };
     }
     

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader, AlertCircle } from 'lucide-react';
 import type { ApparelType } from '@/types/creator-lab';
-import { APPAREL_PRICES } from '@/types/creator-lab';
+import { calculateCustomerPrice, calculateCreatorCommission } from '@/types/creator-lab';
 import type { ApparelItem } from '@/types/apparel-items';
 
 interface ApparelSelectorProps {
@@ -93,11 +93,6 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
     setSelectedSurface('front');
   };
 
-  const calculateCommission = (price: number) => {
-    // Price includes 25% commission, so commission = price * (25/125) = price * 0.2
-    return Math.round(price * 0.2);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
@@ -143,8 +138,9 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
                 {apparelItems.map((item) => {
                   const mappedType = mapItemTypeToApparelType(item.itemType);
                   const isSelected = selectedItem === mappedType;
-                  const price = item.retailPrice;
-                  const commission = calculateCommission(price);
+                  const retailPrice = item.retailPrice;
+                  const customerPrice = calculateCustomerPrice(retailPrice);
+                  const commission = calculateCreatorCommission(retailPrice);
                   const displayImage = item.mockImageUrl || item.mockImageFront || '/images/apparel/placeholder.jpg';
 
                   return (
@@ -168,7 +164,7 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
                       <div className="p-2 sm:p-3 bg-white">
                         <p className="font-extrabold text-[#3D2E17] text-sm sm:text-base truncate">{item.name}</p>
                         <div className="flex items-center justify-between mt-1 flex-wrap gap-1">
-                          <span className="text-base sm:text-lg font-bold text-[#006B3E]">R{price.toFixed(2)}</span>
+                          <span className="text-base sm:text-lg font-bold text-[#006B3E]">R{customerPrice.toFixed(2)}</span>
                           <Badge variant="secondary" className="bg-green-100 text-green-700 font-bold text-[10px] sm:text-xs">
                             Earn R{commission}
                           </Badge>

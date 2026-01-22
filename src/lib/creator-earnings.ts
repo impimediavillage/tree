@@ -25,7 +25,9 @@ export interface ProcessSaleParams {
   productId: string;
   apparelType: string;
   quantity: number;
-  totalAmount: number; // Total sale amount in ZAR
+  totalAmount: number; // Total customer payment in ZAR
+  retailPrice: number; // Platform retail price (for commission calculation)
+  basePrice: number;   // Platform cost (for analytics)
   orderDate: any;
 }
 
@@ -49,12 +51,18 @@ export async function processSale(params: ProcessSaleParams): Promise<void> {
     apparelType,
     quantity,
     totalAmount,
+    retailPrice,
+    basePrice,
     orderDate,
   } = params;
 
-  // Calculate commissions
-  const creatorCommission = Math.round(totalAmount * CREATOR_COMMISSION_RATE);
-  const platformCommission = Math.round(totalAmount * PLATFORM_COMMISSION_RATE);
+  // NEW PRICING MODEL:
+  // - Customer pays: totalAmount (retailPrice * 1.25)
+  // - Creator gets: retailPrice * 0.25 (25% of retailPrice, NOT customer payment)
+  // - Platform gets: retailPrice (which covers basePrice + profit)
+  const creatorCommission = Math.round(retailPrice * CREATOR_COMMISSION_RATE);
+  const platformRevenue = retailPrice; // Platform receives the retailPrice
+  const platformProfit = platformRevenue - basePrice; // Actual profit after costs
 
   const earningsRef = db.collection('creatorEarnings').doc(creatorId);
 
@@ -66,8 +74,11 @@ export async function processSale(params: ProcessSaleParams): Promise<void> {
       productId,
       apparelType: apparelType as ApparelType,
       quantity,
-      saleAmount: totalAmount,
-      commission: creatorCommission,
+      saleAmount: totalAmount,      // What customer paid
+      retailPrice: retailPrice,      // Platform retail price
+      basePrice: basePrice,          // Platform cost
+      commission: creatorCommission, // 25% of retailPrice
+      platformProfit: platformProfit, // retailPrice - basePrice
       orderDate: orderDate || FieldValue.serverTimestamp(),
       status: 'shipped',
     };
@@ -115,9 +126,15 @@ export async function processSale(params: ProcessSaleParams): Promise<void> {
       userId: creatorId,
       type: 'treehouse_sale',
       amount: creatorCommission,
-      description: `Sale commission (25%) for order ${orderId}`,
+      description: `Sale commission (25% of R${retailPrice} retail price) for order ${orderId}`,
       orderId,
       productId,
+      metadata: {
+        retailPrice,
+        basePrice,
+        customerPayment: totalAmount,
+        commissionRate: CREATOR_COMMISSION_RATE
+      },
       status: 'pending',
       createdAt: FieldValue.serverTimestamp(),
     });
@@ -246,10 +263,25 @@ export function calculatePlatformRevenue(totalAmount: number): number {
 }
 
 /**
- * Calculate creator commission from a sale
+ * Calculate creator commission from retail price
+ * Creator earns 25% of the retailPrice (platform selling price)
+ * NOT 25% of what customer pays
+ * 
+ * Example:
+ * - retailPrice: R100
+ * - customerPrice: R125 (retailPrice * 1.25)
+ * - creatorCommission: R25 (retailPrice * 0.25)
  */
-export function calculateCreatorCommission(totalAmount: number): number {
-  return Math.round(totalAmount * CREATOR_COMMISSION_RATE);
+export function calculateCreatorCommission(retailPrice: number): number {
+  return Math.round(retailPrice * CREATOR_COMMISSION_RATE);
+}
+
+/**
+ * Calculate customer price from retail price
+ * Customer pays: retailPrice + 25% commission
+ */
+export function calculateCustomerPrice(retailPrice: number): number {
+  return Math.round(retailPrice * 1.25 * 100) / 100;
 }
 
 /**

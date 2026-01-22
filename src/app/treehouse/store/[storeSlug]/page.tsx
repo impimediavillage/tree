@@ -6,7 +6,8 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { CreatorStore } from '@/types/creator-store';
 import type { TreehouseProduct } from '@/types/creator-lab';
-import { APPAREL_SIZES } from '@/types/creator-lab';
+import { APPAREL_SIZES, calculateCustomerPrice, calculateCreatorCommission } from '@/types/creator-lab';
+import type { ApparelItem } from '@/types/apparel-items';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -296,6 +297,11 @@ export default function CreatorStorePage() {
                           R{product.price.toFixed(2)}
                         </span>
                         <Badge variant="secondary">{product.category}</Badge>
+                      </div>
+                      
+                      {/* Price breakdown info */}
+                      <div className="text-xs text-muted-foreground">
+                        <p>Creator earns R{calculateCreatorCommission(product.price / 1.25).toFixed(2)} per sale</p>
                       </div>
                       
                       {/* Size Selection UI */}

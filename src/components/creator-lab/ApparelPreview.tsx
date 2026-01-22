@@ -77,8 +77,8 @@ export function ApparelPreview({ designImageUrl, selectedType, onAddToCart }: Ap
                     <p className="text-sm text-[#5D4E37] font-semibold">100% Cotton, Premium Quality</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-extrabold text-[#006B3E]">R{APPAREL_PRICES[type]}</p>
-                    <p className="text-xs text-[#5D4E37] font-semibold">incl. VAT</p>
+                    <p className="text-2xl font-extrabold text-[#006B3E]">R{customerPrice.toFixed(2)}</p>
+                    <p className="text-xs text-[#5D4E37] font-semibold">You earn: R{commission}</p>
                   </div>
                 </div>
 
@@ -99,18 +99,18 @@ export function ApparelPreview({ designImageUrl, selectedType, onAddToCart }: Ap
                     className="w-full bg-[#006B3E] hover:bg-[#5D4E37] text-white font-bold py-6 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <ShoppingBag className="mr-2 h-5 w-5" />
-                    Add to Cart - R{APPAREL_PRICES[type]}
+                    Add to Cart - R{customerPrice.toFixed(2)}
                   </Button>
                 )}
               </div>
             </TabsContent>
-          ))}
+          )})}
         </Tabs>
 
         {/* Info note */}
         <div className="text-center text-xs text-[#5D4E37] font-semibold bg-[#006B3E]/5 rounded-lg p-3">
           <p>🌳 All items are printed on-demand to reduce waste.</p>
-          <p className="mt-1">Creators earn 25% commission on every sale.</p>
+          <p className="mt-1">Creators earn 25% of platform retail price on every sale.</p>
         </div>
       </CardContent>
     </Card>

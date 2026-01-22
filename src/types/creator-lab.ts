@@ -21,21 +21,49 @@ export interface ApparelPricing {
   currency: 'ZAR';
 }
 
-// Fixed pricing (incl. VAT + 25% creator surcharge)
-// Cap: R350 base + R87.50 commission = R437.50
-// Beanie: R350 base + R87.50 commission = R437.50
-// T-Shirt: R500 base + R125 commission = R625
-// Long Sleeve: R750 base + R187.50 commission = R937.50
-// Hoodie: R1000 base + R250 commission = R1250
-// Backpack: R600 base + R150 commission = R750
-export const APPAREL_PRICES: Record<ApparelType, number> = {
-  'T-Shirt': 625,
-  'Long T-Shirt': 937.50,
-  'Hoodie': 1250,
-  'Cap': 437.50,
-  'Beanie': 437.50,
-  'Backpack': 750,
+// NEW PRICING MODEL:
+// - basePrice: Cost to platform (manufacturing)
+// - retailPrice: Platform selling price
+// - customerPrice: retailPrice + (retailPrice × 0.25) - what customer pays
+// - creatorCommission: retailPrice × 0.25 - creator earns 25% of retailPrice
+// - platformProfit: retailPrice - basePrice
+
+// Default pricing (fallback if apparel_items not available)
+// These are retailPrice values - customer pays retailPrice * 1.25
+export const DEFAULT_APPAREL_RETAIL_PRICES: Record<ApparelType, number> = {
+  'T-Shirt': 500,      // Customer pays: R625
+  'Long T-Shirt': 750, // Customer pays: R937.50
+  'Hoodie': 1000,      // Customer pays: R1250
+  'Cap': 350,          // Customer pays: R437.50
+  'Beanie': 350,       // Customer pays: R437.50
+  'Backpack': 600,     // Customer pays: R750
 };
+
+// Deprecated - use getApparelPricing() instead
+export const APPAREL_PRICES: Record<ApparelType, number> = DEFAULT_APPAREL_RETAIL_PRICES;
+
+export interface ApparelPricingData {
+  itemType: string;
+  basePrice: number;    // Cost to platform
+  retailPrice: number;  // Platform selling price
+  customerPrice: number; // What customer pays (retailPrice * 1.25)
+  creatorCommission: number; // Creator earns (retailPrice * 0.25)
+  platformProfit: number; // Platform profit (retailPrice - basePrice)
+}
+
+/**
+ * Calculate customer-facing price from retailPrice
+ */
+export function calculateCustomerPrice(retailPrice: number): number {
+  return Math.round(retailPrice * 1.25 * 100) / 100; // Round to 2 decimals
+}
+
+/**
+ * Calculate creator commission from retailPrice
+ */
+export function calculateCreatorCommission(retailPrice: number): number {
+  return Math.round(retailPrice * 0.25 * 100) / 100;
+}
 
 // Available sizes per apparel type
 export const APPAREL_SIZES: Record<ApparelType, string[]> = {
@@ -176,8 +204,11 @@ export interface SaleRecord {
   productId: string;
   apparelType: ApparelType;
   quantity: number;
-  saleAmount: number; // Total sale (ZAR)
-  commission: number; // 25% of saleAmount (ZAR)
+  saleAmount: number;      // Total customer paid (ZAR)
+  retailPrice: number;     // Platform retail price (ZAR)
+  basePrice: number;       // Platform cost (ZAR)
+  commission: number;      // 25% of retailPrice (ZAR)
+  platformProfit: number;  // retailPrice - basePrice (ZAR)
   orderDate: any; // Firestore ServerTimestamp
   shippedDate?: any;
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
@@ -206,17 +237,29 @@ export interface TreehouseOrderItem {
   apparelColor: ApparelColor;
   designImageUrl: string;
   quantity: number;
-  price: number; // Per unit price (ZAR)
-  totalPrice: number; // quantity * price (ZAR)
-  creatorCommission: number; // 25% of totalPrice (ZAR)
-  platformCommission: number; // 75% of totalPrice (ZAR)
+  
+  // NEW PRICING MODEL:
+  basePrice: number;         // Cost to platform per unit (ZAR)
+  retailPrice: number;       // Platform retail price per unit (ZAR)
+  customerPrice: number;     // What customer pays per unit: retailPrice * 1.25 (ZAR)
+  
+  totalCustomerPayment: number;  // customerPrice * quantity (ZAR)
+  creatorCommission: number;     // retailPrice * 0.25 * quantity (ZAR)
+  platformRevenue: number;       // retailPrice * quantity (ZAR)
+  platformProfit: number;        // (retailPrice - basePrice) * quantity (ZAR)
 }
 
 export interface TreehouseOrderMetadata {
   orderType: 'treehouse';
   creatorIds: string[]; // Multiple creators if mixed cart
-  totalCreatorCommission: number; // Sum of all 25% commissions (ZAR)
-  totalPlatformRevenue: number; // Sum of all 75% commissions (ZAR)
+  
+  // NEW PRICING MODEL:
+  totalCustomerPayment: number;  // Sum of all customerPrice (what customer paid)
+  totalCreatorCommission: number; // Sum of all retailPrice * 0.25 commissions (ZAR)
+  totalPlatformRevenue: number;   // Sum of all retailPrice (ZAR)
+  totalPlatformProfit: number;    // Sum of all (retailPrice - basePrice) (ZAR)
+  totalBasePrice: number;         // Sum of all basePrices (platform costs)
+  
   podStatus: PODStatus;
   printedDate?: any;
   shippedDate?: any;

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Truck, MapPin, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Award } from 'lucide-react';
+import { Truck, MapPin, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Award, Trees } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -82,11 +82,7 @@ export default function DriverDashboardLayout({
     <>
       <div className="p-3 border-b">
         <Link href="/driver/dashboard" className="flex items-center gap-3 px-1 hover:opacity-80 transition-opacity">
-          <img 
-            src="/logo.svg" 
-            alt="The Wellness Tree" 
-            className="h-8 w-8 object-contain flex-shrink-0"
-          />
+          <Trees className="h-8 w-8 text-[#006B3E] flex-shrink-0" />
           <h2 className="text-lg sm:text-xl font-semibold text-primary">Driver Portal</h2>
         </Link>
       </div>
@@ -137,11 +133,7 @@ export default function DriverDashboardLayout({
           href="/driver/dashboard" 
           className="flex items-center gap-2"
         >
-          <img 
-            src="/logo.svg" 
-            alt="The Wellness Tree" 
-            className="h-8 w-8 rounded-lg object-contain"
-          />
+          <Trees className="h-8 w-8 text-[#006B3E]" />
           <span 
             className="text-lg font-semibold text-foreground"
             style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
@@ -208,11 +200,7 @@ export default function DriverDashboardLayout({
         {/* Desktop Top Ribbon - Full Width */}
         <div className="hidden md:flex items-center justify-between w-full border-b bg-background/95 backdrop-blur-sm px-6 py-3 sticky top-0 z-40">
           <Link href="/driver/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <img 
-              src="/logo.svg" 
-              alt="The Wellness Tree" 
-              className="h-10 w-10 object-contain"
-            />
+            <Trees className="h-10 w-10 text-[#006B3E]" />
             <h1 
               className="text-2xl font-extrabold text-[#3D2E17]"
               style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}

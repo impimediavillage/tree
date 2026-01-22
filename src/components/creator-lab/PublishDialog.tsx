@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import type { CreatorDesign, ApparelType } from '@/types/creator-lab';
-import { APPAREL_PRICES, CREATOR_COMMISSION_RATE } from '@/types/creator-lab';
+import { calculateCustomerPrice, calculateCreatorCommission, DEFAULT_APPAREL_RETAIL_PRICES } from '@/types/creator-lab';
 
 interface PublishDialogProps {
   open: boolean;
@@ -36,10 +36,6 @@ export function PublishDialog({ open, onOpenChange, design, onPublished }: Publi
     setSelectedApparel((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
-  };
-
-  const calculateEarnings = (price: number) => {
-    return Math.round(price * CREATOR_COMMISSION_RATE);
   };
 
   const handlePublish = async () => {
@@ -142,8 +138,9 @@ export function PublishDialog({ open, onOpenChange, design, onPublished }: Publi
             <h4 className="font-extrabold text-[#3D2E17]">Select Apparel Types</h4>
             <div className="grid gap-3">
               {apparelOptions.map((type) => {
-                const price = APPAREL_PRICES[type];
-                const earnings = calculateEarnings(price);
+                const retailPrice = DEFAULT_APPAREL_RETAIL_PRICES[type];
+                const customerPrice = calculateCustomerPrice(retailPrice);
+                const earnings = calculateCreatorCommission(retailPrice);
                 const isSelected = selectedApparel.includes(type);
 
                 return (
@@ -170,9 +167,9 @@ export function PublishDialog({ open, onOpenChange, design, onPublished }: Publi
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-extrabold text-[#3D2E17]">R{price}</p>
+                      <p className="font-extrabold text-[#3D2E17]">R{customerPrice.toFixed(2)}</p>
                       <p className="text-xs text-[#006B3E] font-bold">
-                        You earn: R{earnings}
+                        You earn: R{earnings.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -197,7 +194,7 @@ export function PublishDialog({ open, onOpenChange, design, onPublished }: Publi
                 <div className="flex justify-between">
                   <span className="text-[#5D4E37] font-semibold">Potential earnings per sale:</span>
                   <span className="font-extrabold text-[#006B3E]">
-                    R{calculateEarnings(APPAREL_PRICES[selectedApparel[0]])} - R{calculateEarnings(APPAREL_PRICES['Hoodie'])}
+                    R{calculateCreatorCommission(DEFAULT_APPAREL_RETAIL_PRICES[selectedApparel[0]]).toFixed(2)} - R{calculateCreatorCommission(DEFAULT_APPAREL_RETAIL_PRICES['Hoodie']).toFixed(2)}
                   </span>
                 </div>
               </div>
