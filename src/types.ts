@@ -294,6 +294,7 @@ export interface ProductRequest {
   requesterDispensaryId: string;
   requesterDispensaryName: string;
   requesterEmail: string;
+  requesterUserId?: string; // User ID of the buyer
 
   quantityRequested: number;
   requestedTier?: {

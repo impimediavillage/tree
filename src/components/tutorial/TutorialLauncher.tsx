@@ -336,9 +336,9 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                 >
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-white font-semibold">Overall Progress</span>
-                    <span className="text-white font-bold">{Math.round(progressPercentage)}%</span>
+                    <span className="text-white font-bold">{Math.round(progressPercent)}%</span>
                   </div>
-                  <Progress value={progressPercentage} className="h-3 bg-white/20" />
+                  <Progress value={progressPercent} className="h-3 bg-white/20" />
                 </motion.div>
               </div>
 

@@ -2,7 +2,8 @@
 'use client';
 
 import * as React from 'react';
-import type { ProductRequest, NoteData, Product, ShippingRate, PUDOLocker } from '@/types';
+import type { ProductRequest, NoteData, Product, PUDOLocker } from '@/types';
+import type { ShippingRate } from '@/types/checkout';
 import type { ProductType } from '@/types/product';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
@@ -23,7 +24,7 @@ import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '../ui/separator';
 import Image from 'next/image';
-import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2, ThumbsUp, ThumbsDown, Trash2, ShoppingCart, CheckCircle } from 'lucide-react';
+import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2, ThumbsUp, ThumbsDown, Trash2, ShoppingCart, CheckCircle, Search } from 'lucide-react';
 import { getProductCollectionName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Input } from '../ui/input';
@@ -31,6 +32,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { Order, OrderItem, OrderShipment } from '@/types/order';
+import { useProductPoolShipping } from '@/hooks/use-product-pool-shipping';
 
 
 const addNoteSchema = z.object({
@@ -62,6 +64,12 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
     const [availableShippingMethods, setAvailableShippingMethods] = React.useState<string[]>([]);
     const [sellerDispensary, setSellerDispensary] = React.useState<any>(null);
     const [buyerDispensary, setBuyerDispensary] = React.useState<any>(null);
+    const [selectedShippingTier, setSelectedShippingTier] = React.useState<string | null>(null);
+    const [isLockerModalOpen, setIsLockerModalOpen] = React.useState(false);
+    const [lockerSearchTerm, setLockerSearchTerm] = React.useState('');
+    
+    // Use the shipping hook
+    const shipping = useProductPoolShipping();
     const { toast } = useToast();
     const { currentUser } = useAuth();
     const notesEndRef = React.useRef<HTMLDivElement>(null);
@@ -511,134 +519,427 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                     )}
                                     {type === 'incoming' && request.requestStatus === 'accepted' && request.requesterConfirmed && (
                                          <>
-                                            {/* Shipping Selection UI */}
+                                            {/* Modern Shipping Selection UI */}
                                             {showShippingSelection && (
-                                                <div className="col-span-full space-y-4 p-4 bg-muted/30 rounded-lg border-2 border-primary/20">
-                                                    <div className="flex items-center gap-2">
-                                                        <Truck className="h-5 w-5 text-primary" />
-                                                        <h4 className="font-semibold text-base">Select Shipping Method</h4>
-                                                    </div>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Choose how this order will be delivered from {sellerDispensary?.dispensaryName || 'seller'} to {request.requesterDispensaryName}
-                                                    </p>
-                                                    
-                                                    {availableShippingMethods.length === 0 ? (
-                                                        <div className="text-sm text-center text-muted-foreground py-4 bg-background rounded-md border">
-                                                            <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-                                                            <p className="font-semibold">No shipping methods configured</p>
-                                                            <p className="text-xs mt-1">The seller dispensary needs to configure shipping methods in their profile.</p>
-                                                        </div>
-                                                    ) : (
-                                                        <RadioGroup 
-                                                            value={selectedShipping?.id || ''} 
-                                                            onValueChange={(value) => {
-                                                                const method = availableShippingMethods.find(m => m === value);
-                                                                if (method) {
-                                                                    // Create a mock ShippingRate based on the method type
-                                                                    const shippingRate: ShippingRate = {
-                                                                        id: method,
-                                                                        name: method.toUpperCase(),
-                                                                        courier_name: method === 'dtd' ? 'ShipLogic' : method.includes('lt') ? 'PUDO' : method === 'in_house' ? 'In-house Delivery' : 'Collection',
-                                                                        provider: method === 'dtd' ? 'shiplogic' : ['dtl', 'ltd', 'ltl'].includes(method) ? 'pudo' : method === 'in_house' ? 'in_house' : 'collection',
-                                                                        label: method.toUpperCase(),
-                                                                        rate: 0,
-                                                                        price: 0, // Will be calculated by shipping service
-                                                                        serviceType: method,
-                                                                        estimatedDays: '2-5 business days',
-                                                                    };
-                                                                    setSelectedShipping(shippingRate);
-                                                                }
-                                                            }}
-                                                            className="grid grid-cols-1 md:grid-cols-2 gap-2"
-                                                        >
-                                                            {availableShippingMethods.map((method) => {
-                                                                const methodLabels: Record<string, string> = {
-                                                                    'dtd': 'Door-to-Door Courier',
-                                                                    'dtl': 'Door-to-Locker',
-                                                                    'ltd': 'Locker-to-Door',
-                                                                    'ltl': 'Locker-to-Locker',
-                                                                    'collection': 'Collection from Store',
-                                                                    'in_house': 'In-house Delivery'
-                                                                };
-                                                                
-                                                                const isLockerMethod = ['dtl', 'ltd', 'ltl'].includes(method);
-                                                                
-                                                                return (
-                                                                    <div key={method}>
-                                                                        <Label 
-                                                                            htmlFor={`shipping-${method}`}
-                                                                            className="flex items-center space-x-3 border-2 rounded-md p-3 cursor-pointer hover:bg-accent has-[:checked]:bg-accent has-[:checked]:border-primary transition-all"
-                                                                        >
-                                                                            <RadioGroupItem value={method} id={`shipping-${method}`} />
-                                                                            <div className="flex-1">
-                                                                                <p className="font-semibold text-sm">{methodLabels[method] || method}</p>
-                                                                                {isLockerMethod && (
-                                                                                    <p className="text-xs text-muted-foreground">PUDO Locker service</p>
+                                                <div className="col-span-full space-y-6">
+                                                    {/* Method Selection Card */}
+                                                    <Card className="border-2 border-primary/30 bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 dark:from-gray-900 dark:via-amber-950 dark:to-green-950">
+                                                        <CardHeader>
+                                                            <CardTitle className="flex items-center gap-2 text-lg">
+                                                                <Truck className="h-6 w-6 text-[#006B3E]" />
+                                                                <span className="font-black text-[#3D2E17]">1. Select Shipping Method</span>
+                                                            </CardTitle>
+                                                            <CardDescription className="font-semibold text-[#5D4E37]">
+                                                                Choose delivery from {sellerDispensary?.dispensaryName || 'seller'} to {request.requesterDispensaryName}
+                                                            </CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {availableShippingMethods.length === 0 ? (
+                                                                <div className="text-center py-8 bg-white/60 rounded-xl border-2 border-dashed border-[#006B3E]/30">
+                                                                    <AlertTriangle className="h-12 w-12 text-[#006B3E]/30 mx-auto mb-3" />
+                                                                    <p className="text-lg font-bold text-[#5D4E37]">No shipping methods configured</p>
+                                                                    <p className="text-sm font-semibold text-muted-foreground mt-1">The seller dispensary needs to configure shipping methods in their profile.</p>
+                                                                </div>
+                                                            ) : (
+                                                                <RadioGroup 
+                                                                    value={selectedShippingTier || ''} 
+                                                                    onValueChange={async (value) => {
+                                                                        setSelectedShippingTier(value);
+                                                                        setSelectedShipping(null);
+                                                                        setSelectedDestinationLocker(null);
+                                                                        shipping.resetShipping();
+                                                                        
+                                                                        if (!buyerDispensary || !sellerDispensary || !request.requestedTier) return;
+                                                                        
+                                                                        const buyerAddress = {
+                                                                            streetAddress: buyerDispensary.address || buyerDispensary.streetAddress || '',
+                                                                            suburb: buyerDispensary.suburb || '',
+                                                                            city: buyerDispensary.city || '',
+                                                                            province: buyerDispensary.province || '',
+                                                                            postalCode: buyerDispensary.postalCode || '',
+                                                                            country: buyerDispensary.country || 'South Africa',
+                                                                            latitude: buyerDispensary.latitude,
+                                                                            longitude: buyerDispensary.longitude,
+                                                                        };
+                                                                        
+                                                                        const shippingConfig = {
+                                                                            items: [{
+                                                                                productId: request.productId,
+                                                                                name: request.productName,
+                                                                                quantity: request.quantityRequested,
+                                                                                weight: request.requestedTier.weightKgs || 0.5,
+                                                                                lengthCm: request.requestedTier.lengthCm,
+                                                                                widthCm: request.requestedTier.widthCm,
+                                                                                heightCm: request.requestedTier.heightCm,
+                                                                            }],
+                                                                            sellerDispensary,
+                                                                            buyerDispensary,
+                                                                        };
+                                                                        
+                                                                        // Fetch rates based on method
+                                                                        if (value === 'dtd') {
+                                                                            await shipping.fetchShiplogicRates(shippingConfig, buyerAddress);
+                                                                        } else if (value === 'collection') {
+                                                                            const collectionRate = shipping.createCollectionRate(sellerDispensary);
+                                                                            setSelectedShipping(collectionRate);
+                                                                        } else if (value === 'in_house') {
+                                                                            const inHouseRate = shipping.calculateInHouseDelivery(sellerDispensary, buyerAddress);
+                                                                            if (inHouseRate) setSelectedShipping(inHouseRate);
+                                                                        } else if (['dtl', 'ltd', 'ltl'].includes(value)) {
+                                                                            // Fetch PUDO lockers for buyer
+                                                                            if (value === 'dtl' || value === 'ltl') {
+                                                                                await shipping.fetchPudoLockers(
+                                                                                    buyerAddress,
+                                                                                    request.requestedTier.weightKgs || 0.5,
+                                                                                    request.requestedTier.lengthCm && request.requestedTier.widthCm && request.requestedTier.heightCm
+                                                                                        ? { length: request.requestedTier.lengthCm, width: request.requestedTier.widthCm, height: request.requestedTier.heightCm }
+                                                                                        : undefined
+                                                                                );
+                                                                            } else if (value === 'ltd' && sellerDispensary.originLocker) {
+                                                                                // LTD: Only needs origin locker (from seller)
+                                                                                await shipping.fetchPudoRates(shippingConfig, value as any, buyerAddress);
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                                                                >
+                                                                    {availableShippingMethods.map((method) => {
+                                                                        const methodLabels: Record<string, string> = {
+                                                                            'dtd': 'Door-to-Door Courier',
+                                                                            'dtl': 'Door-to-Locker',
+                                                                            'ltd': 'Locker-to-Door',
+                                                                            'ltl': 'Locker-to-Locker',
+                                                                            'collection': 'Collection from Store',
+                                                                            'in_house': 'In-house Delivery'
+                                                                        };
+                                                                        
+                                                                        const methodDescriptions: Record<string, string> = {
+                                                                            'dtd': 'ShipLogic courier service',
+                                                                            'dtl': 'To PUDO locker near buyer',
+                                                                            'ltd': 'From seller locker to buyer',
+                                                                            'ltl': 'Between PUDO lockers',
+                                                                            'collection': 'Free pickup at store',
+                                                                            'in_house': 'Local delivery service'
+                                                                        };
+                                                                        
+                                                                        return (
+                                                                            <Label 
+                                                                                key={method}
+                                                                                htmlFor={`shipping-${method}`}
+                                                                                className={cn(
+                                                                                    "flex items-center p-4 rounded-xl cursor-pointer border-2 transition-all",
+                                                                                    selectedShippingTier === method
+                                                                                        ? "bg-[#006B3E] border-[#006B3E] shadow-xl ring-2 ring-[#006B3E]/30"
+                                                                                        : "bg-white/80 dark:bg-gray-800/50 border-[#006B3E]/20 hover:border-[#006B3E] hover:shadow-lg"
                                                                                 )}
-                                                                            </div>
-                                                                        </Label>
+                                                                            >
+                                                                                <RadioGroupItem value={method} id={`shipping-${method}`} className="sr-only" />
+                                                                                <div className="flex-1">
+                                                                                    <p className={cn(
+                                                                                        "font-black text-base",
+                                                                                        selectedShippingTier === method ? "text-white" : "text-[#3D2E17]"
+                                                                                    )}>
+                                                                                        {methodLabels[method] || method}
+                                                                                    </p>
+                                                                                    <p className={cn(
+                                                                                        "text-sm font-semibold",
+                                                                                        selectedShippingTier === method ? "text-green-100" : "text-[#5D4E37]"
+                                                                                    )}>
+                                                                                        {methodDescriptions[method]}
+                                                                                    </p>
+                                                                                </div>
+                                                                                {selectedShippingTier === method && (
+                                                                                    <CheckCircle className="h-6 w-6 text-white ml-2" />
+                                                                                )}
+                                                                            </Label>
+                                                                        );
+                                                                    })}
+                                                                </RadioGroup>
+                                                            )}
+                                                        </CardContent>
+                                                    </Card>
+
+                                                    {/* Origin Locker Display (for LTL/LTD) */}
+                                                    {selectedShippingTier && ['ltd', 'ltl'].includes(selectedShippingTier) && sellerDispensary?.originLocker && (
+                                                        <Card className="border-[#006B3E]/30 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20">
+                                                            <CardHeader className="pb-3">
+                                                                <CardTitle className="text-base flex items-center gap-2">
+                                                                    <MapPin className="h-5 w-5 text-[#006B3E]" />
+                                                                    Origin Locker (Seller)
+                                                                </CardTitle>
+                                                                <CardDescription>Seller ships from:</CardDescription>
+                                                            </CardHeader>
+                                                            <CardContent>
+                                                                <div className="flex items-start gap-3">
+                                                                    <div className="flex-1">
+                                                                        <p className="font-semibold text-[#3D2E17]">{sellerDispensary.originLocker.name || sellerDispensary.originLocker.pudoName}</p>
+                                                                        <p className="text-sm text-muted-foreground">{sellerDispensary.originLocker.address}</p>
                                                                     </div>
-                                                                );
-                                                            })}
-                                                        </RadioGroup>
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
                                                     )}
-                                                    
-                                                    {/* Locker information for LTL/DTL/LTD */}
-                                                    {selectedShipping && ['dtl', 'ltd', 'ltl'].includes(selectedShipping.id) && (
-                                                        <div className="space-y-3 p-3 bg-background rounded-md border">
-                                                            <h5 className="font-semibold text-sm flex items-center gap-2">
-                                                                <Package className="h-4 w-4" />
-                                                                Locker Details
-                                                            </h5>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                                                <div className="space-y-1">
-                                                                    <p className="text-xs text-muted-foreground">Origin Locker (Seller)</p>
-                                                                    {sellerDispensary?.originLocker ? (
-                                                                        <div className="p-2 bg-green-50 border border-green-200 rounded">
-                                                                            <p className="font-semibold text-xs text-green-800">{sellerDispensary.originLocker.pudoName}</p>
-                                                                            <p className="text-xs text-green-700">{sellerDispensary.originLocker.address}</p>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <p className="text-xs text-orange-600">⚠️ Not configured</p>
-                                                                    )}
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <p className="text-xs text-muted-foreground">Destination Locker (Buyer)</p>
-                                                                    {buyerDispensary?.originLocker ? (
-                                                                        <div className="p-2 bg-blue-50 border border-blue-200 rounded">
-                                                                            <p className="font-semibold text-xs text-blue-800">{buyerDispensary.originLocker.pudoName}</p>
-                                                                            <p className="text-xs text-blue-700">{buyerDispensary.originLocker.address}</p>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <p className="text-xs text-orange-600">⚠️ Not configured</p>
-                                                                    )}
-                                                                </div>
+
+                                                    {/* Destination Locker Selection (for DTL/LTL) */}
+                                                    {selectedShippingTier && ['dtl', 'ltl'].includes(selectedShippingTier) && (
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <p className="font-extrabold text-[#3D2E17] text-lg">2. Select Destination Locker</p>
+                                                                {shipping.parcelSizeCategory && shipping.parcelSizeCategory !== 'UNKNOWN' && (
+                                                                    <Badge className={cn(
+                                                                        "font-bold",
+                                                                        shipping.parcelSizeCategory === 'OVERSIZED' 
+                                                                            ? "bg-destructive text-white" 
+                                                                            : "bg-primary text-white"
+                                                                    )}>
+                                                                        {shipping.parcelSizeCategory === 'OVERSIZED' ? '⚠️ Oversized' : `Size: ${shipping.parcelSizeCategory}`}
+                                                                    </Badge>
+                                                                )}
                                                             </div>
-                                                            <p className="text-xs text-muted-foreground italic">
-                                                                💡 Both dispensaries' origin lockers will be used for this delivery
-                                                            </p>
+
+                                                            {shipping.isFetchingLockers ? (
+                                                                <div className="flex items-center justify-center p-8 bg-white/60 rounded-xl border-2 border-dashed border-[#006B3E]/30">
+                                                                    <Loader2 className="h-8 w-8 animate-spin text-[#006B3E]" />
+                                                                    <p className="ml-3 font-semibold text-[#5D4E37]">Fetching PUDO lockers...</p>
+                                                                </div>
+                                                            ) : shipping.pudoLockers.length > 0 ? (
+                                                                <Button 
+                                                                    className="w-full h-auto py-4 bg-[#006B3E] hover:bg-[#005030] text-white font-black text-left justify-start"
+                                                                    onClick={() => setIsLockerModalOpen(true)}
+                                                                >
+                                                                    {selectedDestinationLocker ? (
+                                                                        <div className="text-left">
+                                                                            <p className="font-semibold">{selectedDestinationLocker.name}</p>
+                                                                            <p className="text-sm text-green-100">{selectedDestinationLocker.address}</p>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="flex items-center gap-2">
+                                                                            <Search className="h-5 w-5" />
+                                                                            Select destination locker near buyer
+                                                                        </span>
+                                                                    )}
+                                                                </Button>
+                                                            ) : null}
+
+                                                            {!selectedDestinationLocker && shipping.pudoLockers.length > 0 && (
+                                                                <p className="text-xs text-primary font-semibold">
+                                                                    ⬆️ Please select a destination locker to see shipping rates
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     )}
-                                                    
-                                                    {selectedShipping && (
-                                                        <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                                                            <CheckCircle className="h-4 w-4 text-green-600" />
-                                                            <p className="text-sm text-green-800">
-                                                                <span className="font-semibold">Shipping method selected:</span> {selectedShipping.label}
+
+                                                    {/* Locker Search Modal */}
+                                                    <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
+                                                        <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 dark:from-gray-900 dark:via-amber-950 dark:to-green-950">
+                                                            <DialogHeader className="pb-4 border-b-2 border-[#006B3E]/30">
+                                                                <DialogTitle className="text-2xl font-black text-[#3D2E17] flex items-center gap-2">
+                                                                    <MapPin className="h-6 w-6 text-[#006B3E]" />
+                                                                    Select Destination Locker
+                                                                </DialogTitle>
+                                                                <DialogDescription className="text-base font-semibold text-[#5D4E37]">
+                                                                    Showing lockers near {buyerDispensary?.city || 'buyer location'}
+                                                                </DialogDescription>
+                                                            </DialogHeader>
+                                                            <div className="relative mt-4">
+                                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#006B3E]" />
+                                                                <Input 
+                                                                    placeholder="Search by name or address..."
+                                                                    className="pl-10 border-2 border-[#006B3E]/30 focus:border-[#006B3E] font-semibold"
+                                                                    value={lockerSearchTerm}
+                                                                    onChange={(e) => setLockerSearchTerm(e.target.value)}
+                                                                />
+                                                            </div>
+                                                            <div className="mt-4 flex-1 overflow-y-auto space-y-3 p-2 pr-3">
+                                                                {shipping.pudoLockers
+                                                                    .filter(locker => 
+                                                                        locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
+                                                                        (locker.address && locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
+                                                                    )
+                                                                    .map(locker => {
+                                                                        const isSelected = selectedDestinationLocker?.id === locker.id;
+                                                                        return (
+                                                                            <button
+                                                                                key={locker.id}
+                                                                                onClick={async () => {
+                                                                                    setSelectedDestinationLocker(locker);
+                                                                                    setIsLockerModalOpen(false);
+                                                                                    
+                                                                                    // Fetch PUDO rates with selected locker
+                                                                                    if (selectedShippingTier && buyerDispensary && sellerDispensary && request.requestedTier) {
+                                                                                        const buyerAddress = {
+                                                                                            streetAddress: buyerDispensary.address || buyerDispensary.streetAddress || '',
+                                                                                            suburb: buyerDispensary.suburb || '',
+                                                                                            city: buyerDispensary.city || '',
+                                                                                            province: buyerDispensary.province || '',
+                                                                                            postalCode: buyerDispensary.postalCode || '',
+                                                                                            country: buyerDispensary.country || 'South Africa',
+                                                                                            latitude: buyerDispensary.latitude,
+                                                                                            longitude: buyerDispensary.longitude,
+                                                                                        };
+                                                                                        
+                                                                                        const shippingConfig = {
+                                                                                            items: [{
+                                                                                                productId: request.productId,
+                                                                                                name: request.productName,
+                                                                                                quantity: request.quantityRequested,
+                                                                                                weight: request.requestedTier.weightKgs || 0.5,
+                                                                                                lengthCm: request.requestedTier.lengthCm,
+                                                                                                widthCm: request.requestedTier.widthCm,
+                                                                                                heightCm: request.requestedTier.heightCm,
+                                                                                            }],
+                                                                                            sellerDispensary,
+                                                                                            buyerDispensary,
+                                                                                        };
+                                                                                        
+                                                                                        await shipping.fetchPudoRates(
+                                                                                            shippingConfig, 
+                                                                                            selectedShippingTier as any, 
+                                                                                            buyerAddress,
+                                                                                            locker
+                                                                                        );
+                                                                                    }
+                                                                                }}
+                                                                                className={cn(
+                                                                                    "w-full rounded-xl p-4 text-left transition-all duration-200 border-2",
+                                                                                    isSelected 
+                                                                                        ? "bg-[#006B3E] border-[#006B3E] shadow-xl scale-[1.02] ring-4 ring-[#006B3E]/30" 
+                                                                                        : "bg-white/80 dark:bg-gray-800/50 border-[#006B3E]/20 hover:border-[#006B3E] hover:bg-gradient-to-br hover:from-white hover:to-green-50 dark:hover:from-gray-800 dark:hover:to-green-950/30 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
+                                                                                )}
+                                                                            >
+                                                                                <div className="flex items-start justify-between gap-3">
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                                            <MapPin className={cn(
+                                                                                                "h-5 w-5 flex-shrink-0",
+                                                                                                isSelected ? "text-white" : "text-[#006B3E]"
+                                                                                            )} />
+                                                                                            <p className={cn(
+                                                                                                "font-black text-base truncate",
+                                                                                                isSelected ? "text-white" : "text-[#3D2E17]"
+                                                                                            )}>{locker.name}</p>
+                                                                                        </div>
+                                                                                        <p className={cn(
+                                                                                            "text-sm font-semibold line-clamp-2 ml-7",
+                                                                                            isSelected ? "text-green-100" : "text-muted-foreground"
+                                                                                        )}>{locker.address}</p>
+                                                                                    </div>
+                                                                                    {isSelected && (
+                                                                                        <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1">
+                                                                                            <CheckCircle className="h-5 w-5 text-white" />
+                                                                                            <span className="text-sm font-black text-white uppercase tracking-wide">Selected</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                            </div>
+                                                        </DialogContent>
+                                                    </Dialog>
+
+                                                    {/* Shipping Rates Display */}
+                                                    {shipping.isLoading && (
+                                                        <div className="flex items-center justify-center p-8 bg-white/60 rounded-xl border-2 border-dashed border-[#006B3E]/30">
+                                                            <Loader2 className="h-8 w-8 animate-spin text-[#006B3E]" />
+                                                            <p className="ml-3 font-semibold text-[#5D4E37]">Calculating shipping rates...</p>
+                                                        </div>
+                                                    )}
+
+                                                    {shipping.error && (
+                                                        <div className="p-4 bg-destructive/10 border-2 border-destructive/20 rounded-xl">
+                                                            <p className="text-destructive font-semibold">{shipping.error}</p>
+                                                        </div>
+                                                    )}
+
+                                                    {shipping.rates.length > 0 && !shipping.isLoading && (
+                                                        <div className="space-y-3">
+                                                            <p className="font-extrabold text-[#3D2E17] text-lg flex items-center gap-2">
+                                                                <Package className="h-6 w-6 text-[#006B3E]" />
+                                                                3. Confirm Shipping Rate
                                                             </p>
+                                                            <RadioGroup 
+                                                                value={selectedShipping?.id.toString() || ''} 
+                                                                onValueChange={(value) => {
+                                                                    const rate = shipping.rates.find(r => r.id.toString() === value);
+                                                                    if (rate) {
+                                                                        // Add locker data to rate
+                                                                        const rateWithLockers = {
+                                                                            ...rate,
+                                                                            originLocker: sellerDispensary?.originLocker || null,
+                                                                            destinationLocker: selectedDestinationLocker || null
+                                                                        };
+                                                                        setSelectedShipping(rateWithLockers);
+                                                                    }
+                                                                }}
+                                                                className="space-y-3"
+                                                            >
+                                                                {shipping.rates.map(rate => {
+                                                                    const isSelected = selectedShipping?.id.toString() === rate.id.toString();
+                                                                    return (
+                                                                        <Label
+                                                                            key={rate.id}
+                                                                            className={cn(
+                                                                                "flex justify-between items-center rounded-xl p-5 border-2 cursor-pointer transition-all relative",
+                                                                                isSelected
+                                                                                    ? "bg-[#006B3E] border-[#006B3E] shadow-xl ring-2 ring-[#006B3E]/30"
+                                                                                    : "bg-white/80 dark:bg-gray-800/50 border-[#006B3E]/20 hover:border-[#006B3E] hover:shadow-lg"
+                                                                            )}
+                                                                        >
+                                                                            <div className="flex-1">
+                                                                                <div className="flex items-center gap-2 mb-1">
+                                                                                    <Truck className={cn(
+                                                                                        "h-5 w-5",
+                                                                                        isSelected ? "text-white" : "text-[#006B3E]"
+                                                                                    )} />
+                                                                                    <p className={cn(
+                                                                                        "font-black text-base",
+                                                                                        isSelected ? "text-white" : "text-[#3D2E17]"
+                                                                                    )}>{rate.courier_name}</p>
+                                                                                </div>
+                                                                                <p className={cn(
+                                                                                    "text-sm font-semibold ml-7",
+                                                                                    isSelected ? "text-green-100" : "text-[#5D4E37]"
+                                                                                )}>{rate.name}</p>
+                                                                                <p className={cn(
+                                                                                    "text-sm font-bold mt-1 ml-7",
+                                                                                    isSelected ? "text-green-50" : "text-[#006B3E]"
+                                                                                )}>⏱️ Est. Delivery: {rate.delivery_time || rate.estimatedDays}</p>
+                                                                            </div>
+                                                                            <div className="flex-shrink-0 ml-4">
+                                                                                <div className={cn(
+                                                                                    "px-4 py-2 rounded-lg",
+                                                                                    isSelected ? "bg-white/20 backdrop-blur-sm" : "bg-[#006B3E]/10"
+                                                                                )}>
+                                                                                    <p className={cn(
+                                                                                        "text-2xl font-black",
+                                                                                        isSelected ? "text-white" : "text-[#006B3E]"
+                                                                                    )}>R{(rate.price || rate.rate).toFixed(2)}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <RadioGroupItem value={rate.id.toString()} className="sr-only" />
+                                                                            {isSelected && (
+                                                                                <div className="absolute top-3 right-3">
+                                                                                    <CheckCircle className="h-6 w-6 text-white" />
+                                                                                </div>
+                                                                            )}
+                                                                        </Label>
+                                                                    );
+                                                                })}
+                                                            </RadioGroup>
                                                         </div>
                                                     )}
                                                 </div>
                                             )}
                                             
                                             <Button 
-                                                className="bg-green-600 hover:bg-green-700 text-white" 
+                                                className="bg-gradient-to-r from-[#006B3E] to-[#008B4E] hover:from-[#005030] hover:to-[#006B3E] text-white font-black text-lg h-14 shadow-xl col-span-full" 
                                                 onClick={handleOwnerFinalAccept} 
                                                 disabled={isSubmitting || (showShippingSelection && !selectedShipping)}
                                             >
                                                 {isSubmitting ? (
                                                     <>
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                                         Creating Order...
                                                     </>
                                                 ) : showShippingSelection ? (
