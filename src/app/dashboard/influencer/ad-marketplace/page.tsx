@@ -260,7 +260,7 @@ export default function InfluencerAdMarketplacePage() {
                             {ad.title}
                           </CardTitle>
                           <Badge className="bg-green-100 text-green-700 border-none shrink-0">
-                            {ad.influencerCommission.rate}% 💰
+                            {ad.influencerCommission.displayRate || ad.influencerCommission.adBonusRate}% 💰
                           </Badge>
                         </div>
                         <CardDescription className="line-clamp-2">
