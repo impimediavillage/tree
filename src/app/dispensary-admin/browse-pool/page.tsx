@@ -115,6 +115,9 @@ export default function BrowsePoolPage() {
         toast({ title: "Error", description: "A critical error occurred while loading products from the pool.", variant: "destructive" });
     } finally {
         setIsLoading(false);
+    }
+  }, [currentUser, currentDispensary, toast]);
+
   // Check if user needs to see onboarding
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -290,6 +293,13 @@ export default function BrowsePoolPage() {
 
   return (
     <>
+      {/* Product Pool Onboarding Dialog */}
+      <ProductPoolOnboardingDialog 
+        isOpen={showOnboarding}
+        onOptIn={handleOptIn}
+        onOptOut={handleOptOut}
+      />
+
       <div className="space-y-6 p-3 sm:p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="p-4 sm:p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
