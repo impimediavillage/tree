@@ -258,7 +258,7 @@ export default function BrowsePoolPage() {
         variant: "destructive"
       });
     }
-  }; [filteredProducts, myOpenRequests]);
+  };
 
   const handleRequestClick = (product: Product, tier: PriceTier) => {
     // For pool tiers, we need to find a unique identifier
