@@ -369,7 +369,7 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredTutorials.map((tutorial, index) => {
                     const isCompleted = tutorialProgress[tutorial.id]?.completed;
-                    const isLocked = isTutorialLocked(tutorial);
+                    const isTutorialLocked = isLocked(tutorial);
                     const progress = tutorialProgress[tutorial.id];
 
                     return (
@@ -379,7 +379,7 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.5 + index * 0.05 }}
                         className={`relative group ${
-                          isLocked ? 'opacity-60' : ''
+                          isTutorialLocked ? 'opacity-60' : ''
                         }`}
                       >
                         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all hover:scale-105 hover:shadow-2xl">
@@ -388,11 +388,11 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                             <div className={`p-4 rounded-xl ${
                               isCompleted
                                 ? 'bg-green-500'
-                                : isLocked
+                                : isTutorialLocked
                                 ? 'bg-gray-500'
                                 : 'bg-gradient-to-br from-pink-500 to-purple-500'
                             }`}>
-                              {isLocked ? (
+                              {isTutorialLocked ? (
                                 <Lock className="h-6 w-6 text-white" />
                               ) : isCompleted ? (
                                 <CheckCircle className="h-6 w-6 text-white" />
@@ -439,16 +439,16 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                           {/* Action Button */}
                           <Button
                             onClick={() => handleStartTutorial(tutorial.id)}
-                            disabled={isLocked}
+                            disabled={isTutorialLocked}
                             className={`w-full ${
                               isCompleted
                                 ? 'bg-green-600 hover:bg-green-700'
-                                : isLocked
+                                : isTutorialLocked
                                 ? 'bg-gray-600 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'
                             } text-white font-bold`}
                           >
-                            {isLocked ? (
+                            {isTutorialLocked ? (
                               <>
                                 <Lock className="h-4 w-4 mr-2" />
                                 Locked
@@ -473,7 +473,7 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                         </div>
 
                         {/* Locked Tooltip */}
-                        {isLocked && (
+                        {isTutorialLocked && (
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                               Complete prerequisites first
