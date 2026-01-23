@@ -153,8 +153,9 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             const productSnap = await getDoc(productRef);
             
             let quantityInStock = 0;
+            let productData: Product | null = null;
             if (productSnap.exists()) {
-                const productData = productSnap.data() as Product;
+                productData = productSnap.data() as Product;
                 // Find the matching tier in poolPriceTiers
                 const matchingPoolTier = productData.poolPriceTiers?.find(
                     tier => tier.unit === request.requestedTier?.unit
@@ -187,7 +188,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 dispensaryId: request.productOwnerDispensaryId,
                 dispensaryName: sellerDispensary.dispensaryName || '',
                 dispensaryType: 'Product Pool',
-                productType: request.productDetails?.productType || null,
+                productType: productData?.productType || null,
                 
                 // Pricing breakdown with 5% commission
                 dispensarySetPrice: tierPrice,
