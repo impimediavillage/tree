@@ -142,6 +142,11 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             const sellerDispensary = sellerDispensarySnap.data();
             const buyerDispensary = buyerDispensarySnap.data();
 
+            // Validate requested tier exists
+            if (!request.requestedTier) {
+                throw new Error('No price tier specified in request');
+            }
+
             // Calculate 5% commission using existing pricing function
             const tierPrice = request.requestedTier.price;
             const taxRate = buyerDispensary.taxRate || 0;
