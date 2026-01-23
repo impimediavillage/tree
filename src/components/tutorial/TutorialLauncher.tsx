@@ -27,6 +27,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { TutorialInfomercial } from './TutorialInfomercial';
 
 interface Tutorial {
   id: string;
@@ -195,6 +196,7 @@ interface TutorialLauncherProps {
 export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherProps) {
   const { showLauncher, closeLauncher, startTutorial, tutorialProgress, achievements, totalPoints } = useTutorial();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [activeInfomercial, setActiveInfomercial] = useState<string | null>(null);
 
   const categories = ['All', 'Core', 'Advanced', 'Pro Tips'];
 
@@ -217,7 +219,13 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
   };
 
   const handleStartTutorial = (tutorialId: string) => {
-    startTutorial(tutorialId);
+    setActiveInfomercial(tutorialId);
+  };
+
+  const handleCompleteInfomercial = () => {
+    if (activeInfomercial) {
+      startTutorial(activeInfomercial);
+    }
   };
 
   return (
@@ -523,6 +531,16 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
             </div>
           </motion.div>
         </>
+      )}
+      
+      {/* Tutorial Infomercial */}
+      {activeInfomercial && (
+        <TutorialInfomercial
+          tutorialId={activeInfomercial}
+          isOpen={!!activeInfomercial}
+          onClose={() => setActiveInfomercial(null)}
+          onComplete={handleCompleteInfomercial}
+        />
       )}
     </AnimatePresence>
   );

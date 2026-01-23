@@ -505,7 +505,8 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
       {/* Tutorial System Components */}
       <TutorialLauncher />
       <TutorialManager />
-      <TutorialTriggerButton />
+      {/* Tutorial Trigger Button - Hidden until video content is ready */}
+      {/* <TutorialTriggerButton /> */}
     </div>
   );
 }
