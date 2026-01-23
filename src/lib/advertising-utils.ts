@@ -446,7 +446,9 @@ export async function influencerSelectAd(
         clicks: 0,
         conversions: 0,
         revenue: 0,
-        commission: 0,
+        baseCommission: 0,
+        adBonus: 0,
+        totalCommission: 0,
         pendingCommission: 0,
         paidCommission: 0
       },
