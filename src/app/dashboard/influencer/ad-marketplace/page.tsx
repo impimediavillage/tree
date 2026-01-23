@@ -148,7 +148,7 @@ export default function InfluencerAdMarketplacePage() {
               <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 space-y-1">
                 <p className="text-white/80 text-sm font-medium">Total Earnings</p>
                 <p className="text-3xl font-extrabold text-white">
-                  R{selections.reduce((sum, s) => sum + (s.performance.totalCommission || s.performance.commission || 0), 0).toFixed(0)}
+                  R{selections.reduce((sum, s) => sum + (s.performance.totalCommission || 0), 0).toFixed(0)}
                 </p>
                 <div className="flex gap-3 text-xs mt-2">
                   <div className="bg-emerald-500/30 px-2 py-1 rounded">
