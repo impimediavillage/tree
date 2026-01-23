@@ -85,7 +85,7 @@ export default function EditAdPage() {
       setCtaText(adData.ctaText || 'Shop Now');
       setCtaLink(adData.ctaLink || '');
       setAvailableToInfluencers(adData.influencerCommission?.availableToInfluencers || false);
-      setCommissionRate(adData.influencerCommission?.rate || 10);
+      setCommissionRate(adData.influencerCommission?.displayRate || adData.influencerCommission?.adBonusRate || 10);
     } catch (error) {
       console.error('Error fetching ad:', error);
       toast({

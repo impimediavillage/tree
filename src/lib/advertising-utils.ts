@@ -251,7 +251,7 @@ export async function fetchInfluencerMarketplaceAds(
     if (filters?.minCommissionRate) {
       ads = ads.filter(ad => 
         ad.influencerCommission.enabled && 
-        ad.influencerCommission.rate >= (filters.minCommissionRate || 0)
+        (ad.influencerCommission.displayRate || ad.influencerCommission.adBonusRate) >= (filters.minCommissionRate || 0)
       );
     }
     
@@ -440,7 +440,7 @@ export async function influencerSelectAd(
       trackingUrl,
       selectedAt: serverTimestamp() as any,
       status: 'active',
-      commissionRate: ad.influencerCommission.rate,
+      commissionRate: ad.influencerCommission.displayRate || ad.influencerCommission.adBonusRate,
       performance: {
         impressions: 0,
         clicks: 0,

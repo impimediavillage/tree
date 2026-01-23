@@ -205,7 +205,7 @@ export function useInfluencerAdMarketplace(filters?: AdMarketplaceFilters) {
         if (filters?.minCommissionRate) {
           adsData = adsData.filter(ad => 
             ad.influencerCommission.enabled && 
-            ad.influencerCommission.rate >= (filters.minCommissionRate || 0)
+            (ad.influencerCommission.displayRate || ad.influencerCommission.adBonusRate) >= (filters.minCommissionRate || 0)
           );
         }
         
@@ -226,7 +226,7 @@ export function useInfluencerAdMarketplace(filters?: AdMarketplaceFilters) {
         if (filters?.sortBy) {
           switch (filters.sortBy) {
             case 'commission':
-              adsData.sort((a, b) => b.influencerCommission.rate - a.influencerCommission.rate);
+              adsData.sort((a, b) => (b.influencerCommission.displayRate || b.influencerCommission.adBonusRate) - (a.influencerCommission.displayRate || a.influencerCommission.adBonusRate));
               break;
             case 'popularity':
               adsData.sort((a, b) => b.analytics.clicks - a.analytics.clicks);
