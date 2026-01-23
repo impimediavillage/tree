@@ -147,6 +147,21 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 throw new Error('No price tier specified in request');
             }
 
+            // Fetch the actual product to get current stock levels
+            const productCollectionName = getProductCollectionName(request.productDetails?.dispensaryType || sellerDispensary.dispensaryType);
+            const productRef = doc(db, productCollectionName, request.productId);
+            const productSnap = await getDoc(productRef);
+            
+            let quantityInStock = 0;
+            if (productSnap.exists()) {
+                const productData = productSnap.data() as Product;
+                // Find the matching tier in poolPriceTiers
+                const matchingPoolTier = productData.poolPriceTiers?.find(
+                    tier => tier.unit === request.requestedTier?.unit
+                );
+                quantityInStock = matchingPoolTier?.quantityInStock || 0;
+            }
+
             // Calculate 5% commission using existing pricing function
             const tierPrice = request.requestedTier.price;
             const taxRate = buyerDispensary.taxRate || 0;
@@ -164,7 +179,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 category: request.productDetails?.category || 'Product Pool',
                 productOwnerEmail: sellerDispensary.contactEmail || '',
                 quantity: request.quantityRequested,
-                quantityInStock: request.requestedTier.quantityInStock || 0,
+                quantityInStock: quantityInStock,
                 price: tierPrice,
                 originalPrice: tierPrice,
                 unit: request.requestedTier.unit,
