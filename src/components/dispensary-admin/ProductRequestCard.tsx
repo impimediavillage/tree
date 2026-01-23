@@ -160,8 +160,11 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 id: request.productId,
                 productId: request.productId,
                 name: request.productName,
-                image: request.productImage || '',
+                imageUrl: request.productImage || null,
+                category: request.productDetails?.category || 'Product Pool',
+                productOwnerEmail: sellerDispensary.contactEmail || '',
                 quantity: request.quantityRequested,
+                quantityInStock: request.requestedTier.quantityInStock || 0,
                 price: tierPrice,
                 originalPrice: tierPrice,
                 unit: request.requestedTier.unit,
@@ -169,6 +172,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 dispensaryId: request.productOwnerDispensaryId,
                 dispensaryName: request.productOwnerDispensaryName || '',
                 dispensaryType: 'Product Pool',
+                productType: request.productDetails?.productType || null,
                 
                 // Pricing breakdown with 5% commission
                 dispensarySetPrice: tierPrice,
