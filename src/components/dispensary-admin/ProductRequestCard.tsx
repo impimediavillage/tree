@@ -128,6 +128,9 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             return;
         }
 
+        // TypeScript: selectedShipping is guaranteed non-null here
+        const shippingMethod = selectedShipping;
+
         setIsSubmitting(true);
         try {
             // Fetch both dispensary details
@@ -205,9 +208,9 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             const orderShipment: OrderShipment = {
                 dispensaryId: request.productOwnerDispensaryId,
                 items: [orderItem],
-                shippingMethod: selectedShipping,
+                shippingMethod: shippingMethod,
                 status: 'pending',
-                shippingProvider: selectedShipping.provider,
+                shippingProvider: shippingMethod.provider,
                 originLocker: sellerDispensary.originLocker || undefined,
                 destinationLocker: selectedDestinationLocker || buyerDispensary.originLocker || undefined,
                 statusHistory: [{
@@ -221,7 +224,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             // Calculate totals
             const subtotal = orderItem.subtotalBeforeTax * orderItem.quantity;
             const tax = orderItem.taxAmount;
-            const shippingCost = selectedShipping.price || 0;
+            const shippingCost = shippingMethod.price || 0;
             const total = subtotal + tax + shippingCost;
             const totalDispensaryEarnings = orderItem.basePrice * orderItem.quantity;
             const totalPlatformCommission = orderItem.platformCommission * orderItem.quantity;
