@@ -187,8 +187,8 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 weight: request.requestedTier.weightKgs || 0.5,
                 dispensaryId: request.productOwnerDispensaryId,
                 dispensaryName: sellerDispensary.dispensaryName || '',
-                dispensaryType: 'Product Pool',
-                productType: (productData?.productType || 'Other') as Product['productType'],
+                dispensaryType: sellerDispensary.dispensaryType,
+                productType: (productData?.productType ?? 'Other') as Product['productType'],
                 
                 // Pricing breakdown with 5% commission
                 dispensarySetPrice: tierPrice,
@@ -272,8 +272,9 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                     [request.productOwnerDispensaryId]: orderShipment
                 },
                 
-                // Order metadata
-                orderType: 'dispensary', // Could also be 'pool' if you want a new type
+                // Order metadata - mark as Product Pool order
+                orderType: 'dispensary',
+                isProductPoolOrder: true, // Flag to identify Product Pool orders
                 status: 'pending',
                 statusHistory: [{
                     status: 'pending',

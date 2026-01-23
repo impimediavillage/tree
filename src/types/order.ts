@@ -124,6 +124,7 @@ export interface Order {
     
     // Treehouse marketplace fields
     orderType?: 'dispensary' | 'treehouse' | 'healer-service';
+    isProductPoolOrder?: boolean; // Flag to identify Product Pool negotiation orders
     podStatus?: 'pending_print' | 'printing' | 'printed' | 'packaging' | 'shipped' | 'delivered';
     platformCommission?: number; // 75% for Treehouse orders (legacy, use totalPlatformCommission)
     creatorCommission?: number; // 25% for Treehouse orders
