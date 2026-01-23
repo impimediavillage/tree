@@ -185,7 +185,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 unit: request.requestedTier.unit,
                 weight: request.requestedTier.weightKgs || 0.5,
                 dispensaryId: request.productOwnerDispensaryId,
-                dispensaryName: request.productOwnerDispensaryName || '',
+                dispensaryName: sellerDispensary.dispensaryName || '',
                 dispensaryType: 'Product Pool',
                 productType: request.productDetails?.productType || null,
                 
@@ -513,7 +513,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                                         <h4 className="font-semibold text-base">Select Shipping Method</h4>
                                                     </div>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Choose how this order will be delivered from {request.productOwnerDispensaryName} to {request.requesterDispensaryName}
+                                                        Choose how this order will be delivered from {sellerDispensary?.dispensaryName || 'seller'} to {request.requesterDispensaryName}
                                                     </p>
                                                     
                                                     {availableShippingMethods.length === 0 ? (
