@@ -864,10 +864,10 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                                                     const rate = shipping.rates.find(r => r.id.toString() === value);
                                                                     if (rate) {
                                                                         // Add locker data to rate
-                                                                        const rateWithLockers = {
+                                                                        const rateWithLockers: ShippingRate = {
                                                                             ...rate,
-                                                                            originLocker: sellerDispensary?.originLocker || null,
-                                                                            destinationLocker: selectedDestinationLocker || null
+                                                                            originLocker: sellerDispensary?.originLocker || undefined,
+                                                                            destinationLocker: selectedDestinationLocker || undefined
                                                                         };
                                                                         setSelectedShipping(rateWithLockers);
                                                                     }
