@@ -124,7 +124,7 @@ export default function BrowsePoolPage() {
       if (!currentUser?.dispensaryId || authLoading || !currentDispensary) return;
       
       // Only show onboarding for dispensary owners
-      if (currentUser.role !== 'dispensary_owner') {
+      if (currentUser.role !== 'DispensaryOwner') {
         setHasCheckedOnboarding(true);
         return;
       }
