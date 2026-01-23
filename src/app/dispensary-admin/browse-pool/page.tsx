@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc, setDoc } from 'firebase/firestore';
 import type { Product, PriceTier, ProductRequest } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, ShoppingBasket, FilterX, Truck } from 'lucide-react';
+import { ProductPoolOnboardingDialog } from '@/components/product-pool/ProductPoolOnboardingDialog';
 
 const productCollectionNames = [
     "cannibinoid_store_products",
@@ -46,6 +47,10 @@ export default function BrowsePoolPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
+
+  // Product Pool Onboarding
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
 
   const fetchPoolData = useCallback(async () => {
     if (!currentUser?.dispensaryId || !currentDispensary?.dispensaryType) {
@@ -110,11 +115,39 @@ export default function BrowsePoolPage() {
         toast({ title: "Error", description: "A critical error occurred while loading products from the pool.", variant: "destructive" });
     } finally {
         setIsLoading(false);
-    }
-  }, [currentUser, currentDispensary, toast]);
+  // Check if user needs to see onboarding
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!currentUser?.dispensaryId || authLoading || !currentDispensary) return;
+      
+      // Only show onboarding for dispensary owners
+      if (currentUser.role !== 'dispensary_owner') {
+        setHasCheckedOnboarding(true);
+        return;
+      }
 
+      try {
+        const onboardingRef = doc(db, 'productPoolOnboarding', currentUser.dispensaryId);
+        const onboardingDoc = await getDoc(onboardingRef);
+        
+        if (!onboardingDoc.exists() || !onboardingDoc.data()?.hasOptedIn) {
+          setShowOnboarding(true);
+        }
+        setHasCheckedOnboarding(true);
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        setHasCheckedOnboarding(true);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [currentUser, currentDispensary, authLoading]);
 
   useEffect(() => {
+    if (!authLoading && hasCheckedOnboarding && !showOnboarding) {
+      fetchPoolData();
+    }
+  }, [authLoading, hasCheckedOnboarding, showOnboar) => {
     if (!authLoading) {
       fetchPoolData();
     }
@@ -164,7 +197,79 @@ export default function BrowsePoolPage() {
       }
       return [];
     });
-  }, [filteredProducts, myOpenRequests]);
+  },
+
+  // Handle onboarding opt in
+  const handleOptIn = async () => {
+    if{/* Product Pool Onboarding Dialog */}
+      <ProductPoolOnboardingDialog 
+        isOpen={showOnboarding}
+        onOptIn={handleOptIn}
+        onOptOut={handleOptOut}
+      />
+
+       (!currentUser?.dispensaryId) return;
+
+    try {
+      const onboardingRef = doc(db, 'productPoolOnboarding', currentUser.dispensaryId);
+      await setDoc(onboardingRef, {
+        dispensaryId: currentUser.dispensaryId,
+        dispensaryName: currentDispensary?.name || 'Unknown',
+        hasOptedIn: true,
+        optedInAt: new Date(),
+        optedInBy: currentUser.uid
+      });
+
+      setShowOnboarding(false);
+      toast({
+        title: "Welcome to the Product Pool!",
+        description: "You're all set to start trading with other dispensaries.",
+      });
+      
+      // Fetch pool data after opting in
+      fetchPoolData();
+    } catch (error) {
+      console.error('Error saving opt-in status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save your preferences. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle onboarding opt out
+  const handleOptOut = async () => {
+    if (!currentUser?.dispensaryId) return;
+
+    try {
+      const onboardingRef = doc(db, 'productPoolOnboarding', currentUser.dispensaryId);
+      await setDoc(onboardingRef, {
+        dispensaryId: currentUser.dispensaryId,
+        dispensaryName: currentDispensary?.name || 'Unknown',
+        hasOptedIn: false,
+        optedOutAt: new Date(),
+        optedOutBy: currentUser.uid
+      });
+
+      toast({
+        title: "Opted Out",
+        description: "You've opted out of the Product Pool. Redirecting...",
+      });
+
+      // Redirect to dashboard after a brief delay
+      setTimeout(() => {
+        router.push('/dispensary-admin');
+      }, 1500);
+    } catch (error) {
+      console.error('Error saving opt-out status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save your preferences. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }; [filteredProducts, myOpenRequests]);
 
   const handleRequestClick = (product: Product, tier: PriceTier) => {
     // For pool tiers, we need to find a unique identifier
