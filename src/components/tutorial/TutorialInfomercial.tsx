@@ -32,7 +32,9 @@ import {
   MapPin,
   DollarSign,
   Gift,
-  Heart
+  Heart,
+  Star,
+  Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -291,6 +293,519 @@ const AnalyticsAnimation = ({ step }: { step: number }) => {
   );
 };
 
+const InfluencerProgramAnimation = ({ step }: { step: number }) => {
+  return (
+    <div className="relative w-full h-64 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-6">
+      <AnimatePresence mode="wait">
+        {step === 0 && (
+          <motion.div
+            key="influencer-tiers"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-3 gap-3 h-full"
+          >
+            {['Seed', 'Sprout', 'Bloom'].map((tier, i) => (
+              <motion.div
+                key={tier}
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: i * 0.2, type: 'spring' }}
+                className="bg-white p-4 rounded-lg shadow-lg flex flex-col items-center justify-center"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 2, delay: i * 0.3 }}
+                  className={`w-12 h-12 rounded-full mb-2 ${
+                    i === 0 ? 'bg-green-500' : i === 1 ? 'bg-blue-500' : 'bg-purple-500'
+                  } flex items-center justify-center`}
+                >
+                  <Users className="h-6 w-6 text-white" />
+                </motion.div>
+                <span className="font-bold text-sm">{tier}</span>
+                <span className="text-xs text-gray-500">{5 + i * 5}%</span>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+        
+        {step === 1 && (
+          <motion.div
+            key="collaboration"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center h-full"
+          >
+            <motion.div className="relative">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
+                className="absolute inset-0 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full blur-xl opacity-50"
+              />
+              <div className="relative bg-gradient-to-r from-pink-600 to-rose-600 p-8 rounded-2xl">
+                <Share2 className="h-16 w-16 text-white" />
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5 }}
+              className="absolute top-4 right-4 bg-green-500 px-4 py-2 rounded-full"
+            >
+              <span className="text-white font-bold">+500 XP!</span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const SettingsProfileAnimation = ({ step }: { step: number }) => {
+  return (
+    <div className="relative w-full h-64 bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-6">
+      <AnimatePresence mode="wait">
+        {step === 0 && (
+          <motion.div
+            key="settings-grid"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-2 gap-4"
+          >
+            {[
+              { icon: <Store className="h-8 w-8" />, label: 'Store Info', color: 'blue' },
+              { icon: <Bell className="h-8 w-8" />, label: 'Notifications', color: 'yellow' },
+              { icon: <CreditCard className="h-8 w-8" />, label: 'Payment', color: 'green' },
+              { icon: <Users className="h-8 w-8" />, label: 'Team', color: 'purple' }
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: i * 0.1, type: 'spring' }}
+                className={`bg-gradient-to-br from-${item.color}-50 to-${item.color}-100 p-6 rounded-xl shadow-md flex flex-col items-center gap-2`}
+              >
+                <div className={`text-${item.color}-600`}>{item.icon}</div>
+                <span className="font-semibold text-sm">{item.label}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+        
+        {step === 1 && (
+          <motion.div
+            key="profile-complete"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center h-full"
+          >
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 p-8 rounded-full mb-4"
+            >
+              <CheckCircle className="h-16 w-16 text-white" />
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-2xl font-bold text-gray-900"
+            >
+              Profile 100% Complete!
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const PaymentsPayoutsAnimation = ({ step }: { step: number }) => {
+  return (
+    <div className="relative w-full h-64 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-6">
+      <AnimatePresence mode="wait">
+        {step === 0 && (
+          <motion.div
+            key="money-flow"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center h-full gap-4"
+          >
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-2xl"
+            >
+              <DollarSign className="h-12 w-12 text-white" />
+            </motion.div>
+            <motion.div
+              animate={{ x: [-20, 20, -20] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="text-4xl"
+            >
+              →
+            </motion.div>
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="bg-gradient-to-r from-amber-600 to-yellow-600 p-6 rounded-2xl"
+            >
+              <CreditCard className="h-12 w-12 text-white" />
+            </motion.div>
+          </motion.div>
+        )}
+        
+        {step === 1 && (
+          <motion.div
+            key="earnings"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center h-full"
+          >
+            <motion.div
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 3 }}
+              className="text-6xl font-black text-green-600 mb-4"
+            >
+              R12,450
+            </motion.div>
+            <p className="text-xl font-bold text-amber-900">Available Balance</p>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: 'spring' }}
+              className="mt-4 bg-green-500 px-6 py-3 rounded-full"
+            >
+              <span className="text-white font-bold">Request Payout</span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const BrowseShopAnimation = ({ step }: { step: number }) => {
+  return (
+    <div className="relative w-full h-64 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6">
+      <AnimatePresence mode="wait">
+        {step === 0 && (
+          <motion.div
+            key="product-cards"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-3 gap-3 h-full"
+          >
+            {[1, 2, 3].map((product, i) => (
+              <motion.div
+                key={product}
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: i * 0.15, type: 'spring' }}
+                className="bg-white rounded-lg shadow-lg overflow-hidden"
+              >
+                <div className="bg-gradient-to-br from-green-400 to-emerald-500 h-20" />
+                <div className="p-2 space-y-1">
+                  <div className="h-2 bg-gray-200 rounded" />
+                  <div className="h-2 bg-gray-200 rounded w-2/3" />
+                  <motion.div
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
+                    className="h-6 bg-green-500 rounded mt-2"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+        
+        {step === 1 && (
+          <motion.div
+            key="cart"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center h-full"
+          >
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="relative"
+            >
+              <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-10 rounded-2xl">
+                <ShoppingCart className="h-20 w-20 text-white" />
+              </div>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 1 }}
+                className="absolute -top-2 -right-2 bg-red-500 rounded-full w-10 h-10 flex items-center justify-center"
+              >
+                <span className="text-white text-lg font-bold">3</span>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const AIAdvisorsAnimation = ({ step }: { step: number }) => {
+  return (
+    <div className="relative w-full h-64 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-6">
+      <AnimatePresence mode="wait">
+        {step === 0 && (
+          <motion.div
+            key="ai-chat"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-3"
+          >
+            {['Hello! How can I help?', 'What strain works for anxiety?', 'I recommend Blue Dream...'].map((msg, i) => (
+              <motion.div
+                key={i}
+                initial={{ x: i % 2 === 0 ? -100 : 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: i * 0.4 }}
+                className={`p-3 rounded-lg ${
+                  i % 2 === 0 ? 'bg-purple-600 text-white ml-8' : 'bg-white shadow-md mr-8'
+                }`}
+              >
+                <p className="text-sm">{msg}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+        
+        {step === 1 && (
+          <motion.div
+            key="ai-brain"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center h-full"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
+              className="relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-400 to-purple-400 rounded-full blur-2xl opacity-50" />
+              <div className="relative bg-gradient-to-r from-violet-600 to-purple-600 p-10 rounded-full">
+                <Brain className="h-16 w-16 text-white" />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const CreatorLabAnimation = ({ step }: { step: number }) => {
+  return (
+    <div className="relative w-full h-64 bg-gradient-to-br from-pink-50 to-fuchsia-50 rounded-xl p-6">
+      <AnimatePresence mode="wait">
+        {step === 0 && (
+          <motion.div
+            key="design-tools"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center h-full gap-4"
+          >
+            {[Palette, Sparkles, Heart].map((Icon, i) => (
+              <motion.div
+                key={i}
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: i * 0.2, type: 'spring' }}
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="bg-gradient-to-br from-pink-500 to-fuchsia-500 p-6 rounded-xl shadow-xl cursor-pointer"
+              >
+                <Icon className="h-12 w-12 text-white" />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+        
+        {step === 1 && (
+          <motion.div
+            key="tshirt"
+            initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 100 }}
+            className="flex items-center justify-center h-full"
+          >
+            <div className="relative">
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="bg-white p-8 rounded-2xl shadow-2xl"
+              >
+                <div className="w-32 h-32 bg-gradient-to-br from-pink-400 via-fuchsia-400 to-purple-400 rounded-lg" />
+              </motion.div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.5 }}
+                className="absolute -top-2 -right-2 bg-yellow-500 p-2 rounded-full"
+              >
+                <Sparkles className="h-6 w-6 text-white" />
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const OrdersTrackingAnimation = ({ step }: { step: number }) => {
+  return (
+    <div className="relative w-full h-64 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6">
+      <AnimatePresence mode="wait">
+        {step === 0 && (
+          <motion.div
+            key="order-list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-3"
+          >
+            {['Processing', 'Shipped', 'Out for Delivery'].map((status, i) => (
+              <motion.div
+                key={status}
+                initial={{ x: -100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: i * 0.2 }}
+                className="bg-white p-4 rounded-lg shadow-md flex items-center gap-3"
+              >
+                <motion.div
+                  animate={{ rotate: i === 0 ? 360 : 0 }}
+                  transition={{ repeat: i === 0 ? Infinity : 0, duration: 2 }}
+                  className={`p-2 rounded-full ${
+                    i === 0 ? 'bg-yellow-500' : i === 1 ? 'bg-blue-500' : 'bg-green-500'
+                  }`}
+                >
+                  <Package className="h-5 w-5 text-white" />
+                </motion.div>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">{status}</p>
+                  <p className="text-xs text-gray-500">Order #12{i + 1}34</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+        
+        {step === 1 && (
+          <motion.div
+            key="tracking-map"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center h-full"
+          >
+            <div className="relative w-48 h-48">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="absolute inset-0 bg-teal-500 rounded-full opacity-20"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2, delay: 0.3 }}
+                className="absolute inset-4 bg-cyan-500 rounded-full opacity-30"
+              />
+              <div className="absolute inset-8 bg-gradient-to-r from-teal-600 to-cyan-600 rounded-full flex items-center justify-center">
+                <MapPin className="h-16 w-16 text-white" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const TripleSClubAnimation = ({ step }: { step: number }) => {
+  return (
+    <div className="relative w-full h-64 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6">
+      <AnimatePresence mode="wait">
+        {step === 0 && (
+          <motion.div
+            key="perks"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-2 gap-4"
+          >
+            {[
+              { icon: <Gift className="h-8 w-8" />, label: 'Rewards', color: 'red' },
+              { icon: <Star className="h-8 w-8" />, label: 'Points', color: 'yellow' },
+              { icon: <Trophy className="h-8 w-8" />, label: 'Events', color: 'purple' },
+              { icon: <Crown className="h-8 w-8" />, label: 'VIP', color: 'orange' }
+            ].map((perk, i) => (
+              <motion.div
+                key={perk.label}
+                initial={{ scale: 0, rotate: -90 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: i * 0.15, type: 'spring', stiffness: 200 }}
+                className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-xl shadow-lg border-2 border-yellow-400 flex flex-col items-center gap-2"
+              >
+                <div className="text-yellow-600">{perk.icon}</div>
+                <span className="font-bold text-sm">{perk.label}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+        
+        {step === 1 && (
+          <motion.div
+            key="vip-badge"
+            initial={{ opacity: 0, scale: 0.3, rotate: -180 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 100 }}
+            className="flex items-center justify-center h-full"
+          >
+            <motion.div
+              animate={{ 
+                boxShadow: [
+                  '0 0 0 0 rgba(251, 191, 36, 0.7)',
+                  '0 0 0 30px rgba(251, 191, 36, 0)',
+                ]
+              }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="bg-gradient-to-r from-yellow-600 via-orange-500 to-red-500 p-12 rounded-full"
+            >
+              <Crown className="h-20 w-20 text-white" />
+            </motion.div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: 'spring' }}
+              className="absolute top-4 bg-purple-600 px-6 py-3 rounded-full"
+            >
+              <span className="text-white font-black text-xl">VIP UNLOCKED!</span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 // Tutorial Content Definitions
 const TUTORIAL_CONTENT: Record<string, { steps: Step[], color: string, icon: React.ReactNode, AnimationComponent: React.ComponentType<{ step: number }> }> = {
   'product-management': {
@@ -490,6 +1005,326 @@ const TUTORIAL_CONTENT: Record<string, { steps: Step[], color: string, icon: Rea
           'Always provide tracking information'
         ],
         proTip: 'Locker-to-locker shipping can be up to 40% cheaper than door-to-door!'
+      }
+    ]
+  },
+  'influencer-program': {
+    color: 'from-pink-600 to-rose-600',
+    icon: <Users className="h-8 w-8" />,
+    AnimationComponent: InfluencerProgramAnimation,
+    steps: [
+      {
+        title: 'Understanding Influencer Tiers',
+        description: 'Influencers are organized into tiers (Seed, Sprout, Growth, Bloom, Forest) based on their performance. Each tier earns a different commission rate, ranging from 5% to 20% of your platform commission.',
+        animation: <InfluencerProgramAnimation step={0} />,
+        tips: [
+          'Higher tier influencers have larger audiences',
+          'Bloom and Forest tiers drive the most sales',
+          'Offer higher ad bonuses to attract top influencers'
+        ],
+        proTip: 'Partner with micro-influencers (Seed/Sprout) for niche products - they often have more engaged audiences!'
+      },
+      {
+        title: 'Enabling Influencer Promotion',
+        description: 'When creating ads, toggle "Available to Influencers" and set your ad bonus rate (0-5%). This bonus is added to the influencer\'s base commission, making your products more attractive to promote.',
+        animation: <InfluencerProgramAnimation step={1} />,
+        tips: [
+          'Set 3-5% ad bonus for competitive offers',
+          'Track which influencers perform best',
+          'Feature top products for influencer promotion'
+        ],
+        proTip: 'Influencer-driven sales convert 40% better than regular ads because of the trust factor!'
+      },
+      {
+        title: 'Building Long-Term Partnerships',
+        description: 'Create exclusive deals for top-performing influencers, provide them with unique promo codes, and collaborate on special product bundles. Strong influencer relationships = consistent sales!',
+        animation: <InfluencerProgramAnimation step={1} />,
+        tips: [
+          'Communicate regularly with your influencers',
+          'Share product samples for authentic reviews',
+          'Celebrate their milestones and successes'
+        ],
+        proTip: 'Exclusive ambassador programs with top influencers can increase your revenue by 200%!'
+      }
+    ]
+  },
+  'settings-profile': {
+    color: 'from-slate-600 to-gray-600',
+    icon: <Settings className="h-8 w-8" />,
+    AnimationComponent: SettingsProfileAnimation,
+    steps: [
+      {
+        title: 'Completing Your Dispensary Profile',
+        description: 'A complete profile builds trust! Add your business name, logo, description, operating hours, contact info, and verification documents. The more complete your profile, the more professional you appear.',
+        animation: <SettingsProfileAnimation step={0} />,
+        tips: [
+          'Use a high-quality logo',
+          'Write a compelling "About Us" story',
+          'Add professional photos of your store'
+        ],
+        proTip: 'Complete profiles get 60% more customer trust and higher conversion rates!'
+      },
+      {
+        title: 'Configuring Notifications',
+        description: 'Stay on top of your business with smart notifications! Enable alerts for new orders, low stock, customer messages, payout updates, and review requests. Never miss a critical update!',
+        animation: <SettingsProfileAnimation step={1} />,
+        tips: [
+          'Enable push notifications for instant alerts',
+          'Set quiet hours to avoid late-night pings',
+          'Prioritize order and payment notifications'
+        ],
+        proTip: 'Customize notification sounds for different event types to instantly know what needs attention!'
+      },
+      {
+        title: 'Managing Team & Permissions',
+        description: 'Add staff members with specific roles: Managers, Staff, or Drivers. Control what each team member can access and do. Perfect for delegating tasks while maintaining security!',
+        animation: <SettingsProfileAnimation step={1} />,
+        tips: [
+          'Give managers full access except payouts',
+          'Limit staff to order processing only',
+          'Review team activity logs regularly'
+        ],
+        proTip: 'Proper team permissions prevent errors and protect sensitive business information!'
+      }
+    ]
+  },
+  'payments-payouts': {
+    color: 'from-yellow-600 to-amber-600',
+    icon: <CreditCard className="h-8 w-8" />,
+    AnimationComponent: PaymentsPayoutsAnimation,
+    steps: [
+      {
+        title: 'Understanding Your Earnings',
+        description: 'View real-time earnings from public store sales and Product Pool transactions. Track pending amounts, available balance, and payout history. Know exactly where your money is at all times!',
+        animation: <PaymentsPayoutsAnimation step={0} />,
+        tips: [
+          'Check earnings dashboard daily',
+          'Understand the difference between pending and available',
+          'Monitor Product Pool commissions separately'
+        ],
+        proTip: 'Platform takes 25% commission on public sales and 5% on Product Pool - factor this into your pricing!'
+      },
+      {
+        title: 'Requesting Payouts',
+        description: 'Once you reach the minimum payout threshold (R500), request a payout to your bank account. Payouts are processed within 3-5 business days. Set up automatic payouts for hands-free cash flow!',
+        animation: <PaymentsPayoutsAnimation step={1} />,
+        tips: [
+          'Verify bank details before first payout',
+          'Schedule payouts on specific days',
+          'Keep records for tax purposes'
+        ],
+        proTip: 'Enable automatic payouts every Friday to maintain consistent cash flow!'
+      },
+      {
+        title: 'Tracking Product Pool Commissions',
+        description: 'Product Pool sales generate 5% commission for the platform, automatically deducted from your public store payouts. Monitor this balance to ensure you always have enough public sales to cover it!',
+        animation: <PaymentsPayoutsAnimation step={1} />,
+        tips: [
+          'Balance Product Pool sales with public sales',
+          'Set notifications if commission exceeds R1000',
+          'Factor 5% into your wholesale prices'
+        ],
+        proTip: 'If Product Pool commission exceeds your public store earnings, you\'ll get a notification to balance your sales mix!'
+      }
+    ]
+  },
+  'browse-shop': {
+    color: 'from-indigo-600 to-blue-600',
+    icon: <Store className="h-8 w-8" />,
+    AnimationComponent: BrowseShopAnimation,
+    steps: [
+      {
+        title: 'Discovering Amazing Products',
+        description: 'Browse thousands of wellness products across all categories! Use filters to narrow by dispensary type, price range, effects, and ratings. Find exactly what you need in seconds!',
+        animation: <BrowseShopAnimation step={0} />,
+        tips: [
+          'Use the search bar for specific products',
+          'Filter by "Top Rated" to see customer favorites',
+          'Check dispensary profiles for verification'
+        ],
+        proTip: 'Follow your favorite dispensaries to get notified when they add new products!'
+      },
+      {
+        title: 'Adding to Cart & Checkout',
+        description: 'Found what you love? Add items to your cart, review your order, choose delivery or collection, and checkout securely. Track your order from warehouse to doorstep!',
+        animation: <BrowseShopAnimation step={1} />,
+        tips: [
+          'Check for bundle deals to save money',
+          'Compare shipping options for best rates',
+          'Apply promo codes before payment'
+        ],
+        proTip: 'Shopping during dispensary sale events can save you 20-50% on premium products!'
+      },
+      {
+        title: 'Leaving Reviews & Earning Points',
+        description: 'After receiving your order, leave honest reviews to help other customers. Earn points for every review, which unlock rewards, discounts, and exclusive perks!',
+        animation: <BrowseShopAnimation step={1} />,
+        tips: [
+          'Include photos in reviews for extra points',
+          'Be detailed and honest',
+          'Rate both product quality and service'
+        ],
+        proTip: 'Top reviewers get invited to exclusive product testing programs and earn free samples!'
+      }
+    ]
+  },
+  'ai-advisors': {
+    color: 'from-violet-600 to-purple-600',
+    icon: <Brain className="h-8 w-8" />,
+    AnimationComponent: AIAdvisorsAnimation,
+    steps: [
+      {
+        title: 'Meet Your AI Wellness Team',
+        description: 'Chat with specialized AI advisors for FREE! Dr. Green (cannabis expert), Fungi Master (mushroom specialist), Root Healer (traditional medicine), and more. Get instant, personalized advice 24/7!',
+        animation: <AIAdvisorsAnimation step={0} />,
+        tips: [
+          'Ask specific questions for better answers',
+          'Try different advisors for varied perspectives',
+          'Save helpful responses for later reference'
+        ],
+        proTip: 'Your first 3 messages with each advisor are completely FREE - no credits needed!'
+      },
+      {
+        title: 'Getting Personalized Recommendations',
+        description: 'Tell the AI about your needs, preferences, and goals. It analyzes thousands of products to recommend the perfect matches for you. Like having a wellness expert in your pocket!',
+        animation: <AIAdvisorsAnimation step={1} />,
+        tips: [
+          'Share your experience level honestly',
+          'Mention any allergies or sensitivities',
+          'Ask about dosage and usage methods'
+        ],
+        proTip: 'The more you chat with AI advisors, the smarter they get about your preferences!'
+      },
+      {
+        title: 'Learning & Growing',
+        description: 'Use AI advisors to learn about strains, effects, terpenes, wellness practices, and more. They provide educational content, answer questions, and guide your wellness journey!',
+        animation: <AIAdvisorsAnimation step={1} />,
+        tips: [
+          'Ask about the science behind effects',
+          'Request beginner-friendly explanations',
+          'Explore different wellness modalities'
+        ],
+        proTip: 'AI advisors stay updated with the latest research - ask them about new discoveries!'
+      }
+    ]
+  },
+  'creator-lab': {
+    color: 'from-pink-600 to-fuchsia-600',
+    icon: <Palette className="h-8 w-8" />,
+    AnimationComponent: CreatorLabAnimation,
+    steps: [
+      {
+        title: 'Designing Custom Apparel',
+        description: 'Unleash your creativity! Choose from t-shirts, hoodies, hats, and more. Select cannabis-inspired artwork from our gallery or upload your own designs. Make it uniquely yours!',
+        animation: <CreatorLabAnimation step={0} />,
+        tips: [
+          'Preview designs on different products',
+          'Choose high-contrast colors for visibility',
+          'Check size charts before ordering'
+        ],
+        proTip: 'Use the AI design generator to create completely original cannabis art in seconds!'
+      },
+      {
+        title: 'AI-Powered Design Magic',
+        description: 'No design skills? No problem! Describe what you want and our AI creates stunning, original cannabis-themed designs. Psychedelic patterns, minimalist logos, trippy art - anything you imagine!',
+        animation: <CreatorLabAnimation step={1} />,
+        tips: [
+          'Be specific in your design prompts',
+          'Generate multiple options to compare',
+          'Combine AI designs with gallery art'
+        ],
+        proTip: 'Top-selling AI-generated designs get featured in our marketplace - earn royalties!'
+      },
+      {
+        title: 'Publishing & Earning',
+        description: 'Love your design? Publish it to the marketplace! When others buy your design, you earn royalties. Turn your creativity into passive income while spreading cannabis culture!',
+        animation: <CreatorLabAnimation step={1} />,
+        tips: [
+          'Create trending, seasonal designs',
+          'Promote your designs on social media',
+          'Build a portfolio of popular styles'
+        ],
+        proTip: 'Top creators earn R5,000+ monthly from design royalties alone!'
+      }
+    ]
+  },
+  'orders-tracking': {
+    color: 'from-teal-600 to-cyan-600',
+    icon: <Package className="h-8 w-8" />,
+    AnimationComponent: OrdersTrackingAnimation,
+    steps: [
+      {
+        title: 'Managing Your Orders',
+        description: 'View all your orders in one place! See order status (Processing, Shipped, Delivered), track packages in real-time, and get instant updates via notifications. Never wonder "where\'s my order?" again!',
+        animation: <OrdersTrackingAnimation step={0} />,
+        tips: [
+          'Enable notifications for status updates',
+          'Check estimated delivery dates',
+          'Contact dispensary if issues arise'
+        ],
+        proTip: 'Orders with tracking numbers are 95% less likely to get lost!'
+      },
+      {
+        title: 'Real-Time Package Tracking',
+        description: 'Follow your package every step of the way! See when it leaves the warehouse, track the driver\'s location, and get notified when it\'s nearby. Know exactly when your wellness goodies arrive!',
+        animation: <OrdersTrackingAnimation step={1} />,
+        tips: [
+          'Watch the map view for live updates',
+          'Prepare to receive packages on time',
+          'Rate delivery experience after arrival'
+        ],
+        proTip: 'PUDO locker deliveries let you pick up 24/7 - perfect for busy schedules!'
+      },
+      {
+        title: 'Reviews & Reordering',
+        description: 'Loved your order? Leave a detailed review with photos to help the community and earn points! Want more of the same? Use "Reorder" button to add previous favorites to your cart instantly!',
+        animation: <OrdersTrackingAnimation step={1} />,
+        tips: [
+          'Review products within 7 days for double points',
+          'Save favorites for easy reordering',
+          'Report issues for quick resolution'
+        ],
+        proTip: 'Detailed reviews with photos earn 3x the points and unlock VIP perks faster!'
+      }
+    ]
+  },
+  'triple-s-club': {
+    color: 'from-yellow-600 to-orange-600',
+    icon: <Crown className="h-8 w-8" />,
+    AnimationComponent: TripleSClubAnimation,
+    steps: [
+      {
+        title: 'Unlocking Club Benefits',
+        description: 'Join the exclusive Triple S Club (Seed, Sprout, Sage) to access premium perks! Earn points with every purchase, review, and interaction. Unlock tiers for bigger rewards, discounts, and VIP treatment!',
+        animation: <TripleSClubAnimation step={0} />,
+        tips: [
+          'Track your points in the rewards dashboard',
+          'Complete daily challenges for bonus points',
+          'Refer friends to earn huge point bonuses'
+        ],
+        proTip: 'Reach Sage tier (highest) to unlock lifetime 20% discounts on all purchases!'
+      },
+      {
+        title: 'Exclusive Events & Drops',
+        description: 'Club members get first access to new products, limited drops, and special events! Attend virtual sessions, win giveaways, and connect with cannabis culture legends. Being a member has privileges!',
+        animation: <TripleSClubAnimation step={1} />,
+        tips: [
+          'Set reminders for exclusive drop times',
+          'Attend virtual events for bonus rewards',
+          'Network with other club members'
+        ],
+        proTip: 'Club members get notified 24 hours before public product launches - never miss out!'
+      },
+      {
+        title: 'VIP Status & Perks',
+        description: 'Reach VIP status and enjoy priority customer support, free shipping on all orders, birthday bonuses, and exclusive merchandise. The ultimate wellness insider experience!',
+        animation: <TripleSClubAnimation step={1} />,
+        tips: [
+          'Maintain activity to keep VIP status',
+          'Use perks regularly to maximize value',
+          'Combine club discounts with sale prices'
+        ],
+        proTip: 'VIP members save an average of R2,500 per year through exclusive perks and discounts!'
       }
     ]
   }

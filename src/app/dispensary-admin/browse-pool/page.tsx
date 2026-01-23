@@ -147,11 +147,7 @@ export default function BrowsePoolPage() {
     if (!authLoading && hasCheckedOnboarding && !showOnboarding) {
       fetchPoolData();
     }
-  }, [authLoading, hasCheckedOnboarding, showOnboar) => {
-    if (!authLoading) {
-      fetchPoolData();
-    }
-  }, [authLoading, fetchPoolData]);
+  }, [authLoading, hasCheckedOnboarding, showOnboarding, fetchPoolData]);
 
   // Listen for when a request is submitted and refresh data
   useEffect(() => {
