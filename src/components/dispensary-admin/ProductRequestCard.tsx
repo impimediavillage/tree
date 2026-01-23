@@ -188,7 +188,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 dispensaryId: request.productOwnerDispensaryId,
                 dispensaryName: sellerDispensary.dispensaryName || '',
                 dispensaryType: 'Product Pool',
-                productType: productData?.productType || 'Other',
+                productType: (productData?.productType || 'Other') as Product['productType'],
                 
                 // Pricing breakdown with 5% commission
                 dispensarySetPrice: tierPrice,
