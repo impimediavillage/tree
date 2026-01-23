@@ -250,7 +250,6 @@ function OrderHistoryContent() {
                       onClick={() => setSelectedOrder(order)}
                       data-tour={index === 0 ? "order-card" : undefined}
                     />
-                    />
                   ))}
                 </div>
               )}
