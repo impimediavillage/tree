@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import type { ProductRequest, NoteData, Product, ShippingRate, PUDOLocker } from '@/types';
+import type { ProductType } from '@/types/product';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, getDoc, addDoc, collection, writeBatch, deleteDoc, Timestamp } from 'firebase/firestore';
@@ -188,7 +189,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 dispensaryId: request.productOwnerDispensaryId,
                 dispensaryName: sellerDispensary.dispensaryName || '',
                 dispensaryType: sellerDispensary.dispensaryType,
-                productType: (productData?.productType ?? 'Other') as Product['productType'],
+                productType: (productData?.productType || 'Other') as ProductType,
                 
                 // Pricing breakdown with 5% commission
                 dispensarySetPrice: tierPrice,
