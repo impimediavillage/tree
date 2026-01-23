@@ -193,18 +193,11 @@ export default function BrowsePoolPage() {
       }
       return [];
     });
-  },
+  }, [filteredProducts, myOpenRequests]);
 
   // Handle onboarding opt in
   const handleOptIn = async () => {
-    if{/* Product Pool Onboarding Dialog */}
-      <ProductPoolOnboardingDialog 
-        isOpen={showOnboarding}
-        onOptIn={handleOptIn}
-        onOptOut={handleOptOut}
-      />
-
-       (!currentUser?.dispensaryId) return;
+    if (!currentUser?.dispensaryId) return;
 
     try {
       const onboardingRef = doc(db, 'productPoolOnboarding', currentUser.dispensaryId);
