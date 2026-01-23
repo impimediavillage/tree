@@ -206,7 +206,7 @@ export default function BrowsePoolPage() {
       const onboardingRef = doc(db, 'productPoolOnboarding', currentUser.dispensaryId);
       await setDoc(onboardingRef, {
         dispensaryId: currentUser.dispensaryId,
-        dispensaryName: currentDispensary?.name || 'Unknown',
+        dispensaryName: currentDispensary?.dispensaryName || 'Unknown',
         hasOptedIn: true,
         optedInAt: new Date(),
         optedInBy: currentUser.uid
@@ -238,7 +238,7 @@ export default function BrowsePoolPage() {
       const onboardingRef = doc(db, 'productPoolOnboarding', currentUser.dispensaryId);
       await setDoc(onboardingRef, {
         dispensaryId: currentUser.dispensaryId,
-        dispensaryName: currentDispensary?.name || 'Unknown',
+        dispensaryName: currentDispensary?.dispensaryName || 'Unknown',
         hasOptedIn: false,
         optedOutAt: new Date(),
         optedOutBy: currentUser.uid
