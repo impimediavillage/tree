@@ -4,7 +4,8 @@ import { useState, useCallback } from 'react';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
 import type { ShippingRate } from '@/types/checkout';
-import type { PUDOLocker, Dispensary } from '@/types';
+import type { PudoLocker } from '@/types/shipping';
+import type { Dispensary } from '@/types';
 
 interface ProductPoolShippingConfig {
   items: Array<{
@@ -35,7 +36,7 @@ export const useProductPoolShipping = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingLockers, setIsFetchingLockers] = useState(false);
   const [rates, setRates] = useState<ShippingRate[]>([]);
-  const [pudoLockers, setPudoLockers] = useState<PUDOLocker[]>([]);
+  const [pudoLockers, setPudoLockers] = useState<PudoLocker[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [parcelSizeCategory, setParcelSizeCategory] = useState<string>('');
 
@@ -151,7 +152,7 @@ export const useProductPoolShipping = () => {
       };
 
       const result = await getPudoLockersFn(payload);
-      const data = result.data as { pickupPoints?: PUDOLocker[] };
+      const data = result.data as { pickupPoints?: PudoLocker[] };
 
       if (data.pickupPoints && data.pickupPoints.length > 0) {
         setPudoLockers(data.pickupPoints);
@@ -179,7 +180,7 @@ export const useProductPoolShipping = () => {
     config: ProductPoolShippingConfig,
     shippingMethod: 'dtl' | 'ltd' | 'ltl',
     buyerAddress: BuyerAddress,
-    destinationLocker?: PUDOLocker
+    destinationLocker?: PudoLocker
   ) => {
     setIsLoading(true);
     setError(null);

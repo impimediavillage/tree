@@ -2,8 +2,9 @@
 'use client';
 
 import * as React from 'react';
-import type { ProductRequest, NoteData, Product, PUDOLocker } from '@/types';
+import type { ProductRequest, NoteData, Product } from '@/types';
 import type { ShippingRate } from '@/types/checkout';
+import type { PudoLocker } from '@/types/shipping';
 import type { ProductType } from '@/types/product';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
@@ -60,7 +61,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [showShippingSelection, setShowShippingSelection] = React.useState(false);
     const [selectedShipping, setSelectedShipping] = React.useState<ShippingRate | null>(null);
-    const [selectedDestinationLocker, setSelectedDestinationLocker] = React.useState<PUDOLocker | null>(null);
+    const [selectedDestinationLocker, setSelectedDestinationLocker] = React.useState<PudoLocker | null>(null);
     const [availableShippingMethods, setAvailableShippingMethods] = React.useState<string[]>([]);
     const [sellerDispensary, setSellerDispensary] = React.useState<any>(null);
     const [buyerDispensary, setBuyerDispensary] = React.useState<any>(null);
