@@ -105,7 +105,8 @@ export default function CreateAdPage() {
     availableToInfluencers: true,
     influencerCommission: {
       enabled: true,
-      rate: 15
+      adBonusRate: 0,
+      maxAdBonusRate: 5
     },
     placements: ['hero_banner'],
     design: {
