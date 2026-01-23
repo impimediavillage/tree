@@ -136,8 +136,8 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             return;
         }
 
-        // TypeScript: selectedShipping is guaranteed non-null here
-        const shippingMethod = selectedShipping;
+        // TypeScript: selectedShipping is guaranteed non-null here with all required ShippingRate properties
+        const shippingMethod: ShippingRate = selectedShipping;
 
         setIsSubmitting(true);
         try {
