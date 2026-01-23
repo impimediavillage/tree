@@ -414,7 +414,7 @@ export default function InfluencerAdMarketplacePage() {
                             <div>
                               <p className="text-xs text-[#5D4E37]/50 font-semibold">Earned</p>
                               <p className="text-2xl font-black text-orange-600">
-                                R{(selection.performance.totalCommission || selection.performance.commission || 0).toFixed(0)}
+                                R{(selection.performance.totalCommission || 0).toFixed(0)}
                               </p>
                               {selection.performance.adBonus > 0 && (
                                 <p className="text-[10px] text-amber-600 font-semibold mt-0.5">
