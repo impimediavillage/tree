@@ -123,24 +123,18 @@ const DISPENSARY_TUTORIALS: Tutorial[] = [
     category: 'Pro Tips',
   },
 ];
-LEAF_TUTORIALS: Tutorial[] = [
+
+const LEAF_TUTORIALS: Tutorial[] = [
   {
     id: 'browse-shop',
     title: 'Browse & Shop',
     description: 'Discover how to find products, use filters, and shop like a pro!',
     icon: <Store className="h-6 w-6" />,
-interface TutorialLauncherProps {
-  userType?: 'dispensary' | 'leaf';
-}
-
-export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherProps) {
-  const { showLauncher, closeLauncher, startTutorial, tutorialProgress, achievements, totalPoints } = useTutorial();
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-
-  const categories = ['All', 'Core', 'Advanced', 'Pro Tips'];
-
-  // Select tutorials based on user type
-  const TUTORIALS = userType === 'leaf' ? LEAF_TUTORIALS : DISPENSARY_TUTORIALS
+    duration: '5 min',
+    difficulty: 'Beginner',
+    points: 100,
+    category: 'Core',
+    userType: 'leaf',
   },
   {
     id: 'ai-advisors',
@@ -188,18 +182,24 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
   },
 ];
 
-const 
 const DIFFICULTY_COLORS = {
   Beginner: 'bg-green-500',
   Intermediate: 'bg-yellow-500',
   Advanced: 'bg-red-500',
 };
 
-export function TutorialLauncher() {
+interface TutorialLauncherProps {
+  userType?: 'dispensary' | 'leaf';
+}
+
+export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherProps) {
   const { showLauncher, closeLauncher, startTutorial, tutorialProgress, achievements, totalPoints } = useTutorial();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   const categories = ['All', 'Core', 'Advanced', 'Pro Tips'];
+
+  // Select tutorials based on user type
+  const TUTORIALS = userType === 'leaf' ? LEAF_TUTORIALS : DISPENSARY_TUTORIALS;
 
   const filteredTutorials =
     selectedCategory === 'All'
@@ -207,12 +207,10 @@ export function TutorialLauncher() {
       : TUTORIALS.filter(t => t.category === selectedCategory);
 
   const completedCount = Object.values(tutorialProgress).filter(p => p.completed).length;
-  const progressPercent{userType === 'leaf' ? 'Wellness Explorer Academy' : 'Tutorial Academy'}
-                  </h1>
-                  <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-                    {userType === 'leaf' 
-                      ? 'Master shopping, AI advisors, and exclusive club benefits!' 
-                      : 'Master your dispensary dashboard with fun, interactive tutorials!'}
+  const progressPercent = (completedCount / TUTORIALS.length) * 100;
+
+  const isLocked = (tutorial: Tutorial) => {
+    if (!tutorial.prerequisites || tutorial.prerequisites.length === 0) return false;
     return tutorial.prerequisites.some(
       prereq => !tutorialProgress[prereq]?.completed
     );
@@ -274,10 +272,12 @@ export function TutorialLauncher() {
                   </div>
                   
                   <h1 className="text-5xl font-black text-white mb-4 bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-                    🎮 Tutorial Academy
+                    🎮 {userType === 'leaf' ? 'Wellness Explorer Academy' : 'Tutorial Academy'}
                   </h1>
                   <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-                    Master your dispensary dashboard with fun, interactive tutorials!
+                    {userType === 'leaf' 
+                      ? 'Master shopping, AI advisors, and exclusive club benefits!' 
+                      : 'Master your dispensary dashboard with fun, interactive tutorials!'}
                   </p>
                 </motion.div>
 
