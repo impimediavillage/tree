@@ -350,9 +350,9 @@ export default function InfluencerDashboard() {
             </Link>
           </Button>
           <Button asChild variant="outline" className="h-auto py-6 flex-col gap-2 border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white">
-            <Link href="/dashboard/influencer/live-events/schedule">
-              <Radio className="w-6 h-6" />
-              <span>Schedule Live</span>
+            <Link href="/dashboard/influencer/social-accounts">
+              <Share2 className="w-6 h-6" />
+              <span>Social Accounts</span>
             </Link>
           </Button>
           <Button asChild variant="outline" className="h-auto py-6 flex-col gap-2 border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white">

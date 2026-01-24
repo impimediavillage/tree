@@ -61,6 +61,7 @@ const managementSidebarNavItems: NavItem[] = [
 
 const settingsSidebarNavItems: NavItem[] = [
   { title: 'Dispensary Profile', href: '/dispensary-admin/profile', icon: Store, ownerOnly: true }, // Only owners can edit dispensary
+  { title: 'Social Accounts', href: '/dispensary-admin/social-accounts', icon: Share2, ownerOnly: true }, // Social media account connections
   { title: 'My Profile', href: '/dispensary-admin/my-profile', icon: UserCircle }, // All users can edit their profile
   { title: 'Notifications', href: '#notifications', icon: Bell },
 ];
@@ -505,8 +506,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
       {/* Tutorial System Components */}
       <TutorialLauncher />
       <TutorialManager />
-      {/* Tutorial Trigger Button - Hidden until video content is ready */}
-      {/* <TutorialTriggerButton /> */}
+      <TutorialTriggerButton />
     </div>
   );
 }

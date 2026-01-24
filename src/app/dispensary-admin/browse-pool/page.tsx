@@ -133,12 +133,18 @@ export default function BrowsePoolPage() {
         const onboardingRef = doc(db, 'productPoolOnboarding', currentUser.dispensaryId);
         const onboardingDoc = await getDoc(onboardingRef);
         
-        if (!onboardingDoc.exists() || !onboardingDoc.data()?.hasOptedIn) {
+        // Show onboarding if:
+        // 1. Document doesn't exist (first time visit)
+        // 2. Document exists but hasOptedIn is false or undefined
+        const data = onboardingDoc.data();
+        if (!onboardingDoc.exists() || !data || data.hasOptedIn !== true) {
           setShowOnboarding(true);
         }
         setHasCheckedOnboarding(true);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
+        // On error, show onboarding to be safe
+        setShowOnboarding(true);
         setHasCheckedOnboarding(true);
       }
     };

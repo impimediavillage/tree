@@ -15,20 +15,23 @@ import {
   Sparkles, Trophy, TrendingUp, Zap, Download, ExternalLink,
   Target, BarChart3, Users, ArrowRight, Rocket, Star, Crown,
   Calendar, Image as ImageIcon, FileDown, CalendarPlus, Clock,
-  CalendarClock, Award, ArrowLeft
+  CalendarClock, Award, ArrowLeft, Settings, CheckCircle2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
+import { db, functions } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import type { ShareConfig, ShareStats, ShareAnalytics, ScheduledShare, SocialPlatform, Achievement } from '@/types/social-share';
+import type { SocialMediaAccount } from '@/types/social-media';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 import { ScheduleShareDialog, ScheduledSharesList } from './ScheduleShare';
 import { CustomShareImages } from './CustomShareImages';
 import { SharePerformanceLeaderboard } from './Leaderboard';
 import { exportAnalyticsToCSV, exportStatsToCSV, calculatePerformanceScore, getPerformanceRank } from '@/lib/social-share-utils';
+import Link from 'next/link';
 
 // Platform configurations
 const platformConfig = {
@@ -186,6 +189,10 @@ export function SocialShareHubPage() {
   const [scheduledShares, setScheduledShares] = useState<ScheduledShare[]>([]);
   const [shareAnalytics, setShareAnalytics] = useState<ShareAnalytics[]>([]);
   
+  // Connected Accounts State
+  const [connectedAccounts, setConnectedAccounts] = useState<SocialMediaAccount[]>([]);
+  const [isPostingToAll, setIsPostingToAll] = useState(false);
+  
   const storeUrl = currentDispensary?.publicStoreUrl || 
     `${typeof window !== 'undefined' ? window.location.origin : ''}/store/${currentDispensary?.id}`;
 
@@ -194,8 +201,27 @@ export function SocialShareHubPage() {
     if (currentDispensary?.id) {
       loadShareData();
       loadScheduledShares();
+      loadConnectedAccounts();
     }
   }, [currentDispensary?.id]);
+
+  const loadConnectedAccounts = async () => {
+    if (!currentDispensary?.id) return;
+    
+    try {
+      const accountsRef = collection(db, 'dispensaries', currentDispensary.id, 'socialAccounts');
+      const q = query(accountsRef, where('status', '==', 'connected'), where('isActive', '==', true));
+      const snapshot = await getDocs(q);
+      const accounts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as SocialMediaAccount[];
+      
+      setConnectedAccounts(accounts);
+    } catch (error) {
+      console.error('Error loading connected accounts:', error);
+    }
+  };
 
   const loadScheduledShares = async () => {
     if (!currentDispensary?.id) return;
@@ -379,6 +405,60 @@ export function SocialShareHubPage() {
     }
 
     return achievements;
+  };
+
+  const handlePostToConnected = async () => {
+    if (!currentDispensary?.id || connectedAccounts.length === 0) {
+      toast({
+        title: 'No Connected Accounts',
+        description: 'Please connect your social media accounts first.',
+        variant: 'default'
+      });
+      return;
+    }
+
+    setIsPostingToAll(true);
+    try {
+      const postToSocial = httpsCallable(functions, 'postToSocial');
+      const platforms = connectedAccounts.map(acc => acc.platform);
+      const message = customMessage || shareConfig.description || `Check out my wellness store: ${currentDispensary.dispensaryName}`;
+
+      const result = await postToSocial({
+        dispensaryId: currentDispensary.id,
+        platforms,
+        message,
+        link: storeUrl,
+        hashtags: ['wellness', 'naturalhealth', currentDispensary.dispensaryName.replace(/\s+/g, '')],
+      });
+
+      const results = (result.data as any).results;
+      const successCount = Object.values(results).filter((r: any) => r.status === 'success').length;
+      const failCount = Object.values(results).filter((r: any) => r.status === 'failed').length;
+
+      toast({
+        title: 'Posted to Social Media!',
+        description: `Successfully posted to ${successCount} platform(s). ${failCount > 0 ? `${failCount} failed.` : ''}`,
+      });
+
+      // Log shares for each successful platform
+      for (const [platform, result] of Object.entries(results)) {
+        if ((result as any).status === 'success') {
+          await logShare(platform as SocialPlatform);
+        }
+      }
+
+      celebrateShare();
+      loadConnectedAccounts(); // Refresh stats
+    } catch (error: any) {
+      console.error('Error posting to social:', error);
+      toast({
+        title: 'Posting Failed',
+        description: error.message || 'Failed to post to social media',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPostingToAll(false);
+    }
   };
 
   const handleShare = async (platform: SocialPlatform) => {
@@ -613,6 +693,83 @@ export function SocialShareHubPage() {
 
         {/* Share Tab Content */}
         <TabsContent value="share" className="space-y-6">
+          {/* Connected Accounts Banner */}
+          {connectedAccounts.length > 0 && (
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-300/50 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg font-bold text-green-900 dark:text-green-100 flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  {connectedAccounts.length} Connected Account{connectedAccounts.length !== 1 ? 's' : ''}
+                </CardTitle>
+                <CardDescription className="text-green-800 dark:text-green-200">
+                  Post automatically to your connected platforms with one click
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {connectedAccounts.map((account) => (
+                    <Badge
+                      key={account.id}
+                      variant="secondary"
+                      className="bg-white/80 dark:bg-gray-800/80 px-3 py-1.5 text-sm"
+                    >
+                      {platformConfig[account.platform as keyof typeof platformConfig]?.icon && 
+                        (() => {
+                          const Icon = platformConfig[account.platform as keyof typeof platformConfig].icon;
+                          return <Icon className="h-4 w-4 mr-1.5" />;
+                        })()
+                      }
+                      {platformConfig[account.platform as keyof typeof platformConfig]?.name || account.platform}
+                    </Badge>
+                  ))}
+                </div>
+                <Button
+                  onClick={handlePostToConnected}
+                  disabled={isPostingToAll}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold shadow-lg"
+                >
+                  {isPostingToAll ? (
+                    <>
+                      <Rocket className="h-5 w-5 mr-2 animate-bounce" />
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="h-5 w-5 mr-2" />
+                      Post to All Connected Accounts
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Not Connected - Prompt to Connect */}
+          {connectedAccounts.length === 0 && (
+            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-2 border-blue-300/50">
+              <CardContent className="pt-6 text-center space-y-4">
+                <Settings className="h-12 w-12 mx-auto text-blue-600" />
+                <div>
+                  <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">
+                    Connect Your Social Accounts
+                  </h3>
+                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
+                    Save time by connecting your social media accounts. Post to all platforms with one click!
+                  </p>
+                </div>
+                <Button
+                  asChild
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Link href="/dispensary-admin/social-accounts">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Connect Accounts
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Custom Images Button */}
           <Button
             onClick={() => setShowImageUpload(true)}

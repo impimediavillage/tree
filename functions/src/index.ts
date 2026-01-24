@@ -93,6 +93,15 @@ export {
   activateScheduledAds
 } from './advertising';
 
+// Export Social Media Posting functions
+export {
+  connectSocialAccount,
+  disconnectSocialAccount,
+  refreshSocialToken,
+  postToSocial,
+  getSocialAnalytics
+} from './social-media-posting';
+
 // Export Stock Management functions
 export {
   deductStockOnOrderCreated,

@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Package, Brain, Sparkles, Loader2, AlertTriangle, UserCheck, BarChart3, Video, Calendar, Trees } from 'lucide-react'; 
+import { DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Package, Brain, Sparkles, Loader2, AlertTriangle, UserCheck, BarChart3, Video, Calendar, Trees, Share2 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,7 @@ const sidebarNavItems: NavItem[] = [
   { title: 'Interaction History', href: '/dashboard/leaf/history', icon: History },
   { title: 'Community Events', href: '/dashboard/leaf/events', icon: Calendar },
   { title: 'Video Library', href: '/dashboard/leaf/video-library', icon: Video },
+  { title: 'Social Accounts', href: '/dashboard/leaf/social-accounts', icon: Share2 },
   { title: 'AI Advisors', href: '/dashboard/advisors', icon: Brain },
   { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Sparkles },
   { title: 'Influencer Dashboard', href: '/dashboard/influencer', icon: UserCheck },

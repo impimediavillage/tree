@@ -128,7 +128,96 @@ function analyzeCategoryStructure(categoriesData: any): CategoryStructureMetadat
 /**
  * Normalizes the category navigation structure while PRESERVING all metadata
  * Ensures categoriesData.categories exists for navigation, keeps metadata intact
+ * Now with elegant category item formatting
  */
+/**
+ * Normalize a single category item to ensure elegant, consistent structure
+ */
+function normalizeCategoryItem(item: any, index: number): any | null {
+  if (!item || typeof item !== 'object') {
+    logger.warn(`Invalid category item at index ${index}:`, item);
+    return null;
+  }
+
+  // Extract the essential fields with multiple fallbacks
+  const name = item.name || item.label || item.title || item.type || `Category ${index + 1}`;
+  const value = item.value || item.id || item.key || item.type || item.name || name.toLowerCase().replace(/\s+/g, '_');
+  const type = item.type || item.category || value;
+
+  // Skip if we can't determine a valid name
+  if (!name || name === 'undefined') {
+    logger.warn(`Skipping category at index ${index} - no valid name found`);
+    return null;
+  }
+
+  // Build normalized category object with elegant structure
+  const normalized: any = {
+    name,
+    value,
+    type,
+  };
+
+  // Add optional fields only if they exist and are valid
+  if (item.description && typeof item.description === 'string') {
+    normalized.description = item.description;
+  }
+
+  if (item.imageUrl && typeof item.imageUrl === 'string') {
+    normalized.imageUrl = item.imageUrl;
+  } else if (item.image && typeof item.image === 'string') {
+    normalized.imageUrl = item.image;
+  }
+
+  // Handle subcategories/examples (dropdown options)
+  const subcategories = item.examples || item.subcategories || item.options || item.children;
+  if (Array.isArray(subcategories) && subcategories.length > 0) {
+    // For simple string arrays, keep as-is
+    if (typeof subcategories[0] === 'string') {
+      normalized.examples = subcategories;
+    } else if (typeof subcategories[0] === 'object') {
+      // For nested objects, extract names
+      normalized.examples = subcategories
+        .map((sub: any) => sub.name || sub.label || sub.value)
+        .filter((name: string) => name && name !== 'undefined');
+    }
+  }
+
+  // Preserve enhanced metadata if present
+  if (item.searchTags && Array.isArray(item.searchTags)) {
+    normalized.searchTags = item.searchTags;
+  }
+
+  if (item.userIntent && typeof item.userIntent === 'string') {
+    normalized.userIntent = item.userIntent;
+  }
+
+  if (item.audience && Array.isArray(item.audience)) {
+    normalized.audience = item.audience;
+  }
+
+  if (item.regionalRelevance && typeof item.regionalRelevance === 'string') {
+    normalized.regionalRelevance = item.regionalRelevance;
+  }
+
+  if (item.useCases && Array.isArray(item.useCases)) {
+    normalized.useCases = item.useCases;
+  }
+
+  if (item.seoPageIntent && typeof item.seoPageIntent === 'object') {
+    normalized.seoPageIntent = item.seoPageIntent;
+  }
+
+  if (item.structuredDataHints && typeof item.structuredDataHints === 'object') {
+    normalized.structuredDataHints = item.structuredDataHints;
+  }
+
+  if (item.faqSeedQuestions && Array.isArray(item.faqSeedQuestions)) {
+    normalized.faqSeedQuestions = item.faqSeedQuestions;
+  }
+
+  return normalized;
+}
+
 function normalizeToStandardStructure(inputData: any): { 
   categoriesData: any; 
   metadata: any;
@@ -177,8 +266,19 @@ function normalizeToStandardStructure(inputData: any): {
     categoriesArray = Object.values(rawCategories).filter(v => typeof v === 'object');
   }
 
+  // ✨ NEW: Normalize each category item for elegant, consistent structure
+  const normalizedCategories = categoriesArray
+    .map((item, index) => normalizeCategoryItem(item, index))
+    .filter(item => item !== null); // Remove any invalid items
+
+  logger.info('Category structure normalized', {
+    inputCount: categoriesArray.length,
+    outputCount: normalizedCategories.length,
+    sampleOutput: normalizedCategories.slice(0, 2)
+  });
+
   return {
-    categoriesData: { categories: categoriesArray },
+    categoriesData: { categories: normalizedCategories },
     metadata
   };
 }
