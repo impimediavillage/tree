@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Coins, 
@@ -38,6 +39,12 @@ export function ProductPoolOnboardingDialog({
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
+        <VisuallyHidden>
+          <DialogTitle>Product Pool Onboarding</DialogTitle>
+          <DialogDescription>
+            Welcome to the Product Pool! Learn about the 5% commission structure, shipping options, and privacy controls for B2B wholesale trading.
+          </DialogDescription>
+        </VisuallyHidden>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white p-6 rounded-t-lg">
           <div className="flex items-center gap-3">

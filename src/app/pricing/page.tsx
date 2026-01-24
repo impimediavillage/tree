@@ -195,7 +195,11 @@ export default function PublicCreditsPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Treehouse Creator Lab */}
-            <div className="p-6 bg-gradient-to-br from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-xl border-3 border-violet-400/40 shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer">
+            <div className="relative p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer overflow-hidden">
+              <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-xl border-3 border-violet-400/40"></div>
+              <div className="relative z-10">
+              <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-3 rounded-xl">
                   <Palette className="h-8 w-8 text-white" />
@@ -223,10 +227,15 @@ export default function PublicCreditsPage() {
                   <span>We print, ship & handle customers. You just <strong>CASH OUT</strong>!</span>
                 </li>
               </ul>
+              </div>
             </div>
 
             {/* AI Advisors */}
-            <div className="p-6 bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-indigo-500/20 rounded-xl border-3 border-cyan-400/40 shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer">
+            <div className="relative p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer overflow-hidden">
+              <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-indigo-500/20 rounded-xl border-3 border-cyan-400/40"></div>
+              <div className="relative z-10">
+              <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-3 rounded-xl">
                   <Brain className="h-8 w-8 text-white" />
@@ -254,10 +263,15 @@ export default function PublicCreditsPage() {
                   <span><strong>10 FREE credits</strong> on signup - no card needed!</span>
                 </li>
               </ul>
+              </div>
             </div>
 
             {/* Influencer Program */}
-            <div className="p-6 bg-gradient-to-br from-pink-500/20 via-rose-500/20 to-red-500/20 rounded-xl border-3 border-pink-400/40 shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer">
+            <div className="relative p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer overflow-hidden">
+              <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-rose-500/20 to-red-500/20 rounded-xl border-3 border-pink-400/40"></div>
+              <div className="relative z-10">
+              <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-3 rounded-xl">
                   <Megaphone className="h-8 w-8 text-white" />
@@ -285,10 +299,15 @@ export default function PublicCreditsPage() {
                   <span>More credits = <strong>More content = More MONEY</strong>! 🔥</span>
                 </li>
               </ul>
+              </div>
             </div>
 
             {/* Credit Benefits */}
-            <div className="p-6 bg-gradient-to-br from-emerald-500/20 via-green-500/20 to-teal-500/20 rounded-xl border-3 border-emerald-400/40 shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer">
+            <div className="relative p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer overflow-hidden">
+              <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-green-500/20 to-teal-500/20 rounded-xl border-3 border-emerald-400/40"></div>
+              <div className="relative z-10">
+              <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-3 rounded-xl animate-pulse">
                   <DollarSign className="h-8 w-8 text-white" />
@@ -316,11 +335,15 @@ export default function PublicCreditsPage() {
                   <span><strong>Secure payments</strong> via PayFast - safe & ez!</span>
                 </li>
               </ul>
+              </div>
             </div>
           </div>
 
           {/* Call to Action Banner */}
-          <div className="mt-8 p-8 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 rounded-xl shadow-2xl text-center">
+          <div className="relative mt-8 p-8 rounded-xl shadow-2xl text-center overflow-hidden">
+            <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 rounded-xl"></div>
+            <div className="relative z-10">
             <h3 className="text-3xl font-black text-white mb-3 drop-shadow-lg">
               🎮 Level Up Your Wellness Game! 🎮
             </h3>
@@ -330,6 +353,7 @@ export default function PublicCreditsPage() {
             <p className="text-lg text-white/80 font-semibold">
               👇 Pick your power-up package below! 👇
             </p>
+            </div>
           </div>
         </div>
 

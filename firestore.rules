@@ -45,11 +45,18 @@ service cloud.firestore {
     // ===== USER MANAGEMENT =====
     match /users/{userId} {
       // Users can read their own profile
-      allow read: if isAuthenticated() && request.auth.uid == userId;
-      // Dispensary staff can read users in their dispensary
-      allow read: if isAuthenticated() && 
+      allow get: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Dispensary owners and staff can read individual users in their dispensary
+      allow get: if isAuthenticated() && 
                     request.auth.token.dispensaryId != null && 
                     get(/databases/$(database)/documents/users/$(userId)).data.dispensaryId == request.auth.token.dispensaryId;
+      
+      // Dispensary owners and staff can list/query users in their dispensary
+      allow list: if isAuthenticated() && 
+                     request.auth.token.dispensaryId != null &&
+                     resource.data.dispensaryId == request.auth.token.dispensaryId;
+      
       // Allow public user creation during checkout (guest checkout flow)
       allow create: if request.auth.uid == userId || isRole('Super Admin');
       allow delete: if isRole('Super Admin');
@@ -186,6 +193,12 @@ service cloud.firestore {
     }
 
     // ===== PRODUCT POOL SYSTEM =====
+    // Product Pool Onboarding - dispensary owners can manage their own onboarding status
+    match /productPoolOnboarding/{dispensaryId} {
+      allow read: if isAuthenticated() && isDispensaryMember(dispensaryId);
+      allow write: if isAuthenticated() && isDispensaryMember(dispensaryId) && isDispensaryOwner();
+    }
+    
     match /productRequests/{requestId} {
       allow create: if isAuthenticated();
       allow read: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
