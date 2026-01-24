@@ -333,9 +333,9 @@ export function SocialShareHubPage() {
           description: a.description || '',
           type: a.id as any,
           icon: a.icon || '🏆',
-          unlockedAt: a.unlockedAt instanceof Date ? a.unlockedAt : a.unlockedAt?.toDate?.() || new Date(),
-          progress: 100,
-          target: 100
+          unlockedAt: a.unlockedAt || new Date(),
+          progress: a.progress || 100,
+          target: a.target || 100
         })),
         lastShareDate: events[events.length - 1]?.timestamp,
         consecutiveDays,
