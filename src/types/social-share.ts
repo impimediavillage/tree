@@ -60,6 +60,9 @@ export interface ShareAchievement {
   target: number;
 }
 
+// Alias for backward compatibility
+export type Achievement = ShareAchievement;
+
 export interface ShareStats {
   totalShares: number;
   sharesByPlatform: Record<SocialPlatform, number>;
