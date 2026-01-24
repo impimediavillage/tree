@@ -232,16 +232,16 @@ export function ImageUpload({
               <>
                 <Upload className="mr-2 h-4 w-4" />
                 Upload Image
+              </>
+            )}
+          </Button>
+          <div className={`border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center ${
             aspectRatio === '1:1' ? 'aspect-square' : ''
           } ${
             previewSize === 'small' ? 'max-w-xs' : 
             previewSize === 'large' ? 'max-w-2xl' : 
             'max-w-sm'
-          
-              </>
-            )}
-          </Button>
-          <div className={`border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center ${aspectRatio === '1:1' ? 'aspect-square max-w-sm' : ''}`}>
+          }`}>
             <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
             <p className="mt-2 text-sm text-muted-foreground">
               No image uploaded yet
