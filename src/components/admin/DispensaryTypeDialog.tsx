@@ -87,7 +87,7 @@ export function DispensaryTypeDialog({
   const [recommendedStructuredData, setRecommendedStructuredData] = React.useState('');
   const [semanticRelationships, setSemanticRelationships] = React.useState('');
   const [aiSearchBoost, setAiSearchBoost] = React.useState('');
-  const [pageBlueprint, setPageBlueprint] = React.useState('');
+  const [isGeneratingMetadata, setIsGeneratingMetadata] = React.useState(false);
 
   const form = useForm<DispensaryTypeFormData>({
     resolver: zodResolver(dispensaryTypeSchema),
@@ -120,7 +120,6 @@ export function DispensaryTypeDialog({
         if (data?.recommendedStructuredData) setRecommendedStructuredData(JSON.stringify(data.recommendedStructuredData, null, 2));
         if (data?.semanticRelationships) setSemanticRelationships(JSON.stringify(data.semanticRelationships, null, 2));
         if (data?.aiSearchBoost) setAiSearchBoost(JSON.stringify(data.aiSearchBoost, null, 2));
-        if (data?.pageBlueprint) setPageBlueprint(JSON.stringify(data.pageBlueprint, null, 2));
       }
     } catch (error) {
       console.error('Error fetching existing categories:', error);
@@ -250,6 +249,167 @@ export function DispensaryTypeDialog({
     });
   };
 
+  // Auto-generate metadata from categories JSON
+  const handleAutoGenerateMetadata = () => {
+    if (!categoriesJSON) {
+      toast({
+        title: 'No Categories Found',
+        description: 'Please configure categories first before generating metadata.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsGeneratingMetadata(true);
+    const typeName = form.getValues('name');
+    const typeDescription = form.getValues('description') || '';
+
+    try {
+      // Extract categories and subcategories from JSON
+      const categories = categoriesJSON.categories || [];
+      const categoryNames = categories.map((cat: any) => cat.name);
+      const allKeywords: string[] = [];
+      
+      categories.forEach((cat: any) => {
+        allKeywords.push(cat.name);
+        if (cat.subcategories) {
+          cat.subcategories.forEach((sub: any) => allKeywords.push(sub.name));
+        }
+      });
+
+      // 1. Generate Meta Data (SEO)
+      const metaDataObj = {
+        title: `${typeName} | The Wellness Tree`,
+        description: typeDescription || `Discover authentic ${typeName} products and solutions at The Wellness Tree. ${categoryNames.slice(0, 3).join(', ')} and more.`,
+        keywords: allKeywords.slice(0, 15),
+        ogTitle: `Shop ${typeName} Products | The Wellness Tree`,
+        ogDescription: `Explore our curated selection of ${typeName} products. Trusted by wellness enthusiasts worldwide.`,
+        ogType: 'website',
+        twitterCard: 'summary_large_image',
+        robots: 'index, follow',
+        canonicalUrl: `https://www.thewellnesstree.co.za/dispensaries/by-type/${typeName.toLowerCase().replace(/\s+/g, '-')}`
+      };
+      setMetaData(JSON.stringify(metaDataObj, null, 2));
+
+      // 2. Generate Structured Data (Schema.org with Wellness Tree info)
+      const structuredDataObj = {
+        '@context': 'https://schema.org',
+        '@type': 'Store',
+        name: `The Wellness Tree - ${typeName}`,
+        description: typeDescription || `Premium ${typeName} products and solutions`,
+        url: `https://www.thewellnesstree.co.za/dispensaries/by-type/${typeName.toLowerCase().replace(/\s+/g, '-')}`,
+        parentOrganization: {
+          '@type': 'Organization',
+          name: 'The Wellness Tree (Pty) Ltd',
+          legalName: 'The Wellness Tree (Pty) Ltd',
+          alternateName: 'The Wellness Tree',
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: '63/3 Oxley Road, Salmon Bay',
+            addressLocality: 'Port Edward',
+            addressRegion: 'KwaZulu-Natal',
+            postalCode: '4295',
+            addressCountry: 'ZA'
+          },
+          contactPoint: {
+            '@type': 'ContactPoint',
+            telephone: '+27633873052',
+            email: 'info@thewellnesstree.co.za',
+            contactType: 'Customer Service'
+          },
+          sameAs: [
+            'https://www.thewellnesstree.co.za'
+          ],
+          vatID: 'K2025934950'
+        },
+        hasOfferCatalog: {
+          '@type': 'OfferCatalog',
+          name: `${typeName} Product Categories`,
+          itemListElement: categories.map((cat: any, idx: number) => ({
+            '@type': 'OfferCatalog',
+            name: cat.name,
+            position: idx + 1
+          }))
+        }
+      };
+      setStructuredData(JSON.stringify(structuredDataObj, null, 2));
+
+      // 3. Generate Recommended Structured Data (Product/Service specific)
+      const recommendedStructuredDataObj = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: `${typeName} Categories`,
+        description: `Complete category listing for ${typeName} products`,
+        numberOfItems: categories.length,
+        itemListElement: categories.map((cat: any, idx: number) => ({
+          '@type': 'ListItem',
+          position: idx + 1,
+          name: cat.name,
+          description: cat.description || `${cat.name} products in ${typeName}`,
+          url: `https://www.thewellnesstree.co.za/dispensaries/by-type/${typeName.toLowerCase().replace(/\s+/g, '-')}#${cat.name.toLowerCase().replace(/\s+/g, '-')}`
+        }))
+      };
+      setRecommendedStructuredData(JSON.stringify(recommendedStructuredDataObj, null, 2));
+
+      // 4. Generate Semantic Relationships
+      const semanticRelationshipsObj = {
+        parentType: 'wellness',
+        relatedTypes: ['holistic-health', 'natural-medicine', 'traditional-healing'],
+        synonyms: categoryNames.reduce((acc: any, name: string) => {
+          acc[name] = [name.toLowerCase(), name.replace(/\s+/g, '-')];
+          return acc;
+        }, {}),
+        hierarchicalRelationships: categories.map((cat: any) => ({
+          parent: typeName,
+          child: cat.name,
+          subcategories: cat.subcategories?.map((sub: any) => sub.name) || []
+        })),
+        crossReferences: categoryNames.slice(0, 5)
+      };
+      setSemanticRelationships(JSON.stringify(semanticRelationshipsObj, null, 2));
+
+      // 5. Generate AI Search Boost
+      const aiSearchBoostObj = {
+        weightMultiplier: 1.2,
+        priorityKeywords: allKeywords.slice(0, 10),
+        searchSynonyms: {
+          [typeName.toLowerCase()]: [typeName, ...categoryNames.slice(0, 3)],
+        },
+        embeddingHints: {
+          primaryContext: typeName,
+          secondaryContexts: categoryNames.slice(0, 5),
+          domainSpecific: 'wellness, health, natural medicine'
+        },
+        boostRules: {
+          exactMatch: 2.0,
+          categoryMatch: 1.5,
+          descriptionMatch: 1.2
+        },
+        semanticExpansion: true,
+        localRelevance: {
+          country: 'ZA',
+          region: 'KwaZulu-Natal',
+          language: 'en'
+        }
+      };
+      setAiSearchBoost(JSON.stringify(aiSearchBoostObj, null, 2));
+
+      toast({
+        title: '✨ Metadata Generated!',
+        description: 'All metadata fields have been auto-populated from your category structure.',
+      });
+    } catch (error) {
+      console.error('Error generating metadata:', error);
+      toast({
+        title: 'Generation Failed',
+        description: 'Could not auto-generate metadata. Please check your category structure.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingMetadata(false);
+    }
+  };
+
   const onSubmit = async (formData: DispensaryTypeFormData) => {
     if (!isSuperAdmin) {
         toast({ title: "Permission Denied", description: "Only Super Admins can save types.", variant: "destructive" });
@@ -353,10 +513,6 @@ export function DispensaryTypeDialog({
           try {
             if (aiSearchBoost.trim()) templateDataWithMetadata.aiSearchBoost = JSON.parse(aiSearchBoost);
           } catch (e) { console.warn('Invalid aiSearchBoost JSON, skipping'); }
-          
-          try {
-            if (pageBlueprint.trim()) templateDataWithMetadata.pageBlueprint = JSON.parse(pageBlueprint);
-          } catch (e) { console.warn('Invalid pageBlueprint JSON, skipping'); }
           
           await createCategoryFn({
             dispensaryTypeName: formData.name,
@@ -838,27 +994,13 @@ export function DispensaryTypeDialog({
                       />
                     </div>
 
-                    {/* Page Blueprint */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-[#3D2E17] dark:text-white flex items-center gap-2">
-                        <span className="text-lg">🎨</span> Page Blueprint (JSON)
-                      </label>
-                      <p className="text-xs text-muted-foreground">UI/UX configurations, layout preferences, theme overrides</p>
-                      <Textarea
-                        value={pageBlueprint}
-                        onChange={(e) => setPageBlueprint(e.target.value)}
-                        placeholder='{"layout": "...", "theme": {...}, "featuredSections": [...]}'
-                        className="font-mono text-sm min-h-[100px] bg-white/80 dark:bg-slate-900/80"
-                      />
-                    </div>
-
                     {/* Help Text */}
                     <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-lg p-4">
                       <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 flex items-start gap-2">
                         <span className="text-xl">ℹ️</span>
                         <span>
-                          All fields are optional. Enter valid JSON objects. Invalid JSON will be skipped during save.
-                          These metadata fields enhance AI-powered search, SEO, and user experience but don't affect core functionality.
+                          All fields are optional and auto-generated. You can manually edit any field. Enter valid JSON objects. Invalid JSON will be skipped during save.
+                          These metadata fields enhance AI-powered search, SEO, and user experience.
                         </span>
                       </p>
                     </div>
@@ -903,11 +1045,15 @@ export function DispensaryTypeDialog({
                   </Button>
                   <Button
                     type="button"
-                    onClick={() => setCurrentTab('metadata')}
-                    disabled={isSubmitting}
+                    onClick={() => {
+                      handleAutoGenerateMetadata();
+                      setCurrentTab('metadata');
+                    }}
+                    disabled={isSubmitting || isGeneratingMetadata || !categoriesJSON}
                     className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold shadow-lg"
                   >
-                    Next: Enhanced Metadata <Sparkles className="ml-2 h-4 w-4" />
+                    {isGeneratingMetadata && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isGeneratingMetadata ? 'Generating...' : 'Next: Meta Data'} <Sparkles className="ml-2 h-4 w-4" />
                   </Button>
                 </>
               )}
