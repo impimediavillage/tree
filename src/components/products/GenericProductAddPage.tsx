@@ -163,19 +163,78 @@ export default function GenericProductAddPage({
         dispensaryTypeName,
         categoryPath,
         categoriesFound: Array.isArray(categories) ? categories.length : 0,
-        sampleCategory: Array.isArray(categories) && categories.length > 0 ? categories[0] : null
+        categoriesType: typeof categories,
+        categoriesKeys: typeof categories === 'object' && categories !== null && !Array.isArray(categories) ? Object.keys(categories) : null,
+        sampleCategory: Array.isArray(categories) && categories.length > 0 ? categories[0] : null,
+        fullCategoriesData: data?.categoriesData
       });
 
       if (Array.isArray(categories)) {
-        setCategoryStructure(categories);
+        // Ensure each category has required fields (name, value)
+        const validatedCategories = categories.map((cat: any) => {
+          // If category doesn't have required fields, try to construct them
+          if (!cat.name && !cat.type) {
+            console.warn('[GenericProductAddPage] Category missing name/type field:', cat);
+            return null;
+          }
+          
+          return {
+            name: cat.name || cat.type || cat.label || 'Unknown Category',
+            value: cat.value || cat.type || cat.name || cat.label || 'unknown',
+            description: cat.description || '',
+            type: cat.type || cat.value || cat.name,
+            imageUrl: cat.imageUrl || cat.image || null,
+            examples: cat.examples || cat.subcategories || cat.options || []
+          } as CategoryItem;
+        }).filter((cat): cat is CategoryItem => cat !== null);
+        
+        if (validatedCategories.length === 0) {
+          toast({
+            title: 'Data Format Warning',
+            description: `Categories found but none have valid structure. Please check the category configuration.`,
+            variant: 'default'
+          });
+          console.error('[GenericProductAddPage] No valid categories after validation. Raw data:', categories);
+        }
+        
+        setCategoryStructure(validatedCategories);
       } else if (typeof categories === 'object' && categories !== null) {
-        // Fallback: Convert object to array
-        setCategoryStructure(Object.values(categories) as CategoryItem[]);
+        // Fallback: Convert object to array with validated structure
+        console.log('[GenericProductAddPage] Converting object to array:', categories);
+        const categoriesArray = Object.entries(categories).map(([key, value]: [string, any]) => {
+          if (typeof value === 'object' && value !== null) {
+            return {
+              name: value.name || value.type || value.label || key,
+              value: value.value || value.type || key,
+              description: value.description || '',
+              type: value.type || key,
+              imageUrl: value.imageUrl || value.image || null,
+              examples: value.examples || value.subcategories || value.options || []
+            } as CategoryItem;
+          }
+          return null;
+        }).filter((cat): cat is CategoryItem => cat !== null);
+        
+        if (categoriesArray.length > 0) {
+          setCategoryStructure(categoriesArray);
+        } else {
+          toast({
+            title: 'Data Format Error',
+            description: `Could not parse category structure. Expected array or object with category items.`,
+            variant: 'destructive'
+          });
+        }
       } else {
         toast({
           title: 'Data Format Error',
-          description: `Expected array at categoriesData.${categoryPath.join('.')} but found ${typeof categories}`,
+          description: `Expected array at categoriesData.${categoryPath.join('.')} but found ${typeof categories}. Please reconfigure the category structure in admin panel.`,
           variant: 'destructive'
+        });
+        console.error('[GenericProductAddPage] Invalid category structure:', {
+          expected: 'array',
+          found: typeof categories,
+          categoryPath,
+          rawData: categories
         });
       }
     } catch (error) {
