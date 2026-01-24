@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DispensaryTypeCard } from '@/components/cards/DispensaryTypeCard';
 import Link from 'next/link';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { InlineAd } from '@/components/advertising/InlineAd';
 
 export default function BrowseWellnessTypesPage() {
   const [allWellnessTypes, setAllWellnessTypes] = useState<DispensaryType[]>([]);
@@ -51,6 +52,9 @@ export default function BrowseWellnessTypesPage() {
             title={<> <Trees className="inline-block h-12 w-12 text-primary mr-4" /> Explore Wellness Worlds</>}
             description="Discover a vibrant ecosystem of specialized e-stores. Each category offers unique products and services to support your holistic journey."
         />
+
+        {/* Global Platform Advertisement - Super Admin Controlled */}
+        <InlineAd placement="inline" className="mb-8" />
 
       {isLoadingTypes ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

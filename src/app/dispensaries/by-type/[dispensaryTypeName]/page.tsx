@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DispensaryListingCard } from '@/components/cards/DispensaryListingCard';
 import { TripleSEntry } from '@/components/features/TripleSEntry';
 import { VideoLibraryGallery } from '@/components/video-library/VideoLibraryGallery';
+import { InlineAd } from '@/components/advertising/InlineAd';
 
 // Haversine formula to calculate distance between two lat/lon points
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -253,6 +254,9 @@ export default function PublicWellnessProfilesByTypePage() {
       {wellnessTypeDetails?.name && (
         <VideoLibraryGallery dispensaryType={wellnessTypeDetails.name} />
       )}
+
+      {/* Global Platform Advertisement - Super Admin Controlled */}
+      <InlineAd placement="inline" className="mb-8" />
 
       {wellnessProfiles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">

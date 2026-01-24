@@ -355,6 +355,7 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
             shippingMethods: data.shippingMethods,
             deliveryRadius: data.deliveryRadius,
             inHouseDeliveryPrice: data.inHouseDeliveryPrice,
+            minimumOrderAmount: data.minimumOrderAmount,
             pricePerKm: data.pricePerKm,
             sameDayDeliveryCutoff: data.sameDayDeliveryCutoff,
             message: data.message,
@@ -529,22 +530,23 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
                                 <p className="text-sm text-muted-foreground mb-6">
                                     Upload your store logo and icon for branding across the platform, social sharing, and PWA installation.
                                 </p>
-                                <div className="grid md:grid-cols-2 gap-8">
+                                <div className="grid md:grid-cols-3 gap-8">
                                     <FormField
                                         control={form.control}
                                         name="storeImage"
                                         render={({ field }) => (
-                                            <FormItem>
+                                            <FormItem className="md:col-span-2">
                                                 <FormControl>
                                                     <ImageUpload
                                                         label="Store Logo / Image"
-                                                        description="Main logo displayed in store cards and header"
+                                                        description="Main logo displayed in store cards and header (larger display)"
                                                         value={field.value}
                                                         onChange={field.onChange}
                                                         storagePath={`dispensaries/${dispensary.id}/branding`}
                                                         maxSizeMB={5}
                                                         aspectRatio="16:9"
                                                         disabled={isSubmitting}
+                                                        previewSize="large"
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -555,11 +557,11 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
                                         control={form.control}
                                         name="storeIcon"
                                         render={({ field }) => (
-                                            <FormItem>
+                                            <FormItem className="md:col-span-1">
                                                 <FormControl>
                                                     <ImageUpload
                                                         label="Store Icon"
-                                                        description="Icon for PWA installation and social sharing"
+                                                        description="Square icon for PWA and social sharing (smaller display)"
                                                         value={field.value}
                                                         onChange={field.onChange}
                                                         storagePath={`dispensaries/${dispensary.id}/branding`}
@@ -567,6 +569,7 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
                                                         maxDimensions={{ width: 512, height: 512 }}
                                                         aspectRatio="1:1"
                                                         disabled={isSubmitting}
+                                                        previewSize="small"
                                                     />
                                                 </FormControl>
                                                 <FormMessage />

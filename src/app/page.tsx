@@ -17,6 +17,7 @@ import { collection, query, where, getDocs, orderBy, limit } from 'firebase/fire
 import { PageHeader } from '@/components/ui/PageHeader';
 import { AdvisorCard } from '@/components/advisors/AdvisorCard';
 import { TripleSEntry } from '@/components/features/TripleSEntry';
+import { AdBanner } from '@/components/advertising/AdBanner';
 
 export default function HolisticAiHubPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -118,6 +119,9 @@ export default function HolisticAiHubPage() {
                 </Button>
             </div>
         </PageHeader>
+
+        {/* Global Platform Advertisement - Super Admin Controlled */}
+        <AdBanner placement="hero_banner" className="mb-8" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Card 2: Create a Store */}

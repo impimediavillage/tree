@@ -21,6 +21,7 @@ interface ImageUploadProps {
   maxDimensions?: { width: number; height: number };
   aspectRatio?: string; // e.g., '1:1', '16:9'
   disabled?: boolean;
+  previewSize?: 'small' | 'medium' | 'large'; // Control preview display size
 }
 
 export function ImageUpload({
@@ -32,7 +33,8 @@ export function ImageUpload({
   maxSizeMB = 5,
   maxDimensions,
   aspectRatio,
-  disabled = false
+  disabled = false,
+  previewSize = 'medium'
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(value || null);
@@ -178,13 +180,17 @@ export function ImageUpload({
 
       {previewUrl ? (
         <Card className="relative overflow-hidden">
-          <div className={`relative ${aspectRatio === '1:1' ? 'aspect-square' : 'aspect-video'} w-full max-w-sm bg-muted`}>
+          <div className={`relative ${aspectRatio === '1:1' ? 'aspect-square' : 'aspect-video'} w-full ${
+            previewSize === 'small' ? 'max-w-xs' : 
+            previewSize === 'large' ? 'max-w-2xl' : 
+            'max-w-sm'
+          } bg-muted`}>
             <Image
               src={previewUrl}
               alt="Preview"
               fill
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, 384px"
+              sizes="(max-width: 768px) 100vw, ${previewSize === 'large' ? '672px' : '384px'}"
             />
           </div>
           <Button
@@ -226,6 +232,12 @@ export function ImageUpload({
               <>
                 <Upload className="mr-2 h-4 w-4" />
                 Upload Image
+            aspectRatio === '1:1' ? 'aspect-square' : ''
+          } ${
+            previewSize === 'small' ? 'max-w-xs' : 
+            previewSize === 'large' ? 'max-w-2xl' : 
+            'max-w-sm'
+          
               </>
             )}
           </Button>
