@@ -199,7 +199,6 @@ export default function PublicCreditsPage() {
               <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
               <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-xl border-3 border-violet-400/40"></div>
               <div className="relative z-10">
-              <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-3 rounded-xl">
                   <Palette className="h-8 w-8 text-white" />
@@ -234,7 +233,6 @@ export default function PublicCreditsPage() {
             <div className="relative p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer overflow-hidden">
               <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-indigo-500/20 rounded-xl border-3 border-cyan-400/40"></div>
-              <div className="relative z-10">
               <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-3 rounded-xl">
@@ -271,7 +269,6 @@ export default function PublicCreditsPage() {
               <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
               <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-rose-500/20 to-red-500/20 rounded-xl border-3 border-pink-400/40"></div>
               <div className="relative z-10">
-              <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-3 rounded-xl">
                   <Megaphone className="h-8 w-8 text-white" />
@@ -306,7 +303,6 @@ export default function PublicCreditsPage() {
             <div className="relative p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer overflow-hidden">
               <div className="absolute inset-0 bg-white/90 dark:bg-white/10 rounded-xl"></div>
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-green-500/20 to-teal-500/20 rounded-xl border-3 border-emerald-400/40"></div>
-              <div className="relative z-10">
               <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-3 rounded-xl animate-pulse">
