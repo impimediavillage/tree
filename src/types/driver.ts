@@ -34,6 +34,10 @@ export const SILLY_VEHICLE_TYPES: VehicleType[] = [
 
 export type DriverStatus = 'available' | 'on_delivery' | 'offline' | 'suspended';
 
+export type DriverOwnershipType = 'private' | 'public' | 'shared';
+
+export type DriverApplicationStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+
 export interface DriverDocuments {
   driverLicense?: {
     url: string;
@@ -94,22 +98,46 @@ export interface DriverAchievement {
 export interface DriverProfile {
   // Core identification
   userId: string;
-  dispensaryId: string;
+  dispensaryId?: string; // Optional for public drivers
   crewMemberType: CrewMemberType;
+  
+  // NEW: Ownership & Approval
+  ownershipType: DriverOwnershipType; // 'private' | 'public' | 'shared'
+  isIndependent: boolean; // True if self-registered (not created by dispensary)
+  approvalStatus: DriverApplicationStatus; // 'pending' | 'approved' | 'rejected' | 'suspended'
+  approvedBy?: string; // Super Admin userId who approved
+  approvedAt?: Timestamp;
+  primaryDispensaryId?: string; // For private/shared drivers - their "home" dispensary
   
   // Contact information
   phoneNumber: string;
   dialCode: string; // e.g., "+27"
   displayName: string; // Driver's display name
+  email?: string; // Driver's email
   
-  // Location information
+  // NEW: Enhanced Location - Home base
+  homeLocation: {
+    address: string;
+    latitude: number;
+    longitude: number;
+    city: string;
+    province: string;
+    country: string;
+  };
+  
+  // Legacy location fields (for backward compatibility)
   city?: string;
   province?: string;
   country?: string;
   
+  // NEW: Pricing & Service Area
+  pricePerKm: number; // Driver's rate per kilometer
+  serviceRadius: number; // km from home location they're willing to travel
+  baseDeliveryFee?: number; // Minimum fee per delivery
+  
   // Delivery settings
-  deliveryRadius?: number; // km from dispensary/home base
-  isPublicDriver?: boolean; // Available to other dispensaries or private to one
+  deliveryRadius?: number; // DEPRECATED: Use serviceRadius instead
+  isPublicDriver?: boolean; // DEPRECATED: Use ownershipType instead
   
   // Vehicle information
   vehicle: VehicleInfo;
@@ -588,6 +616,132 @@ export interface DriverDashboardStats {
 export interface AvailableDelivery {
   id: string;
   orderId: string;
+  orderNumber: string;
+  dispensaryId: string;
+  dispensaryName: string;
+  pickupAddress: any;
+  deliveryAddress: any;
+  estimatedDistance?: number;
+  estimatedEarnings?: number;
+  createdAt: Timestamp;
+}
+
+// ============================================================================
+// DRIVER APPLICATION TYPES (NEW - Public Driver Signup)
+// ============================================================================
+
+export interface DriverApplication {
+  id?: string;
+  
+  // Personal Information
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  dialCode: string;
+  profilePhotoUrl?: string;
+  
+  // Location & Service Area
+  homeLocation: {
+    address: string;
+    latitude: number;
+    longitude: number;
+    city: string;
+    province: string;
+    country: string;
+  };
+  serviceRadius: number; // km from home location
+  
+  // Pricing
+  pricePerKm: number; // Driver's requested rate per km
+  baseDeliveryFee?: number; // Minimum delivery fee
+  
+  // Vehicle Information
+  vehicle: {
+    type: VehicleType;
+    make?: string;
+    model?: string;
+    year?: number;
+    color: string;
+    registrationNumber: string;
+    description?: string;
+  };
+  
+  // Documents (URLs after upload)
+  documents: {
+    driverLicenseFront: string;
+    driverLicenseBack: string;
+    idDocument: string;
+    vehiclePhoto: string;
+    proofOfAddress?: string;
+  };
+  
+  // Banking Information
+  banking: {
+    bankName: string;
+    accountNumber: string;
+    accountHolderName: string;
+    branchCode: string;
+  };
+  
+  // Application Status
+  applicationStatus: DriverApplicationStatus;
+  submittedAt: Timestamp;
+  reviewedBy?: string; // Super Admin userId
+  reviewedAt?: Timestamp;
+  reviewNotes?: string;
+  rejectionReason?: string;
+  
+  // Terms acceptance
+  termsAccepted: boolean;
+  backgroundCheckConsent: boolean;
+}
+
+// ============================================================================
+// DRIVER REVIEWS & RATINGS (NEW)
+// ============================================================================
+
+export interface DriverReview {
+  id: string;
+  driverId: string;
+  driverName: string;
+  orderId: string;
+  orderNumber: string;
+  deliveryId: string;
+  customerId: string;
+  customerName: string;
+  dispensaryId: string;
+  dispensaryName: string;
+  
+  // Rating & Feedback
+  rating: number; // 1-5
+  review?: string;
+  
+  // Detailed ratings
+  punctuality?: number; // 1-5
+  professionalism?: number; // 1-5
+  communication?: number; // 1-5
+  vehicleCondition?: number; // 1-5
+  
+  // Tags
+  tags?: string[]; // e.g., ['Friendly', 'Fast', 'Careful', 'Professional']
+  
+  // Images (optional)
+  photos?: string[];
+  
+  // Response from driver
+  driverResponse?: string;
+  driverRespondedAt?: Timestamp;
+  
+  // Timestamps
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+  
+  // Status
+  isVerified: boolean; // Only verified deliveries can leave reviews
+  isFlagged: boolean; // Flagged for admin review
+  flagReason?: string;
+}
   orderNumber: string;
   customerName: string;
   customerPhone: string;

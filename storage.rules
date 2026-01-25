@@ -80,5 +80,15 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
     }
 
+    // Driver application document uploads (public signup)
+    // Anyone can upload documents for their application
+    match /driver_applications/{applicationId}/{allPaths=**} {
+      allow write: if request.resource.size < 5 * 1024 * 1024 // Max 5MB
+                   && request.resource.contentType.matches('image/.*');
+      
+      // Super Admin can delete application documents
+      allow delete: if request.auth != null && request.auth.token.role == 'Super Admin';
+    }
+
   }
 }

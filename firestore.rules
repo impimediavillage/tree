@@ -460,6 +460,44 @@ service cloud.firestore {
       allow update: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
     }
 
+    // ===== DRIVER APPLICATION SYSTEM =====
+    match /driver_applications/{applicationId} {
+      // Anyone can create an application (public driver signup)
+      allow create: if request.resource.data.personalInfo.email is string &&
+                      request.resource.data.applicationStatus == 'pending' &&
+                      request.resource.data.submittedAt is timestamp;
+      
+      // Applicants can read their own application
+      allow read: if request.auth != null && 
+                    request.resource.data.personalInfo.email == request.auth.token.email;
+      
+      // Super Admin can read and update all applications
+      allow read, update: if isRole('Super Admin');
+      
+      // Super Admin can delete applications
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /driver_reviews/{reviewId} {
+      // Authenticated users can read all reviews
+      allow read: if isAuthenticated();
+      
+      // Customers who completed a delivery can create a review
+      allow create: if isAuthenticated() && 
+                      request.auth.uid == request.resource.data.customerId &&
+                      request.resource.data.rating >= 1 && request.resource.data.rating <= 5;
+      
+      // Drivers can update their own reviews (to add response)
+      allow update: if isAuthenticated() && 
+                      request.auth.uid == resource.data.driverId &&
+                      request.resource.data.keys().hasOnly(['driverResponse', 'driverRespondedAt']);
+      
+      // Super Admin can flag/unflag and delete reviews
+      allow update: if isRole('Super Admin') && 
+                      request.resource.data.keys().hasOnly(['isFlagged']);
+      allow delete: if isRole('Super Admin');
+    }
+
     // ===== ADVERTISING SYSTEM =====
     match /advertisements/{adId} {
       allow read: if true;

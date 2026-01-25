@@ -38,6 +38,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkUnclaimedDeliveries = exports.onPayoutRequestUpdate = exports.onDriverStatsUpdate = exports.onDeliveryStatusUpdate = exports.onInHouseDeliveryCreated = void 0;
+exports.sendDriverWelcomeEmail = sendDriverWelcomeEmail;
+exports.geocodeAddress = geocodeAddress;
+exports.calculateDistance = calculateDistance;
+exports.notifyDriversWithPriority = notifyDriversWithPriority;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = __importStar(require("firebase-admin"));
@@ -479,4 +483,209 @@ const checkUnclaimedDeliveries = async () => {
     }
 };
 exports.checkUnclaimedDeliveries = checkUnclaimedDeliveries;
+// ============================================================================
+// DRIVER APPLICATION PROCESSING
+// ============================================================================
+/**
+ * Send welcome email to approved driver with login credentials
+ */
+async function sendDriverWelcomeEmail(email, displayName, temporaryPassword) {
+    try {
+        // TODO: Integrate with your email service
+        // For now, log the credentials
+        v2_1.logger.info(`Driver approved: ${email}`, {
+            displayName,
+            temporaryPassword,
+            loginUrl: 'https://thewellnesstree.com/login'
+        });
+        // You can use SendGrid, Mailgun, or your existing email service here
+        // Example:
+        /*
+        await sendEmail({
+          to: email,
+          subject: 'Welcome to The Wellness Tree Driver Network!',
+          html: `
+            <h1>Welcome, ${displayName}!</h1>
+            <p>Your driver application has been approved! You can now start accepting deliveries.</p>
+            <h2>Login Credentials</h2>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Temporary Password:</strong> ${temporaryPassword}</p>
+            <p><strong>Login URL:</strong> https://thewellnesstree.com/login</p>
+            <p>Please change your password after your first login.</p>
+            <h2>Next Steps</h2>
+            <ol>
+              <li>Log in to your driver dashboard</li>
+              <li>Complete your profile</li>
+              <li>Set your availability</li>
+              <li>Start accepting deliveries!</li>
+            </ol>
+            <p>Welcome to the team!</p>
+          `
+        });
+        */
+    }
+    catch (error) {
+        v2_1.logger.error('Error sending driver welcome email:', error);
+        throw error;
+    }
+}
+/**
+ * Geocode address to get latitude/longitude
+ * Uses Google Maps Geocoding API
+ * Note: Requires GOOGLE_MAPS_API_KEY secret to be set
+ */
+async function geocodeAddress(address, city, province, country) {
+    try {
+        const fullAddress = `${address}, ${city}, ${province}, ${country}`;
+        v2_1.logger.info(`Geocoding address: ${fullAddress}`);
+        // Use the Google Maps API key from environment (set as Firebase secret)
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+            v2_1.logger.warn('GOOGLE_MAPS_API_KEY secret not configured. Set it via: firebase functions:secrets:set GOOGLE_MAPS_API_KEY');
+            return null;
+        }
+        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`);
+        const data = await response.json();
+        if (data.status === 'OK' && data.results && data.results.length > 0) {
+            const location = data.results[0].geometry.location;
+            v2_1.logger.info(`Geocoded successfully: ${location.lat}, ${location.lng}`);
+            return {
+                latitude: location.lat,
+                longitude: location.lng
+            };
+        }
+        else {
+            v2_1.logger.warn(`Geocoding failed: ${data.status}`, { fullAddress, error: data.error_message });
+            return null;
+        }
+    }
+    catch (error) {
+        v2_1.logger.error('Error geocoding address:', error);
+        return null;
+    }
+}
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of Earth in kilometers
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+            Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+}
+/**
+ * Notify nearby public drivers about new delivery
+ * Priority system: Dispensary drivers first, then public drivers
+ */
+async function notifyDriversWithPriority(dispensaryId, deliveryId, orderNumber, pickupLocation, deliveryLocation) {
+    try {
+        // TIER 1: Check for dispensary's own drivers first
+        const privateDriversQuery = await db
+            .collection('driver_profiles')
+            .where('ownershipType', '==', 'private')
+            .where('primaryDispensaryId', '==', dispensaryId)
+            .where('status', '==', 'available')
+            .where('isActive', '==', true)
+            .get();
+        if (!privateDriversQuery.empty) {
+            v2_1.logger.info(`Found ${privateDriversQuery.size} private drivers for dispensary ${dispensaryId}`);
+            // Notify private drivers
+            const privateNotifications = privateDriversQuery.docs.map(async (driverDoc) => {
+                const driverData = driverDoc.data();
+                const distance = calculateDistance(driverData.homeLocation?.latitude || 0, driverData.homeLocation?.longitude || 0, pickupLocation.latitude, pickupLocation.longitude);
+                return (0, notifications_1.sendFCMPushNotification)(driverDoc.id, {
+                    title: '🚗 New Delivery Available (Priority)',
+                    body: `Order #${orderNumber} - ${distance.toFixed(1)}km away. You have priority!`,
+                    data: {
+                        type: 'new_delivery_priority',
+                        deliveryId,
+                        orderNumber,
+                        distance: distance.toFixed(1),
+                        priority: 'high'
+                    }
+                });
+            });
+            await Promise.all(privateNotifications);
+            // Schedule public notification in 2 minutes if not claimed
+            setTimeout(async () => {
+                const deliveryDoc = await db.collection('driver_deliveries').doc(deliveryId).get();
+                if (deliveryDoc.exists && deliveryDoc.data()?.status === 'pending') {
+                    await notifyPublicDriversNearby(deliveryId, orderNumber, pickupLocation, 10);
+                }
+            }, 120000); // 2 minutes
+            return;
+        }
+        // TIER 2: No private drivers, notify public drivers immediately
+        v2_1.logger.info(`No private drivers found, notifying public drivers for delivery ${deliveryId}`);
+        await notifyPublicDriversNearby(deliveryId, orderNumber, pickupLocation, 10);
+    }
+    catch (error) {
+        v2_1.logger.error('Error notifying drivers with priority:', error);
+    }
+}
+/**
+ * Notify public drivers within radius of pickup location
+ */
+async function notifyPublicDriversNearby(deliveryId, orderNumber, pickupLocation, radiusKm) {
+    try {
+        // Get all available public drivers
+        const publicDriversQuery = await db
+            .collection('driver_profiles')
+            .where('ownershipType', '==', 'public')
+            .where('status', '==', 'available')
+            .where('isActive', '==', true)
+            .where('approvalStatus', '==', 'approved')
+            .get();
+        v2_1.logger.info(`Found ${publicDriversQuery.size} public drivers to check`);
+        // Filter by distance and service radius
+        const nearbyDrivers = [];
+        for (const driverDoc of publicDriversQuery.docs) {
+            const driverData = driverDoc.data();
+            const homeLocation = driverData.homeLocation;
+            if (!homeLocation?.latitude || !homeLocation?.longitude)
+                continue;
+            const distance = calculateDistance(homeLocation.latitude, homeLocation.longitude, pickupLocation.latitude, pickupLocation.longitude);
+            const driverServiceRadius = driverData.serviceRadius || 15;
+            if (distance <= Math.min(radiusKm, driverServiceRadius)) {
+                nearbyDrivers.push({
+                    id: driverDoc.id,
+                    distance,
+                    rating: driverData.stats?.averageRating || 0,
+                    pricePerKm: driverData.pricePerKm || 8
+                });
+            }
+        }
+        // Sort by rating, then distance
+        nearbyDrivers.sort((a, b) => {
+            if (Math.abs(a.rating - b.rating) > 0.5) {
+                return b.rating - a.rating; // Higher rating first
+            }
+            return a.distance - b.distance; // Closer first
+        });
+        v2_1.logger.info(`Notifying ${nearbyDrivers.length} nearby drivers`);
+        // Notify drivers
+        const notifications = nearbyDrivers.map(driver => (0, notifications_1.sendFCMPushNotification)(driver.id, {
+            title: '🚗 New Delivery Available',
+            body: `Order #${orderNumber} - ${driver.distance.toFixed(1)}km away. Est. earnings: R${(driver.distance * driver.pricePerKm).toFixed(2)}`,
+            data: {
+                type: 'new_delivery',
+                deliveryId,
+                orderNumber,
+                distance: driver.distance.toFixed(1),
+                estimatedEarnings: (driver.distance * driver.pricePerKm).toFixed(2)
+            }
+        }));
+        await Promise.all(notifications);
+    }
+    catch (error) {
+        v2_1.logger.error('Error notifying public drivers:', error);
+    }
+}
 //# sourceMappingURL=driver-functions.js.map
