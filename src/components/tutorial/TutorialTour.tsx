@@ -57,11 +57,11 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
       }],
 
       onDestroyStarted: () => {
-        // Mark tutorial as complete when user finishes the first step
+        // CRITICAL: Always mark tutorial as complete when user finishes
         completeStep(tutorialId, 0);
         completeTutorial(tutorialId);
         
-        // Show completion modal instead of freezing popup
+        // ALWAYS show completion modal for ALL tutorials
         setShowCompletionModal(true);
         setShowConfetti(true);
         
@@ -70,6 +70,12 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
         }, 3000);
 
         if (onComplete) onComplete();
+        
+        // Clean up driver instance
+        if (driverInstance) {
+          driverInstance.destroy();
+        }
+        
         return true;
       },
 
@@ -82,10 +88,25 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
       },
 
       onPopoverRender: (popover, options) => {
-        // Ensure popover is responsive and doesn't overflow on mobile
+        // Make popover centered and prominent on desktop, responsive on mobile
         const popoverEl = popover.wrapper;
         if (popoverEl) {
-          popoverEl.style.maxWidth = 'min(400px, 90vw)';
+          // Check screen size
+          const isDesktop = window.innerWidth >= 768;
+          
+          if (isDesktop) {
+            // Desktop: Center the popover and make it larger
+            popoverEl.style.position = 'fixed';
+            popoverEl.style.top = '50%';
+            popoverEl.style.left = '50%';
+            popoverEl.style.transform = 'translate(-50%, -50%)';
+            popoverEl.style.maxWidth = '500px';
+            popoverEl.style.width = '90vw';
+          } else {
+            // Mobile: Keep responsive
+            popoverEl.style.maxWidth = '90vw';
+          }
+          
           popoverEl.style.zIndex = '10000';
         }
       },
@@ -205,7 +226,6 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
           border: 2px solid #8B5CF6;
           border-radius: 16px;
           box-shadow: 0 20px 60px rgba(139, 92, 246, 0.4);
-          max-width: min(400px, 90vw);
           z-index: 10000 !important;
         }
 
@@ -264,15 +284,35 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
           z-index: 9999 !important;
         }
 
-        /* Fix for desktop - ensure proper layering */
+        /* Desktop optimization - centered, larger popover */
         @media (min-width: 768px) {
           .driver-popover.tutorial-popover-custom {
-            max-width: 420px;
+            max-width: 500px !important;
+            width: 90vw !important;
+          }
+          
+          .driver-popover.tutorial-popover-custom .driver-popover-title {
+            font-size: 24px;
+          }
+          
+          .driver-popover.tutorial-popover-custom .driver-popover-description {
+            font-size: 16px;
           }
           
           .driver-popover.tutorial-popover-custom button {
-            font-size: 15px;
-            padding: 12px 24px;
+            font-size: 16px;
+            padding: 14px 28px;
+          }
+          
+          .driver-popover.tutorial-popover-custom .driver-popover-footer {
+            margin-top: 20px;
+          }
+        }
+        
+        /* Large desktop - make even more prominent */
+        @media (min-width: 1024px) {
+          .driver-popover.tutorial-popover-custom {
+            max-width: 600px !important;
           }
         }
       `}</style>
