@@ -128,7 +128,6 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
           });
         }
       },
-      },
     };
 
     const driverObj = driver(driverConfig);
