@@ -151,45 +151,56 @@ export default function PublicCreditsPage() {
 
   return (
     <>
-      <div className="container mx-auto py-12 px-4 md:px-6 lg:px-8">
-        <PageHeader 
-            title={
-              <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
-                🚀 Fuel Your Creative Universe! 💎
-              </span>
-            }
-            description={
-              <p className="text-xl font-bold">
-                Credits are your <span className="text-purple-600">secret weapon</span> to unlock <span className="text-pink-600">AI superpowers</span>, 
-                create <span className="text-orange-600">epic designs</span>, and build your <span className="text-green-600">wellness universe</span>! 
-                Let's get that bag! 💰✨
-              </p>
-            }
-        >
-            <div className="mt-8 flex flex-col sm:flex-row gap-4 items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Hero Header */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 p-8 shadow-2xl">
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+            
+            <div className="relative">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl blur-lg opacity-50" />
+                  <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+                    <Zap className="h-12 w-12 text-purple-600" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-2">
+                    🚀 Fuel Your Creative Universe! 💎
+                  </h1>
+                  <p className="text-white/90 text-lg">
+                    Credits are your secret weapon to unlock AI superpowers, create epic designs, and build your wellness universe!
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
                 <Button 
-                    size="lg" 
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-2xl px-8 py-6 text-lg font-black"
-                    onClick={() => router.push('/dashboard/advisors')}
+                  size="lg" 
+                  className="bg-white text-purple-600 hover:bg-white/90 font-bold shadow-lg hover:shadow-xl transition-all"
+                  onClick={() => router.push('/dashboard/advisors')}
                 >
-                    <Sparkles className="mr-2 h-6 w-6" />
-                    Meet Your AI Squad
+                  <Sparkles className="mr-2 h-6 w-6" />
+                  Meet Your AI Squad
                 </Button>
                 {currentUser && !authLoading && (
-                    <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border-2 border-emerald-400 rounded-xl p-4 shadow-lg">
-                        <p className="text-lg font-black text-foreground">
-                            💰 Your Balance: 
-                            <span className="text-3xl font-black text-emerald-600 ml-2">{currentUser.credits}</span> 
-                            <span className="text-sm font-bold text-muted-foreground ml-1">credits</span>
-                        </p>
-                    </div>
+                  <div className="bg-white/20 backdrop-blur-sm border-2 border-white/30 rounded-xl p-4 shadow-lg">
+                    <p className="text-lg font-black text-white">
+                      💰 Your Balance: 
+                      <span className="text-3xl font-black text-white ml-2">{currentUser.credits}</span> 
+                      <span className="text-sm font-bold text-white/80 ml-1">credits</span>
+                    </p>
+                  </div>
                 )}
+              </div>
             </div>
-        </PageHeader>
+          </div>
 
         {/* Colorful Benefits Showcase - Game Style */}
-        <div className="mb-16 space-y-6">
-          <h2 className="text-4xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 mb-8">
+        <div className="space-y-6">
+          <h2 className="text-4xl font-black text-center text-purple-900 dark:text-purple-100 mb-8">
             💎 Why Credits Are Your Superpower! 💎
           </h2>
           
@@ -483,6 +494,7 @@ export default function PublicCreditsPage() {
         <p className="text-xs text-muted-foreground text-center mt-10">
           Payments are processed securely. Credit purchases are non-refundable. This is a simulated purchase environment.
         </p>
+        </div>
       </div>
       <SignupPromptDialog isOpen={isSignupPromptOpen} onOpenChange={setIsSignupPromptOpen} />
     </>
