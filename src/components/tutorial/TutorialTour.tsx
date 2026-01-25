@@ -91,24 +91,43 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
         // Make popover centered and prominent on desktop, responsive on mobile
         const popoverEl = popover.wrapper;
         if (popoverEl) {
-          // Check screen size
-          const isDesktop = window.innerWidth >= 768;
+          // Add centered class immediately for CSS targeting
+          popoverEl.classList.add('tutorial-centered');
           
-          if (isDesktop) {
-            // Desktop: Center the popover and make it larger
-            popoverEl.style.position = 'fixed';
-            popoverEl.style.top = '50%';
-            popoverEl.style.left = '50%';
-            popoverEl.style.transform = 'translate(-50%, -50%)';
-            popoverEl.style.maxWidth = '500px';
-            popoverEl.style.width = '90vw';
-          } else {
-            // Mobile: Keep responsive
-            popoverEl.style.maxWidth = '90vw';
-          }
-          
-          popoverEl.style.zIndex = '10000';
+          // Force center positioning on desktop
+          // Using requestAnimationFrame to ensure Driver.js styles are applied first
+          requestAnimationFrame(() => {
+            const isDesktop = window.innerWidth >= 768;
+            
+            if (isDesktop) {
+              // CRITICAL: Remove ALL Driver.js positioning first
+              popoverEl.style.removeProperty('inset');
+              popoverEl.style.removeProperty('top');
+              popoverEl.style.removeProperty('bottom');
+              popoverEl.style.removeProperty('left');
+              popoverEl.style.removeProperty('right');
+              popoverEl.style.removeProperty('transform');
+              popoverEl.style.removeProperty('margin');
+              
+              // Then apply centered positioning (CSS !important will take over)
+              popoverEl.style.position = 'fixed';
+              popoverEl.style.top = '50%';
+              popoverEl.style.left = '50%';
+              popoverEl.style.right = 'auto';
+              popoverEl.style.bottom = 'auto';
+              popoverEl.style.transform = 'translate(-50%, -50%)';
+              popoverEl.style.margin = '0';
+              popoverEl.style.maxWidth = '500px';
+              popoverEl.style.width = '90vw';
+            } else {
+              // Mobile: Keep responsive
+              popoverEl.style.maxWidth = '90vw';
+            }
+            
+            popoverEl.style.zIndex = '10000';
+          });
         }
+      },
       },
     };
 
@@ -219,7 +238,7 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
         )}
       </AnimatePresence>
 
-      {/* Custom Styles - Improved for Desktop */}
+      {/* Custom Styles - Centered Dialog for Desktop */}
       <style jsx global>{`
         .driver-popover.tutorial-popover-custom {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -284,11 +303,19 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
           z-index: 9999 !important;
         }
 
-        /* Desktop optimization - centered, larger popover */
+        /* CRITICAL: Force center positioning on desktop with animation */
         @media (min-width: 768px) {
-          .driver-popover.tutorial-popover-custom {
+          .driver-popover.tutorial-popover-custom.tutorial-centered {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: translate(-50%, -50%) scale(1) !important;
             max-width: 500px !important;
             width: 90vw !important;
+            margin: 0 !important;
+            animation: tutorialZoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           }
           
           .driver-popover.tutorial-popover-custom .driver-popover-title {
@@ -311,8 +338,27 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
         
         /* Large desktop - make even more prominent */
         @media (min-width: 1024px) {
-          .driver-popover.tutorial-popover-custom {
+          .driver-popover.tutorial-popover-custom.tutorial-centered {
             max-width: 600px !important;
+          }
+        }
+
+        /* Zoom-in animation from center */
+        @keyframes tutorialZoomIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+
+        /* Mobile - keep responsive */
+        @media (max-width: 767px) {
+          .driver-popover.tutorial-popover-custom {
+            max-width: 90vw !important;
           }
         }
       `}</style>
