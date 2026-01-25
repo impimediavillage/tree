@@ -609,85 +609,117 @@ export function SocialShareHubPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl">
-      {/* Header */}
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/dispensary-admin/dashboard')}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Button>
-        
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-gradient-to-br from-[#006B3E] to-[#005230] rounded-xl">
-            <Share2 className="h-8 w-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              Share & Grow Hub
-              <Sparkles className="h-6 w-6 text-[#006B3E] animate-pulse" />
-            </h1>
-            <p className="text-muted-foreground font-semibold">
-              Amplify your reach across all platforms
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Hero Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-green-600 via-emerald-600 to-teal-500 p-8 shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+          
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-green-400 rounded-2xl blur-lg opacity-50" />
+                <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+                  <Share2 className="h-12 w-12 text-green-600" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-2">
+                  🚀 Share & Grow Hub
+                  <Sparkles className="h-8 w-8 text-yellow-300 animate-pulse" />
+                </h1>
+                <p className="text-white/90 text-lg">Amplify your reach across all platforms</p>
+              </div>
+            </div>
+            
+            <Button 
+              variant="ghost"
+              onClick={() => router.push('/dispensary-admin/dashboard')}
+              className="bg-white text-green-600 hover:bg-white/90 font-bold shadow-lg hover:shadow-xl transition-all"
+            >
+              <ArrowLeft className="mr-2 h-5 w-5" />
+              Dashboard
+            </Button>
           </div>
         </div>
-      </div>
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 gap-2 bg-transparent h-auto p-0">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 bg-transparent h-auto p-0">
           <TabsTrigger 
             value="share" 
-            className="flex flex-col items-center gap-2 py-4 px-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#006B3E] data-[state=active]:to-[#005230] data-[state=inactive]:bg-white data-[state=inactive]:hover:bg-muted data-[state=active]:shadow-xl rounded-2xl transition-all h-auto border-2 data-[state=active]:border-[#006B3E] data-[state=inactive]:border-border hover:scale-105 data-[state=active]:scale-105"
+            className="group relative overflow-hidden rounded-2xl transition-all h-auto p-0 border-0 hover:scale-105 data-[state=active]:scale-105"
           >
-            <div className="p-3 rounded-xl bg-gradient-to-br from-[#006B3E] to-[#005230] data-[state=active]:bg-white data-[state=active]:from-white data-[state=active]:to-white shadow-lg">
-              <Rocket className="h-6 w-6 sm:h-8 sm:w-8 data-[state=active]:text-[#006B3E] text-white" />
+            <div className="relative bg-gradient-to-br from-green-500 to-emerald-600 data-[state=inactive]:opacity-70 hover:opacity-100 p-6 rounded-2xl shadow-xl transition-all">
+              <div className="absolute top-0 right-0 -mt-2 -mr-2 h-16 w-16 rounded-full bg-white/10 blur-xl" />
+              <div className="relative flex flex-col items-center gap-3">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm group-data-[state=active]:bg-white group-data-[state=active]:shadow-lg transition-all">
+                  <Rocket className="h-8 w-8 text-white group-data-[state=active]:text-green-600" />
+                </div>
+                <span className="text-sm font-black text-white">Share</span>
+              </div>
             </div>
-            <span className="text-xs sm:text-sm font-black data-[state=active]:text-white text-[#3D2E17]">Share</span>
           </TabsTrigger>
           
           <TabsTrigger 
             value="analytics" 
-            className="flex flex-col items-center gap-2 py-4 px-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=inactive]:bg-white data-[state=inactive]:hover:bg-muted data-[state=active]:shadow-xl rounded-2xl transition-all h-auto border-2 data-[state=active]:border-blue-600 data-[state=inactive]:border-border hover:scale-105 data-[state=active]:scale-105"
+            className="group relative overflow-hidden rounded-2xl transition-all h-auto p-0 border-0 hover:scale-105 data-[state=active]:scale-105"
           >
-            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 data-[state=active]:bg-white data-[state=active]:from-white data-[state=active]:to-white shadow-lg">
-              <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 data-[state=active]:text-blue-600 text-white" />
+            <div className="relative bg-gradient-to-br from-blue-500 to-blue-600 data-[state=inactive]:opacity-70 hover:opacity-100 p-6 rounded-2xl shadow-xl transition-all">
+              <div className="absolute top-0 right-0 -mt-2 -mr-2 h-16 w-16 rounded-full bg-white/10 blur-xl" />
+              <div className="relative flex flex-col items-center gap-3">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm group-data-[state=active]:bg-white group-data-[state=active]:shadow-lg transition-all">
+                  <BarChart3 className="h-8 w-8 text-white group-data-[state=active]:text-blue-600" />
+                </div>
+                <span className="text-sm font-black text-white">Analytics</span>
+              </div>
             </div>
-            <span className="text-xs sm:text-sm font-black data-[state=active]:text-white text-[#3D2E17]">Analytics</span>
           </TabsTrigger>
           
           <TabsTrigger 
             value="achievements" 
-            className="flex flex-col items-center gap-2 py-4 px-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-yellow-500 data-[state=active]:to-orange-600 data-[state=inactive]:bg-white data-[state=inactive]:hover:bg-muted data-[state=active]:shadow-xl rounded-2xl transition-all h-auto border-2 data-[state=active]:border-yellow-500 data-[state=inactive]:border-border hover:scale-105 data-[state=active]:scale-105"
+            className="group relative overflow-hidden rounded-2xl transition-all h-auto p-0 border-0 hover:scale-105 data-[state=active]:scale-105"
           >
-            <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-600 data-[state=active]:bg-white data-[state=active]:from-white data-[state=active]:to-white shadow-lg">
-              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 data-[state=active]:text-yellow-600 text-white" />
+            <div className="relative bg-gradient-to-br from-yellow-500 to-orange-600 data-[state=inactive]:opacity-70 hover:opacity-100 p-6 rounded-2xl shadow-xl transition-all">
+              <div className="absolute top-0 right-0 -mt-2 -mr-2 h-16 w-16 rounded-full bg-white/10 blur-xl" />
+              <div className="relative flex flex-col items-center gap-3">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm group-data-[state=active]:bg-white group-data-[state=active]:shadow-lg transition-all">
+                  <Trophy className="h-8 w-8 text-white group-data-[state=active]:text-yellow-600" />
+                </div>
+                <span className="text-sm font-black text-white">Awards</span>
+              </div>
             </div>
-            <span className="text-xs sm:text-sm font-black data-[state=active]:text-white text-[#3D2E17]">Awards</span>
           </TabsTrigger>
           
           <TabsTrigger 
             value="schedule" 
-            className="flex flex-col items-center gap-2 py-4 px-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=inactive]:bg-white data-[state=inactive]:hover:bg-muted data-[state=active]:shadow-xl rounded-2xl transition-all h-auto border-2 data-[state=active]:border-purple-600 data-[state=inactive]:border-border hover:scale-105 data-[state=active]:scale-105"
+            className="group relative overflow-hidden rounded-2xl transition-all h-auto p-0 border-0 hover:scale-105 data-[state=active]:scale-105"
           >
-            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 data-[state=active]:bg-white data-[state=active]:from-white data-[state=active]:to-white shadow-lg">
-              <CalendarClock className="h-6 w-6 sm:h-8 sm:w-8 data-[state=active]:text-purple-600 text-white" />
+            <div className="relative bg-gradient-to-br from-purple-600 to-pink-600 data-[state=inactive]:opacity-70 hover:opacity-100 p-6 rounded-2xl shadow-xl transition-all">
+              <div className="absolute top-0 right-0 -mt-2 -mr-2 h-16 w-16 rounded-full bg-white/10 blur-xl" />
+              <div className="relative flex flex-col items-center gap-3">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm group-data-[state=active]:bg-white group-data-[state=active]:shadow-lg transition-all">
+                  <CalendarClock className="h-8 w-8 text-white group-data-[state=active]:text-purple-600" />
+                </div>
+                <span className="text-sm font-black text-white">Schedule</span>
+              </div>
             </div>
-            <span className="text-xs sm:text-sm font-black data-[state=active]:text-white text-[#3D2E17]">Schedule</span>
           </TabsTrigger>
           
           <TabsTrigger 
             value="leaderboard" 
-            className="flex flex-col items-center gap-2 py-4 px-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-red-600 data-[state=active]:to-pink-600 data-[state=inactive]:bg-white data-[state=inactive]:hover:bg-muted data-[state=active]:shadow-xl rounded-2xl transition-all h-auto border-2 data-[state=active]:border-red-600 data-[state=inactive]:border-border hover:scale-105 data-[state=active]:scale-105"
+            className="group relative overflow-hidden rounded-2xl transition-all h-auto p-0 border-0 hover:scale-105 data-[state=active]:scale-105"
           >
-            <div className="p-3 rounded-xl bg-gradient-to-br from-red-600 to-pink-600 data-[state=active]:bg-white data-[state=active]:from-white data-[state=active]:to-white shadow-lg">
-              <Crown className="h-6 w-6 sm:h-8 sm:w-8 data-[state=active]:text-red-600 text-white" />
+            <div className="relative bg-gradient-to-br from-red-600 to-pink-600 data-[state=inactive]:opacity-70 hover:opacity-100 p-6 rounded-2xl shadow-xl transition-all">
+              <div className="absolute top-0 right-0 -mt-2 -mr-2 h-16 w-16 rounded-full bg-white/10 blur-xl" />
+              <div className="relative flex flex-col items-center gap-3">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm group-data-[state=active]:bg-white group-data-[state=active]:shadow-lg transition-all">
+                  <Crown className="h-8 w-8 text-white group-data-[state=active]:text-red-600" />
+                </div>
+                <span className="text-sm font-black text-white">Leaders</span>
+              </div>
             </div>
-            <span className="text-xs sm:text-sm font-black data-[state=active]:text-white text-[#3D2E17]">Leaders</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1127,6 +1159,7 @@ export function SocialShareHubPage() {
           }}
         />
       )}
+      </div>
     </div>
   );
 }
