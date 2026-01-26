@@ -33,6 +33,11 @@ export interface DispensaryPayoutRequest {
   payoutType: 'individual' | 'combined';
   requestedAmount: number;
   
+  // Payout Breakdown (Total = Sales + Driver Fees + Vendor Commissions)
+  salesRevenue?: number; // Revenue from product sales (what dispensary keeps)
+  driverFees?: number; // Delivery fees owed to private drivers
+  vendorCommissions?: number; // Commissions owed to vendor crew members
+  
   // For combined payouts
   staffIncluded?: string[]; // Array of staff user IDs included in combined payout
   staffBreakdown?: StaffPayoutBreakdown[]; // Individual amounts per staff member

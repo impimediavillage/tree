@@ -21,6 +21,7 @@ import { doc, setDoc, serverTimestamp, collection, addDoc, getDoc } from 'fireba
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DispensaryCommissionSlider } from './DispensaryCommissionSlider';
 
 interface DispensaryAddStaffDialogProps {
   onUserAdded: () => void;
@@ -90,6 +91,9 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
   // Delivery settings
   const [deliveryRadius, setDeliveryRadius] = useState(10); // Default 10km
   const [driverType, setDriverType] = useState<'private' | 'public' | null>('private'); // Default private
+  
+  // Vendor commission settings
+  const [vendorCommissionRate, setVendorCommissionRate] = useState(10); // Default 10%
   
   // Get current dispensary name from context
   const [dispensaryName, setDispensaryName] = useState('Your Dispensary');
@@ -303,6 +307,8 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
         signupSource: 'dispensary_panel',
         crewMemberType: crewType,
         isDriver: crewType === 'Driver',
+        // Add commission rate for Vendors
+        dispensaryCommissionRate: crewType === 'Vendor' ? vendorCommissionRate : undefined,
         // Add location fields for all crew members (especially drivers)
         phone: crewType === 'Driver' ? driverPhone : undefined,
         dialCode: crewType === 'Driver' ? driverDialCode : undefined,
@@ -568,6 +574,25 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
                 </FormItem>
               )} />
             </div>
+
+            {/* Vendor Commission Settings */}
+            {crewType === 'Vendor' && (
+              <div className="space-y-4 p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 text-purple-600">💰</div>
+                  <h3 className="font-semibold text-sm">Vendor Commission Settings</h3>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Set the commission percentage your dispensary keeps from this vendor's sales.
+                  The vendor receives the remainder when they request a payout.
+                </p>
+                <DispensaryCommissionSlider
+                  value={vendorCommissionRate}
+                  onChange={setVendorCommissionRate}
+                  disabled={isSubmitting}
+                />
+              </div>
+            )}
 
             {/* Driver-Specific Fields */}
             {crewType === 'Driver' && (

@@ -460,6 +460,54 @@ service cloud.firestore {
       allow update: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
     }
 
+    // ===== VENDOR COMMISSION & PAYOUT SYSTEM =====
+    match /vendor_payout_requests/{payoutId} {
+      // Vendors can read their own requests
+      // Dispensary owners/staff can read requests for their dispensary
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.vendorId || 
+                     isDispensaryMember(resource.data.dispensaryId) ||
+                     isRole('Super Admin'));
+      
+      // Vendors can create their own payout requests
+      allow create: if isAuthenticated() && 
+                      request.auth.uid == request.resource.data.vendorId &&
+                      isVendor() &&
+                      request.resource.data.status == 'pending';
+      
+      // Dispensary owners can update payout status (approve, reject, mark paid)
+      allow update: if isAuthenticated() && 
+                      (isDispensaryMember(resource.data.dispensaryId) && isDispensaryOwner()) ||
+                      isRole('Super Admin');
+      
+      // Only Super Admin can delete
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /vendor_earnings/{vendorId} {
+      // Vendors can read their own earnings
+      // Dispensary owners/staff can read earnings for their dispensary vendors
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == vendorId || 
+                     (isDispensaryMember(resource.data.dispensaryId) && isDispensaryOwner()) ||
+                     isRole('Super Admin'));
+      
+      // Only Cloud Functions can write (automated earnings tracking)
+      allow write: if false;
+    }
+
+    match /vendor_sale_transactions/{transactionId} {
+      // Vendors can read their own transactions
+      // Dispensary owners/staff can read transactions for their dispensary
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.vendorId || 
+                     isDispensaryMember(resource.data.dispensaryId) ||
+                     isRole('Super Admin'));
+      
+      // Only Cloud Functions can write (automated on order delivery)
+      allow write: if false;
+    }
+
     // ===== DRIVER APPLICATION SYSTEM =====
     match /driver_applications/{applicationId} {
       // Anyone can create an application (public driver signup)

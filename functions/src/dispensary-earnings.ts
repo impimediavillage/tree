@@ -13,6 +13,189 @@ import {
 } from './types/dispensary-earnings';
 
 /**
+ * Calculate sales revenue for a dispensary (from delivered orders)
+ * This represents the product sales portion of their earnings
+ */
+async function calculateSalesRevenue(
+  db: admin.firestore.Firestore,
+  dispensaryId: string,
+  userId: string
+): Promise<number> {
+  try {
+    // Get the dispensary earnings record which tracks accumulated revenue
+    const earningsRef = db.collection('dispensary_earnings').doc(userId);
+    const earningsSnap = await earningsRef.get();
+    
+    if (!earningsSnap.exists) {
+      return 0;
+    }
+    
+    const earnings = earningsSnap.data() as DispensaryEarnings;
+    
+    // The currentBalance already represents sales revenue (commission from orders)
+    // This is accumulated from recordDispensaryEarning function
+    return earnings.currentBalance || 0;
+  } catch (error) {
+    console.error('Error calculating sales revenue:', error);
+    return 0;
+  }
+}
+
+/**
+ * Calculate total pending/approved driver fees owed by dispensary
+ * This represents delivery fees that must be paid to PRIVATE drivers only
+ * Private drivers = DispensaryStaff role with crewMemberType 'Driver'
+ */
+async function calculateDriverFeesOwed(
+  db: admin.firestore.Firestore,
+  dispensaryId: string
+): Promise<number> {
+  try {
+    // Query driver payout requests for this dispensary
+    // These should only be from private drivers (not public marketplace drivers)
+    const driverPayoutsQuery = db
+      .collection('driver_payout_requests')
+      .where('dispensaryId', '==', dispensaryId)
+      .where('status', 'in', ['pending', 'approved']);
+    
+    const driverPayoutsSnap = await driverPayoutsQuery.get();
+    
+    let totalDriverFees = 0;
+    
+    // Verify each payout is from a private driver (DispensaryStaff role)
+    const verificationPromises = driverPayoutsSnap.docs.map(async (payoutDoc) => {
+      const payoutData = payoutDoc.data();
+      const driverId = payoutData.driverId;
+      
+      if (!driverId) {
+        console.warn(`Payout ${payoutDoc.id} has no driverId`);
+        return 0;
+      }
+      
+      // Verify driver is private (DispensaryStaff role, not public Driver role)
+      const userDoc = await db.collection('users').doc(driverId).get();
+      
+      if (!userDoc.exists) {
+        console.warn(`Driver user ${driverId} not found`);
+        return 0;
+      }
+      
+      const userData = userDoc.data();
+      const userRole = userData?.role;
+      
+      // Only count payouts for private drivers (DispensaryStaff)
+      // Public drivers have role 'Driver' and go through platform_driver_payouts
+      if (userRole === 'DispensaryStaff') {
+        // Additional verification: Check driver profile has correct crewMemberType
+        const driverProfileDoc = await db.collection('driver_profiles').doc(driverId).get();
+        
+        if (driverProfileDoc.exists) {
+          const driverProfile = driverProfileDoc.data();
+          const crewMemberType = driverProfile?.crewMemberType;
+          
+          // Only count if they're actually a driver crew member
+          if (crewMemberType === 'Driver') {
+            return payoutData.amount || 0;
+          } else {
+            console.warn(`User ${driverId} is DispensaryStaff but not a Driver crew member (type: ${crewMemberType})`);
+            return 0;
+          }
+        } else {
+          // Has DispensaryStaff role but no driver profile - still count it
+          // (might be legacy data or profile not created yet)
+          console.warn(`Driver ${driverId} has no driver_profile document`);
+          return payoutData.amount || 0;
+        }
+      } else {
+        console.warn(`Excluding payout for user ${driverId} with role ${userRole} (not DispensaryStaff)`);
+        return 0;
+      }
+    });
+    
+    const amounts = await Promise.all(verificationPromises);
+    totalDriverFees = amounts.reduce((sum, amount) => sum + amount, 0);
+    
+    console.log(`Total private driver fees for dispensary ${dispensaryId}: R${totalDriverFees}`);
+    return totalDriverFees;
+  } catch (error) {
+    console.error('Error calculating driver fees:', error);
+    return 0;
+  }
+}
+
+/**
+ * Calculate total pending/approved vendor commissions owed by dispensary
+ * This represents commissions owed to Vendor crew members
+ * Vendors = DispensaryStaff role with crewMemberType 'Vendor'
+ */
+async function calculateVendorCommissionsOwed(
+  db: admin.firestore.Firestore,
+  dispensaryId: string
+): Promise<number> {
+  try {
+    // Query vendor payout requests for this dispensary
+    // Assuming vendor payout requests are stored in 'vendor_payout_requests' collection
+    // If they don't exist yet, this will return 0
+    const vendorPayoutsQuery = db
+      .collection('vendor_payout_requests')
+      .where('dispensaryId', '==', dispensaryId)
+      .where('status', 'in', ['pending', 'approved']);
+    
+    const vendorPayoutsSnap = await vendorPayoutsQuery.get();
+    
+    let totalVendorCommissions = 0;
+    
+    // Verify each payout is from a vendor crew member (DispensaryStaff role)
+    const verificationPromises = vendorPayoutsSnap.docs.map(async (payoutDoc) => {
+      const payoutData = payoutDoc.data();
+      const vendorId = payoutData.vendorId || payoutData.userId;
+      
+      if (!vendorId) {
+        console.warn(`Vendor payout ${payoutDoc.id} has no vendorId/userId`);
+        return 0;
+      }
+      
+      // Verify vendor is dispensary staff member
+      const userDoc = await db.collection('users').doc(vendorId).get();
+      
+      if (!userDoc.exists) {
+        console.warn(`Vendor user ${vendorId} not found`);
+        return 0;
+      }
+      
+      const userData = userDoc.data();
+      const userRole = userData?.role;
+      
+      // Only count payouts for DispensaryStaff vendors
+      if (userRole === 'DispensaryStaff') {
+        // Verify they have Vendor as crewMemberType
+        const crewMemberType = userData?.crewMemberType;
+        
+        if (crewMemberType === 'Vendor') {
+          return payoutData.amount || 0;
+        } else {
+          console.warn(`User ${vendorId} is DispensaryStaff but not a Vendor crew member (type: ${crewMemberType})`);
+          return 0;
+        }
+      } else {
+        console.warn(`Excluding vendor payout for user ${vendorId} with role ${userRole} (not DispensaryStaff)`);
+        return 0;
+      }
+    });
+    
+    const amounts = await Promise.all(verificationPromises);
+    totalVendorCommissions = amounts.reduce((sum, amount) => sum + amount, 0);
+    
+    console.log(`Total vendor commissions for dispensary ${dispensaryId}: R${totalVendorCommissions}`);
+    return totalVendorCommissions;
+  } catch (error) {
+    console.error('Error calculating vendor commissions:', error);
+    // Return 0 if collection doesn't exist yet (feature not implemented)
+    return 0;
+  }
+}
+
+/**
  * Record dispensary earnings when an order is delivered
  * Triggered on order status change to 'delivered'
  */
@@ -199,13 +382,21 @@ export const createDispensaryPayoutRequest = onCall(
           );
         }
 
-        // Create payout request
+        // Calculate payout breakdown
+        const salesRevenue = await calculateSalesRevenue(db, dispensaryId, userId);
+        const driverFees = await calculateDriverFeesOwed(db, dispensaryId);
+        const vendorCommissions = await calculateVendorCommissionsOwed(db, dispensaryId);
+
+        // Create payout request with breakdown
         const payoutRef = db.collection('dispensary_payout_requests').doc();
         const payoutRequest: any = {
           userId,
           dispensaryId,
           payoutType: 'individual',
           requestedAmount,
+          salesRevenue, // What they keep (product sales commission)
+          driverFees, // What they owe to drivers
+          vendorCommissions, // What they owe to vendors
           status: 'pending',
           accountDetails,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -300,13 +491,21 @@ export const createDispensaryPayoutRequest = onCall(
           );
         }
 
-        // Create combined payout request
+        // Calculate payout breakdown
+        const salesRevenue = totalAvailable; // Combined staff earnings (from sales)
+        const driverFees = await calculateDriverFeesOwed(db, dispensaryId);
+        const vendorCommissions = await calculateVendorCommissionsOwed(db, dispensaryId);
+
+        // Create combined payout request with breakdown
         const payoutRef = db.collection('dispensary_payout_requests').doc();
         const payoutRequest: any = {
           userId,
           dispensaryId,
           payoutType: 'combined',
           requestedAmount,
+          salesRevenue, // Combined staff sales revenue
+          driverFees, // Driver fees owed by dispensary
+          vendorCommissions, // Vendor commissions owed by dispensary
           staffIncluded,
           staffBreakdown: staffBreakdown || validStaffBreakdown,
           status: 'pending',

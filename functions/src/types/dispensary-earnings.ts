@@ -27,6 +27,9 @@ export interface DispensaryPayoutRequest {
   dispensaryId: string;
   payoutType: 'individual' | 'combined';
   requestedAmount: number;
+  salesRevenue?: number;
+  driverFees?: number;
+  vendorCommissions?: number;
   staffIncluded?: string[];
   staffBreakdown?: StaffPayoutBreakdown[];
   status: 'pending' | 'approved' | 'processing' | 'completed' | 'failed' | 'rejected';

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   LayoutDashboard, Package, Users, Settings, LogOut, UserCircle, Store,
-  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar, Tv, Truck, Share2, FolderTree
+  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar, Tv, Truck, Share2, FolderTree, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,8 @@ interface NavItem {
   disabled?: boolean;
   badge?: string | number;
   ownerOnly?: boolean;
+  vendorOnly?: boolean; // Only show for Vendor crew members
+  driverOnly?: boolean; // Only show for Driver crew members
   dispensaryTypeOnly?: string; // Only show for specific dispensary type
 }
 
@@ -53,10 +55,13 @@ const managementSidebarNavItems: NavItem[] = [
   { title: 'Advertising', href: '/dispensary-admin/advertising', icon: Tv, ownerOnly: true },
   { title: 'Social Share Hub', href: '/dispensary-admin/social-share', icon: Share2, ownerOnly: true },
   { title: 'Payouts', href: '/dispensary-admin/payouts', icon: DollarSign },
+  { title: 'My Earnings', href: '/dispensary-admin/vendor-earnings', icon: Wallet, vendorOnly: true }, // Vendor-only earnings page
   { title: 'Credits', href: '/dispensary-admin/credits', icon: CreditCard },
   { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Palette },
   { title: 'My Crew', href: '/dispensary-admin/users', icon: Users, ownerOnly: true },
   { title: 'Driver Management', href: '/dispensary-admin/drivers', icon: Truck, ownerOnly: true },
+  { title: 'Driver Payouts', href: '/dispensary-admin/driver-payouts', icon: Truck, ownerOnly: true },
+  { title: 'Vendor Payouts', href: '/dispensary-admin/vendor-payouts', icon: Users, ownerOnly: true }, // Owner manages vendor payouts
 ];
 
 const settingsSidebarNavItems: NavItem[] = [
@@ -129,28 +134,33 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
     );
   }
   
-  // Filter navigation items based on crew member type
-  const filterNavItems = (items: NavItem[]) => {
-    return items.filter(item => {
-      // Owners see everything
-      if (isDispensaryOwner) return true;
+  // Filter navigation items b except crew-specific items
+      if (isDispensaryOwner) {
+        return !item.vendorOnly && !item.driverOnly;
+      }
       
-      // Vendors: Only see products, orders (filtered), analytics, payouts, notifications
+      // Vendors: Only see products, orders (filtered), analytics, their earnings, notifications
       if (isVendor) {
+        // Show vendor-only items
+        if (item.vendorOnly) return true;
+        
         const vendorAllowed = ['/dispensary-admin/products', '/dispensary-admin/orders', 
-          '/dispensary-admin/analytics', '/dispensary-admin/payouts', '/dispensary-admin/profile'];
+          '/dispensary-admin/analytics', '/dispensary-admin/profile'];
         return vendorAllowed.some(path => item.href.startsWith(path)) || item.href === '#notifications';
       }
       
       // Drivers: Only see driver-specific pages (redirected to driver panel in useEffect below)
       if (isDriver) {
-        return false; // Drivers get redirected to driver panel
+        return item.driverOnly || false; // Drivers get redirected to driver panel
       }
       
-      // In-house staff: See everything except owner-only items
+      // In-house staff: See everything except owner-only and crew-specific items
       if (isInHouseStaff) {
-        return !item.ownerOnly;
+        return !item.ownerOnly && !item.vendorOnly && !item.driverOnly;
       }
+      
+      // Default: Check ownerOnly flag and crew-specific flags
+      return !item.ownerOnly && !item.vendorOnly && !item.driv
       
       // Default: Check ownerOnly flag
       return !item.ownerOnly;

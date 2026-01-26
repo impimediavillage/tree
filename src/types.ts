@@ -434,6 +434,9 @@ export interface User {
   crewMemberType?: 'Vendor' | 'In-house Staff' | 'Driver'; // Added for driver feature
   isDriver?: boolean; // Quick flag to identify drivers
   
+  // Vendor-specific fields (only when crewMemberType === 'Vendor')
+  dispensaryCommissionRate?: number; // Percentage (5-1000%) that dispensary keeps from vendor's sales
+  
   // Driver-specific fields (only when crewMemberType === 'Driver')
   driverProfile?: {
     phoneNumber?: string;

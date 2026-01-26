@@ -46,6 +46,7 @@ import {
 } from '@/types/dispensary-earnings';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import PayoutBreakdownCard from '@/components/dispensary-admin/PayoutBreakdownCard';
 
 export default function PayoutsPage() {
   const { currentUser, isDispensaryOwner } = useAuth();
@@ -362,6 +363,17 @@ export default function PayoutsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Latest Payout Breakdown - Show if they have a recent payout request */}
+      {payoutRequests.length > 0 && (payoutRequests[0].salesRevenue || payoutRequests[0].driverFees || payoutRequests[0].vendorCommissions) && (
+        <PayoutBreakdownCard
+          totalAmount={payoutRequests[0].requestedAmount}
+          salesRevenue={payoutRequests[0].salesRevenue}
+          driverFees={payoutRequests[0].driverFees}
+          vendorCommissions={payoutRequests[0].vendorCommissions}
+          showPercentages={true}
+        />
+      )}
 
       {/* Request Payout Button */}
       <Card className="border-4 border-[#006B3E]/30 bg-gradient-to-br from-white via-green-50/50 to-white dark:from-gray-950 dark:via-green-950/20 dark:to-gray-950 shadow-lg hover:shadow-xl transition-all duration-300">

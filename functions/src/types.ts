@@ -319,6 +319,9 @@ export interface User {
   // Crew member type (for DispensaryStaff)
   crewMemberType?: 'Vendor' | 'In-house Staff' | 'Driver';
   isDriver?: boolean;
+  
+  // Vendor-specific fields (only when crewMemberType === 'Vendor')
+  dispensaryCommissionRate?: number; // Percentage (5-1000%) that dispensary keeps from vendor's sales
 }
 
 // Represents a User document in Firestore (for server-side functions)
