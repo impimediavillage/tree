@@ -345,7 +345,9 @@ export const DispensaryShippingGroup = ({
 
         // Scenario 1: Flat fee (if set AND within radius)
         if (dispensary?.inHouseDeliveryPrice && deliveryRadiusKm && distanceKm <= deliveryRadiusKm) {
-          deliveryFee = dispensary.inHouseDeliveryPrice;
+          const baseFee = dispensary.inHouseDeliveryPrice;
+          // Round up to nearest R100 for in-house delivery
+          deliveryFee = Math.ceil(baseFee / 100) * 100;
           deliveryTime = dispensary?.sameDayDeliveryCutoff 
             ? `Same-day if ordered before ${dispensary.sameDayDeliveryCutoff}` 
             : 'Same-day delivery';
@@ -353,12 +355,16 @@ export const DispensaryShippingGroup = ({
         // Scenario 2: Per km pricing (if flat fee not set OR outside radius)
         else if (dispensary?.pricePerKm) {
           const roundedDistance = Math.ceil(distanceKm); // Round up
-          deliveryFee = dispensary.pricePerKm * roundedDistance;
+          const calculatedFee = dispensary.pricePerKm * roundedDistance;
+          // Round up to nearest R100 for in-house delivery
+          deliveryFee = Math.ceil(calculatedFee / 100) * 100;
           deliveryTime = `${roundedDistance}km away - Estimated ${roundedDistance < 10 ? 'same-day' : '1-2 days'}`;
         }
         // Scenario 3: Fallback to legacy inHouseDeliveryFee if exists
         else if (dispensary?.inHouseDeliveryFee) {
-          deliveryFee = dispensary.inHouseDeliveryFee;
+          const baseFee = dispensary.inHouseDeliveryFee;
+          // Round up to nearest R100 for in-house delivery
+          deliveryFee = Math.ceil(baseFee / 100) * 100;
         }
       } else {
         // Fallback if coordinates missing

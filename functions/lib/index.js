@@ -218,7 +218,7 @@ exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)("users/{userId
         }
         return;
     }
-    const validRoles = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
+    const validRoles = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff', 'Driver'];
     const role = afterData.role && validRoles.includes(afterData.role)
         ? afterData.role
         : 'User';

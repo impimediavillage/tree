@@ -83,6 +83,7 @@ import {
   doc,
 } from 'firebase/firestore';
 import { format, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { PublicDriverPayouts } from '@/components/financial-hub/PublicDriverPayouts';
 
 // Types
 interface FinancialMetrics {
@@ -150,7 +151,7 @@ interface PlatformFee {
   notes: string;
 }
 
-type SidePanel = 'overview' | 'treehouse' | 'dispensaries' | 'shipping' | 'credits' | 'fees' | 'influencers';
+type SidePanel = 'overview' | 'treehouse' | 'dispensaries' | 'shipping' | 'credits' | 'fees' | 'influencers' | 'drivers';
 
 export default function FinancialHubPage() {
   const router = useRouter();
@@ -618,7 +619,8 @@ export default function FinancialHubPage() {
     { id: 'treehouse', label: 'Treehouse', icon: Leaf },
     { id: 'dispensaries', label: 'Dispensaries', icon: Building2 },
     { id: 'influencers', label: 'Influencer Program', icon: Users },
-    { id: 'shipping', label: 'Shipping', icon: Truck },
+    { id: 'drivers', label: 'Driver Payouts', icon: Truck },
+    { id: 'shipping', label: 'Shipping', icon: ShoppingCart },
     { id: 'credits', label: 'Credits', icon: CreditCard },
     { id: 'fees', label: 'Platform Fees', icon: Receipt },
   ];
@@ -1789,6 +1791,11 @@ export default function FinancialHubPage() {
                 </Card>
               </div>
             </div>
+          )}
+
+          {/* Driver Payouts Panel */}
+          {activePanel === 'drivers' && (
+            <PublicDriverPayouts dateRange={getDateRangeValues(dateRange)} />
           )}
         </div>
       </div>

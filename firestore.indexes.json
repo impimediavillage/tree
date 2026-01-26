@@ -367,6 +367,30 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "selectedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "platform_driver_payouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "platform_driver_payouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "driverId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "platform_driver_payouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dispensaryId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

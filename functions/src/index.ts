@@ -205,7 +205,7 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         return;
     }
 
-    const validRoles: AllowedUserRole[] = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
+    const validRoles: AllowedUserRole[] = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff', 'Driver'];
     const role: AllowedUserRole = afterData.role && validRoles.includes(afterData.role as AllowedUserRole)
         ? afterData.role as AllowedUserRole
         : 'User';

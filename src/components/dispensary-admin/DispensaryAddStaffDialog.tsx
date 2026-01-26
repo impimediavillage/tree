@@ -89,7 +89,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
   
   // Delivery settings
   const [deliveryRadius, setDeliveryRadius] = useState(10); // Default 10km
-  const [isPublicDriver, setIsPublicDriver] = useState(false); // Default private
+  const [driverType, setDriverType] = useState<'private' | 'public' | null>('private'); // Default private
   
   // Get current dispensary name from context
   const [dispensaryName, setDispensaryName] = useState('Your Dispensary');
@@ -273,14 +273,28 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
       );
       const firebaseUser = userCredential.user;
 
+      // Determine role based on driver type selection
+      let userRole: 'DispensaryStaff' | 'Driver' = 'DispensaryStaff';
+      let userDispensaryId: string | null = dispensaryId;
+      
+      if (crewType === 'Driver' && driverType === 'public') {
+        // Public drivers get standalone 'Driver' role with no dispensary association
+        userRole = 'Driver';
+        userDispensaryId = null;
+      } else if (crewType === 'Driver' && driverType === 'private') {
+        // Private drivers are DispensaryStaff with crewMemberType: 'Driver'
+        userRole = 'DispensaryStaff';
+        userDispensaryId = dispensaryId;
+      }
+
       // Base user data
       const newStaffUserData: User = {
         uid: firebaseUser.uid,
         email: data.email,
         displayName: data.displayName,
         photoURL: null,
-        role: 'DispensaryStaff', 
-        dispensaryId: dispensaryId,
+        role: userRole, 
+        dispensaryId: userDispensaryId,
         credits: 0, 
         status: data.status, 
         createdAt: serverTimestamp() as any,
@@ -330,7 +344,9 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
         // Create driver profile in separate collection for easy querying
         const driverProfileData = {
           userId: firebaseUser.uid,
-          dispensaryId: dispensaryId,
+          dispensaryId: driverType === 'private' ? dispensaryId : null, // Only set for private drivers
+          ownershipType: driverType || 'private', // 'public' or 'private'
+          isIndependent: driverType === 'public', // True for public drivers
           crewMemberType: 'Driver',
           displayName: data.displayName, // Driver's display name
           phoneNumber: driverPhone,
@@ -341,7 +357,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
           country: driverCountry,
           // Delivery settings
           deliveryRadius: deliveryRadius, // km from dispensary
-          isPublicDriver: isPublicDriver, // Available to other dispensaries
+          isPublicDriver: driverType === 'public', // Available to other dispensaries
           vehicle: {
             type: selectedVehicleType,
             registrationNumber: vehicleRegistration,
@@ -657,33 +673,150 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
                     </FormDescription>
                   </div>
 
-                  {/* Public/Private Toggle */}
-                  <div className="flex items-start space-x-3 p-3 border rounded-lg bg-background">
-                    <Checkbox
-                      id="public-driver"
-                      checked={isPublicDriver}
-                      onCheckedChange={(checked) => setIsPublicDriver(checked as boolean)}
-                      className="mt-1"
-                    />
-                    <div className="space-y-1 flex-1">
-                      <label
-                        htmlFor="public-driver"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {isPublicDriver ? '🌍 Public Driver' : '🏠 Private Driver'}
-                      </label>
-                      <FormDescription className="text-xs">
-                        {isPublicDriver ? (
-                          <span className="text-green-600 dark:text-green-400 font-medium">
-                            ✓ This driver will be available to deliver for ANY dispensary within their radius.
+                  {/* Driver Type Selection - Two Exclusive Colorful Sections */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm mb-2">Driver Type *</h3>
+                    
+                    {/* Private Dispensary Driver Section */}
+                    <div 
+                      className={`relative p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                        driverType === 'private' 
+                          ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/40' 
+                          : 'border-gray-200 bg-gray-50 dark:bg-gray-900/20 hover:border-blue-300'
+                      }`}
+                      onClick={() => setDriverType('private')}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="text-2xl">🏠</div>
+                            <div>
+                              <h4 className="font-bold text-base text-blue-700 dark:text-blue-400">
+                                Private Dispensary Driver
+                              </h4>
+                              <p className="text-xs text-blue-600 dark:text-blue-500 font-medium">
+                                Exclusive to Your Dispensary
+                              </p>
+                            </div>
+                          </div>
+                          <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                            <p className="flex items-start gap-2">
+                              <span className="text-blue-500 font-bold">✓</span>
+                              <span>Driver only visible to your dispensary</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span className="text-blue-500 font-bold">✓</span>
+                              <span>You handle all driver disputes and payouts</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span className="text-blue-500 font-bold">✓</span>
+                              <span>Full control over driver management</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span className="text-blue-500 font-bold">✓</span>
+                              <span className="font-semibold">Saved as: DispensaryStaff role</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDriverType(driverType === 'private' ? null : 'private');
+                            }}
+                            className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 ${
+                              driverType === 'private' ? 'bg-blue-600' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                driverType === 'private' ? 'translate-x-6' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                            {driverType === 'private' ? 'ON' : 'OFF'}
                           </span>
-                        ) : (
-                          <span>
-                            This driver will ONLY deliver for your dispensary. Toggle on to make them available to other dispensaries.
-                          </span>
-                        )}
-                      </FormDescription>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Public Marketplace Driver Section */}
+                    <div 
+                      className={`relative p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                        driverType === 'public' 
+                          ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/40 dark:to-emerald-900/40' 
+                          : 'border-gray-200 bg-gray-50 dark:bg-gray-900/20 hover:border-green-300'
+                      }`}
+                      onClick={() => setDriverType('public')}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="text-2xl">🌍</div>
+                            <div>
+                              <h4 className="font-bold text-base text-green-700 dark:text-green-400">
+                                Public Marketplace Driver
+                              </h4>
+                              <p className="text-xs text-green-600 dark:text-green-500 font-medium">
+                                Share on The Wellness Tree Platform
+                              </p>
+                            </div>
+                          </div>
+                          <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                            <p className="flex items-start gap-2">
+                              <span className="text-green-500 font-bold">✓</span>
+                              <span>Driver available to ALL dispensaries on platform</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span className="text-green-500 font-bold">✓</span>
+                              <span>Platform handles driver payouts automatically</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span className="text-green-500 font-bold">✓</span>
+                              <span>Expand driver's earning potential</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span className="text-green-500 font-bold">✓</span>
+                              <span className="font-semibold">Saved as: Driver role (independent)</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDriverType(driverType === 'public' ? null : 'public');
+                            }}
+                            className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 ${
+                              driverType === 'public' ? 'bg-green-600' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                driverType === 'public' ? 'translate-x-6' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                            {driverType === 'public' ? 'ON' : 'OFF'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {driverType === null && (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Please select a driver type above (Private or Public)
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                 </div>
 

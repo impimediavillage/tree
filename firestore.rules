@@ -498,6 +498,19 @@ service cloud.firestore {
       allow delete: if isRole('Super Admin');
     }
 
+    // ===== PLATFORM DRIVER PAYOUTS =====
+    match /platform_driver_payouts/{payoutId} {
+      // Super Admin can read and manage all payouts
+      allow read, update: if isRole('Super Admin');
+      
+      // Drivers can read their own payouts
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.driverId;
+      
+      // Only created programmatically (from driver-service.ts)
+      allow create: if false;
+      allow delete: if false;
+    }
+
     // ===== ADVERTISING SYSTEM =====
     match /advertisements/{adId} {
       allow read: if true;

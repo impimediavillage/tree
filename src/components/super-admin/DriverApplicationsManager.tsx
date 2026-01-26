@@ -169,6 +169,13 @@ export function DriverApplicationsManager({ onStatsUpdate }: DriverApplicationsM
         pricePerKm: app.pricePerKm,
         serviceRadius: app.serviceRadius,
         baseDeliveryFee: app.baseDeliveryFee || 0,
+        banking: {
+          bankName: app.banking.bankName,
+          accountHolderName: app.banking.accountHolderName,
+          accountNumber: app.banking.accountNumber,
+          branchCode: app.banking.branchCode,
+          verified: false,
+        },
         vehicle: {
           type: app.vehicle.type,
           registrationNumber: app.vehicle.registrationNumber,

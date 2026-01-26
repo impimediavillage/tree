@@ -138,6 +138,19 @@ export async function createDelivery(
   dispensaryData: any
 ): Promise<string> {
   try {
+    // Get driver details if assigned to determine ownership type
+    let ownershipType: 'private' | 'public' | 'shared' = 'private';
+    let driverData: any = null;
+    
+    if (orderData.assignedDriverId) {
+      const driverRef = doc(db, 'driver_profiles', orderData.assignedDriverId);
+      const driverSnap = await getDoc(driverRef);
+      if (driverSnap.exists()) {
+        driverData = driverSnap.data();
+        ownershipType = driverData.ownershipType || 'private';
+      }
+    }
+
     const delivery: Partial<DriverDelivery> = {
       orderId,
       orderNumber: orderData.orderNumber,
@@ -146,6 +159,9 @@ export async function createDelivery(
       customerId: orderData.userId,
       customerName: orderData.customerDetails?.name || 'Customer',
       customerPhone: orderData.customerDetails?.phone || '',
+      driverId: orderData.assignedDriverId || null,
+      driverName: orderData.assignedDriverName || '',
+      ownershipType, // Track driver type
       pickupAddress: {
         streetAddress: dispensaryData.streetAddress,
         suburb: dispensaryData.suburb,
@@ -175,17 +191,85 @@ export async function createDelivery(
       }],
       createdAt: serverTimestamp() as Timestamp,
       readyForPickupAt: serverTimestamp() as Timestamp,
-      driverEarnings: orderData.shippingCost || 50, // Driver gets 100% of delivery fee
+      driverEarnings: orderData.shippingCost || 50,
       specialInstructions: orderData.deliveryInstructions || '',
       accessCode: orderData.accessCode || '',
+      platformPayoutStatus: ownershipType === 'public' ? 'pending' : undefined,
       updatedAt: serverTimestamp() as Timestamp,
     };
 
     const docRef = await addDoc(collection(db, 'deliveries'), delivery);
-    return docRef.id;
+    const deliveryId = docRef.id;
+
+    // Create platform payout record for public drivers
+    if (ownershipType === 'public' && driverData) {
+      await createPlatformDriverPayout({
+        driverId: orderData.assignedDriverId,
+        driverName: driverData.displayName || `${driverData.firstName} ${driverData.lastName}`,
+        driverEmail: driverData.email,
+        driverBanking: driverData.banking || {},
+        deliveryId,
+        orderId,
+        orderNumber: orderData.orderNumber,
+        dispensaryId: orderData.dispensaryId || dispensaryData.id,
+        dispensaryName: dispensaryData.dispensaryName,
+        deliveryFee: orderData.shippingCost || 50,
+        currency: dispensaryData.currency || 'ZAR',
+      });
+    }
+
+    return deliveryId;
   } catch (error) {
     console.error('Error creating delivery:', error);
     throw error;
+  }
+}
+
+/**
+ * Create platform payout record for public driver
+ */
+async function createPlatformDriverPayout(data: {
+  driverId: string;
+  driverName: string;
+  driverEmail: string;
+  driverBanking: any;
+  deliveryId: string;
+  orderId: string;
+  orderNumber?: string;
+  dispensaryId: string;
+  dispensaryName: string;
+  deliveryFee: number;
+  currency: string;
+}): Promise<void> {
+  try {
+    await addDoc(collection(db, 'platform_driver_payouts'), {
+      driverId: data.driverId,
+      driverName: data.driverName,
+      driverEmail: data.driverEmail,
+      deliveryId: data.deliveryId,
+      orderId: data.orderId,
+      orderNumber: data.orderNumber,
+      dispensaryId: data.dispensaryId,
+      dispensaryName: data.dispensaryName,
+      
+      deliveryFee: data.deliveryFee,
+      driverEarnings: data.deliveryFee,
+      currency: data.currency,
+      
+      banking: {
+        bankName: data.driverBanking.bankName || '',
+        accountHolderName: data.driverBanking.accountHolderName || '',
+        accountNumber: data.driverBanking.accountNumber || '',
+        branchCode: data.driverBanking.branchCode || '',
+      },
+      
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
+    
+    console.log('✅ Platform driver payout created for delivery:', data.deliveryId);
+  } catch (error) {
+    console.error('❌ Error creating platform payout:', error);
   }
 }
 

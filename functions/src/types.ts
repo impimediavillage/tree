@@ -19,7 +19,7 @@ export interface ProductCategory {
   name: string;
   subcategories?: ProductCategory[]; // Recursive
 }
-export type AllowedUserRole = 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
+export type AllowedUserRole = 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff' | 'Driver';
 // Represents the structure of a Dispensary document in Firestore
 export interface Dispensary {
   id?: string; 
@@ -303,7 +303,7 @@ export interface User {
   country?: string;
   
   photoURL?: string | null;
-  role: 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
+  role: 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff' | 'Driver';
   dispensaryId?: string | null;
   dispensaryStatus?: Dispensary['status'] | null;
   dispensary?: Dispensary | null; // <-- Include full dispensary data

@@ -280,7 +280,9 @@ export const useProductPoolShipping = () => {
 
       // Flat fee if within radius
       if (sellerDispensary.inHouseDeliveryPrice && deliveryRadiusKm && distanceKm <= deliveryRadiusKm) {
-        deliveryFee = sellerDispensary.inHouseDeliveryPrice;
+        const baseFee = sellerDispensary.inHouseDeliveryPrice;
+        // Round up to nearest R100 for in-house delivery
+        deliveryFee = Math.ceil(baseFee / 100) * 100;
         deliveryTime = sellerDispensary.sameDayDeliveryCutoff
           ? `Same-day if ordered before ${sellerDispensary.sameDayDeliveryCutoff}`
           : 'Same-day delivery';
@@ -288,12 +290,16 @@ export const useProductPoolShipping = () => {
       // Per km pricing
       else if (sellerDispensary.pricePerKm) {
         const roundedDistance = Math.ceil(distanceKm);
-        deliveryFee = sellerDispensary.pricePerKm * roundedDistance;
+        const calculatedFee = sellerDispensary.pricePerKm * roundedDistance;
+        // Round up to nearest R100 for in-house delivery
+        deliveryFee = Math.ceil(calculatedFee / 100) * 100;
         deliveryTime = `${roundedDistance}km away - Estimated ${roundedDistance < 10 ? 'same-day' : '1-2 days'}`;
       }
       // Fallback to legacy fee
       else if (sellerDispensary.inHouseDeliveryFee) {
-        deliveryFee = sellerDispensary.inHouseDeliveryFee;
+        const baseFee = sellerDispensary.inHouseDeliveryFee;
+        // Round up to nearest R100 for in-house delivery
+        deliveryFee = Math.ceil(baseFee / 100) * 100;
       }
     } else {
       deliveryFee = sellerDispensary.inHouseDeliveryPrice ?? sellerDispensary.inHouseDeliveryFee ?? 50;
