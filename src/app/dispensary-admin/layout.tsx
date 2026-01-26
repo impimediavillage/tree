@@ -134,7 +134,10 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
     );
   }
   
-  // Filter navigation items b except crew-specific items
+  // Filter navigation items based on user role and crew type
+  const filterNavItems = (items: NavItem[]) => {
+    return items.filter((item) => {
+      // Owners: See all management items except crew-specific items
       if (isDispensaryOwner) {
         return !item.vendorOnly && !item.driverOnly;
       }
@@ -160,10 +163,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
       }
       
       // Default: Check ownerOnly flag and crew-specific flags
-      return !item.ownerOnly && !item.vendorOnly && !item.driv
-      
-      // Default: Check ownerOnly flag
-      return !item.ownerOnly;
+      return !item.ownerOnly && !item.vendorOnly && !item.driverOnly;
     });
   };
   

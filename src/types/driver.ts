@@ -742,30 +742,3 @@ export interface DriverReview {
   isFlagged: boolean; // Flagged for admin review
   flagReason?: string;
 }
-  orderNumber: string;
-  customerName: string;
-  customerPhone: string;
-  pickupAddress: {
-    street: string;
-    city: string;
-    location?: { latitude: number; longitude: number };
-  };
-  deliveryAddress: {
-    street: string;
-    city: string;
-    location: { latitude: number; longitude: number };
-  };
-  distance: number;
-  estimatedDuration?: number;
-  deliveryFee: number;
-  driverEarnings: number;
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-  createdAt: Timestamp;
-  readyForPickupAt?: Timestamp;
-  itemCount: number;
-  specialInstructions?: string;
-}
