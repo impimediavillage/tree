@@ -1380,25 +1380,34 @@ export function TutorialInfomercial({ tutorialId, isOpen, onClose, onComplete }:
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
         >
           <motion.div
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="bg-white rounded-3xl shadow-2xl w-[90vw] max-w-[1000px] max-h-[90vh] overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className={`bg-gradient-to-r ${tutorial.color} text-white p-6 rounded-t-2xl sticky top-0 z-10`}>
+            <div className={`bg-gradient-to-r ${tutorial.color} text-white p-8 rounded-t-3xl sticky top-0 z-10 shadow-lg`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  {tutorial.icon}
-                  <h2 className="text-2xl font-black">Interactive Tutorial</h2>
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    {tutorial.icon}
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-extrabold flex items-center gap-2">
+                      Interactive Tutorial
+                      <Sparkles className="h-6 w-6 text-yellow-300 animate-pulse" />
+                    </h2>
+                    <p className="text-white/80 text-sm mt-1">Learn by doing! 🚀</p>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onClose}
-                  className="text-white hover:bg-white/20"
+                  className="text-white hover:bg-white/20 rounded-full p-3 border border-white/20"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-6 w-6" />
                 </Button>
               </div>
               
@@ -1413,7 +1422,7 @@ export function TutorialInfomercial({ tutorialId, isOpen, onClose, onComplete }:
             </div>
 
             {/* Content */}
-            <div className="p-8">
+            <div className="p-8 overflow-y-auto flex-1">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentStep}
@@ -1481,12 +1490,12 @@ export function TutorialInfomercial({ tutorialId, isOpen, onClose, onComplete }:
             </div>
 
             {/* Navigation */}
-            <div className="border-t border-gray-200 p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
+            <div className="border-t-2 border-gray-200 p-6 flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-3xl shadow-inner">
               <Button
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={currentStep === 0}
-                className="font-bold"
+                className="font-bold border-2 hover:scale-105 transition-all"
               >
                 <ChevronLeft className="h-5 w-5 mr-1" />
                 Previous
@@ -1505,17 +1514,17 @@ export function TutorialInfomercial({ tutorialId, isOpen, onClose, onComplete }:
 
               <Button
                 onClick={handleNext}
-                className={`font-black bg-gradient-to-r ${tutorial.color} text-white`}
+                className={`font-black bg-gradient-to-r ${tutorial.color} text-white hover:scale-105 transition-all shadow-lg border-2 border-white/20`}
               >
                 {currentStep === tutorial.steps.length - 1 ? (
                   <>
-                    Complete
-                    <CheckCircle className="h-5 w-5 ml-1" />
+                    Complete 🎉
+                    <CheckCircle className="h-5 w-5 ml-2" />
                   </>
                 ) : (
                   <>
-                    Next
-                    <ChevronRight className="h-5 w-5 ml-1" />
+                    Next Step
+                    <ChevronRight className="h-5 w-5 ml-2" />
                   </>
                 )}
               </Button>

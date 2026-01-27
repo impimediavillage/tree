@@ -243,11 +243,11 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
 
           {/* Main Launcher */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:w-[95vw] md:max-w-6xl h-full md:h-[90vh] bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 rounded-none md:rounded-3xl shadow-2xl z-[9999] overflow-hidden"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1000px] h-[90vh] bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 rounded-3xl shadow-2xl z-[9999] overflow-hidden"
           >
             {/* Animated Background Pattern */}
             <div className="absolute inset-0 opacity-10">
@@ -259,7 +259,7 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
             {/* Close Button */}
             <button
               onClick={closeLauncher}
-              className="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm"
+              className="absolute top-6 right-6 z-10 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all hover:scale-110 backdrop-blur-md border border-white/20 shadow-lg"
             >
               <X className="h-6 w-6 text-white" />
             </button>
@@ -296,7 +296,7 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                   transition={{ delay: 0.2 }}
                   className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
                 >
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/30 hover:border-white/50 transition-all hover:scale-105 shadow-lg">
                     <div className="flex items-center gap-3">
                       <div className="p-3 bg-yellow-500 rounded-xl">
                         <Star className="h-6 w-6 text-white" />
@@ -390,7 +390,7 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                           isTutorialLocked ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all hover:scale-105 hover:shadow-2xl">
+                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border-2 border-white/20 hover:border-white/40 transition-all hover:scale-105 hover:shadow-2xl hover:bg-white/15">
                           {/* Icon & Status */}
                           <div className="flex items-start justify-between mb-4">
                             <div className={`p-4 rounded-xl ${

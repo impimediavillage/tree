@@ -68,12 +68,17 @@ service cloud.firestore {
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens', 'lastTokenUpdate']);
       
       // Allow profile updates but protect critical fields (role, crewMemberType, dispensaryId, isDriver)
+      // Users CAN update: displayName, signupSource, shippingAddress, phoneNumber, email
       allow update: if isAuthenticated() && 
                       request.auth.uid == userId &&
-                      request.resource.data.role == resource.data.role &&
-                      request.resource.data.get('crewMemberType', null) == resource.data.get('crewMemberType', null) &&
-                      request.resource.data.dispensaryId == resource.data.dispensaryId &&
-                      request.resource.data.get('isDriver', false) == resource.data.get('isDriver', false);
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || 
+                       request.resource.data.role == resource.data.role) &&
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['crewMemberType']) || 
+                       request.resource.data.get('crewMemberType', null) == resource.data.get('crewMemberType', null)) &&
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dispensaryId']) || 
+                       request.resource.data.dispensaryId == resource.data.dispensaryId) &&
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isDriver']) || 
+                       request.resource.data.get('isDriver', false) == resource.data.get('isDriver', false));
     }
 
     // ===== ORDER COUNTERS =====

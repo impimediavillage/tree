@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,14 +10,70 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Users, Clock, CheckCircle, XCircle, Wallet, TrendingDown, DollarSign, User } from 'lucide-react';
+import { 
+  Users, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Wallet, 
+  DollarSign, 
+  User,
+  ArrowLeft,
+  Loader2,
+  Sparkles,
+  TrendingUp,
+  FileText,
+  AlertCircle
+} from 'lucide-react';
 import type { VendorPayoutRequest } from '@/types/vendor-earnings';
 import { formatCurrency, calculateVendorPayout } from '@/types/vendor-earnings';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+// Animated Counter Component
+function AnimatedCounter({ end, prefix = '', suffix = '' }: { 
+  end: number; 
+  prefix?: string; 
+  suffix?: string;
+}) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const duration = 2000;
+    const startTime = Date.now();
+    const startCount = 0;
+
+    const updateCount = () => {
+      const now = Date.now();
+      const progress = Math.min((now - startTime) / duration, 1);
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const current = Math.floor(startCount + (end - startCount) * easeOutQuart);
+      
+      setCount(current);
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCount);
+      }
+    };
+
+    updateCount();
+  }, [end]);
+
+  return <>{prefix}{count}{suffix}</>;
+}
 
 export default function VendorPayoutsPage() {
   const { currentUser, isDispensaryOwner } = useAuth();
@@ -219,68 +276,146 @@ export default function VendorPayoutsPage() {
     );
   }
 
+  const router = useRouter();
+
+  const totalPending = payoutRequests
+    .filter(r => r.status === 'pending')
+    .reduce((sum, r) => sum + r.netPayout, 0);
+
+  const totalApproved = payoutRequests
+    .filter(r => r.status === 'approved')
+    .reduce((sum, r) => sum + r.netPayout, 0);
+
+  const totalPaid = payoutRequests
+    .filter(r => r.status === 'paid')
+    .reduce((sum, r) => sum + r.netPayout, 0);
+
   return (
     <div className="container max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-2">
-          <Users className="h-8 w-8 text-purple-600" />
-          Vendor Payouts
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage payout requests from your vendor crew members
-        </p>
+      {/* Gradient Hero Section */}
+      <div className="bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 rounded-3xl p-8 mb-6 shadow-2xl">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur-lg opacity-50" />
+              <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+                <Users className="h-12 w-12 text-purple-600" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-2">
+                👥 Vendor Payouts Hub
+                <Sparkles className="h-8 w-8 text-yellow-300 animate-pulse" />
+              </h1>
+              <p className="text-white/90 text-lg">
+                Manage payout requests from your vendor crew members
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-yellow-800 flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Pending
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-yellow-700">{stats.pending}</div>
-          </CardContent>
-        </Card>
+      {/* Animated Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Pending Card */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                <Clock className="h-8 w-8 text-white" />
+              </div>
+              <Badge variant="secondary" className="bg-white/20 text-white border-none">
+                ⏳ Pending
+              </Badge>
+            </div>
+            <p className="text-sm font-medium text-white/80 mb-2">Pending Requests</p>
+            <div className="text-4xl font-extrabold text-white mb-2">
+              <AnimatedCounter end={stats.pending} />
+            </div>
+            <div className="flex items-center gap-1 text-white/90">
+              <span className="text-lg font-bold">
+                R<AnimatedCounter end={totalPending} />
+              </span>
+            </div>
+          </div>
+        </div>
 
-        <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-blue-800 flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Approved
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-blue-700">{stats.approved}</div>
-          </CardContent>
-        </Card>
+        {/* Approved Card */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                <CheckCircle className="h-8 w-8 text-white" />
+              </div>
+              <Badge variant="secondary" className="bg-white/20 text-white border-none">
+                ✅ Approved
+              </Badge>
+            </div>
+            <p className="text-sm font-medium text-white/80 mb-2">Approved Requests</p>
+            <div className="text-4xl font-extrabold text-white mb-2">
+              <AnimatedCounter end={stats.approved} />
+            </div>
+            <div className="flex items-center gap-1 text-white/90">
+              <span className="text-lg font-bold">
+                R<AnimatedCounter end={totalApproved} />
+              </span>
+            </div>
+          </div>
+        </div>
 
-        <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-green-800 flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Paid
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-green-700">{stats.paid}</div>
-          </CardContent>
-        </Card>
+        {/* Paid Card */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                <DollarSign className="h-8 w-8 text-white" />
+              </div>
+              <Badge variant="secondary" className="bg-white/20 text-white border-none">
+                💰 Paid
+              </Badge>
+            </div>
+            <p className="text-sm font-medium text-white/80 mb-2">Paid Out</p>
+            <div className="text-4xl font-extrabold text-white mb-2">
+              <AnimatedCounter end={stats.paid} />
+            </div>
+            <div className="flex items-center gap-1 text-white/90">
+              <span className="text-lg font-bold">
+                R<AnimatedCounter end={totalPaid} />
+              </span>
+            </div>
+          </div>
+        </div>
 
-        <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-purple-800 flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Active Vendors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-purple-700">{stats.activeVendors}</div>
-          </CardContent>
-        </Card>
+        {/* Active Vendors Card */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <Badge variant="secondary" className="bg-white/20 text-white border-none">
+                👥 Active
+              </Badge>
+            </div>
+            <p className="text-sm font-medium text-white/80 mb-2">Active Vendors</p>
+            <div className="text-4xl font-extrabold text-white mb-2">
+              <AnimatedCounter end={stats.activeVendors} />
+            </div>
+            <p className="text-sm text-white/80">with payout requests</p>
+          </div>
+        </div>
       </div>
 
       {/* Tabs for filtering */}
