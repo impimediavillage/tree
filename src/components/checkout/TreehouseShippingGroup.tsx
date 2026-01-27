@@ -339,7 +339,7 @@ export const TreehouseShippingGroup = ({
       const collectionRate = { id: 'collection', name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: storeName };
       setRates([collectionRate]);
     } else if (tier === 'in_house') {
-      const deliveryFee = treehouseConfig?.inHouseDeliveryPrice ?? 50;
+      const deliveryFee = treehouseConfig?.inHouseDeliveryPrice ?? 0;
       const deliveryTime = treehouseConfig?.sameDayDeliveryCutoff 
         ? `Same-day if ordered before ${treehouseConfig.sameDayDeliveryCutoff}` 
         : 'Same-day or next-day';

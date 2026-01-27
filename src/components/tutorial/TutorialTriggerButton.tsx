@@ -38,20 +38,20 @@ export function TutorialTriggerButton() {
       >
         <Button
           onClick={handleClick}
-          className="h-16 w-16 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-2xl border-4 border-white relative overflow-hidden group"
+          className="h-16 w-16 rounded-full bg-[#3D2E17] hover:bg-[#2D1E0F] shadow-2xl border-4 border-white relative overflow-hidden group"
         >
           {/* Animated Background Pulse */}
           <motion.div
             animate={{
               scale: [1, 1.2, 1],
-              opacity: [0.5, 0.8, 0.5],
+              opacity: [0.3, 0.5, 0.3],
             }}
             transition={{
               duration: 2,
               repeat: Infinity,
               repeatType: 'reverse',
             }}
-            className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-full"
+            className="absolute inset-0 bg-[#006B3E] rounded-full"
           />
 
           {/* Icon */}
@@ -66,7 +66,7 @@ export function TutorialTriggerButton() {
             }}
             className="relative z-10"
           >
-            <GraduationCap className="h-8 w-8 text-white" />
+            <GraduationCap className="h-6 w-6 text-white" />
           </motion.div>
 
           {/* New Achievement Badge */}

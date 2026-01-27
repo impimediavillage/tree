@@ -19,14 +19,12 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { VehicleType } from '@/types/driver';
 
 const VEHICLE_TYPES: VehicleType[] = [
-  'Car',
-  'SUV',
-  'Bakkie',
-  'Motorcycle',
-  'Scooter',
-  'Bicycle',
-  'Van',
-  'Truck',
+  'car',
+  'bakkie',
+  'motorcycle',
+  'e-bike',
+  'bicycle',
+  'truck',
 ];
 
 const SA_PROVINCES = [

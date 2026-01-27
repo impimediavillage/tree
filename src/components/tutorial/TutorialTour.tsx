@@ -1,15 +1,21 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { driver, DriveStep, Config } from 'driver.js';
-import 'driver.js/dist/driver.css';
 import { useTutorial } from '@/contexts/TutorialContext';
-import { ChatBubble, AnimatedPointer, SpotlightOverlay, ConfettiExplosion } from './AnimatedComponents';
+import { ConfettiExplosion } from './AnimatedComponents';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, Star } from 'lucide-react';
+import { CheckCircle, Star, X, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
-interface TutorialStep extends DriveStep {
+interface TutorialStep {
+  element?: string;
+  popover?: {
+    title?: string;
+    description?: string;
+    side?: string;
+    align?: string;
+  };
   chatMessage?: string;
   showPointer?: boolean;
   pointerDirection?: 'up' | 'down' | 'left' | 'right';
@@ -27,119 +33,33 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [driverInstance, setDriverInstance] = useState<any>(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   // Only use the first step for the interactive tutorial
   const firstStep = steps[0];
   const tutorialSteps = firstStep ? [firstStep] : [];
 
-  useEffect(() => {
-    if (tutorialSteps.length === 0) return;
+  const handleComplete = () => {
+    // Mark tutorial as complete
+    completeStep(tutorialId, 0);
+    completeTutorial(tutorialId);
+    
+    // Show completion modal
+    setIsOpen(false);
+    setShowCompletionModal(true);
+    setShowConfetti(true);
+    
+    setTimeout(() => {
+      setShowConfetti(false);
+    }, 3000);
 
-    // Configure Driver.js with custom styling - ONLY FIRST STEP
-    const driverConfig: Config = {
-      showProgress: false, // Hide progress since we only show first step
-      nextBtnText: '✅ Got it!',
-      doneBtnText: '✅ Complete Tutorial',
-      showButtons: ['next', 'close'],
-      animate: true,
-      
-      steps: [{
-        element: firstStep.element,
-        popover: {
-          title: firstStep.popover?.title || 'Let\'s Get Started!',
-          description: firstStep.popover?.description || '',
-          side: firstStep.popover?.side || 'bottom',
-          align: firstStep.popover?.align || 'center',
-          showButtons: ['next', 'close'],
-          popoverClass: 'tutorial-popover-custom',
-        },
-      }],
+    if (onComplete) onComplete();
+  };
 
-      onDestroyStarted: () => {
-        // CRITICAL: Always mark tutorial as complete when user finishes
-        completeStep(tutorialId, 0);
-        completeTutorial(tutorialId);
-        
-        // ALWAYS show completion modal for ALL tutorials
-        setShowCompletionModal(true);
-        setShowConfetti(true);
-        
-        setTimeout(() => {
-          setShowConfetti(false);
-        }, 3000);
-
-        if (onComplete) onComplete();
-        
-        // Clean up driver instance
-        if (driverInstance) {
-          driverInstance.destroy();
-        }
-        
-        return true;
-      },
-
-      onHighlightStarted: (element) => {
-        // Smooth scroll to element
-        element?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      },
-
-      onPopoverRender: (popover, options) => {
-        // Make popover centered and prominent on desktop, responsive on mobile
-        const popoverEl = popover.wrapper;
-        if (popoverEl) {
-          // Add centered class immediately for CSS targeting
-          popoverEl.classList.add('tutorial-centered');
-          
-          // Force center positioning on desktop
-          // Using requestAnimationFrame to ensure Driver.js styles are applied first
-          requestAnimationFrame(() => {
-            const isDesktop = window.innerWidth >= 768;
-            
-            if (isDesktop) {
-              // CRITICAL: Remove ALL Driver.js positioning first
-              popoverEl.style.removeProperty('inset');
-              popoverEl.style.removeProperty('top');
-              popoverEl.style.removeProperty('bottom');
-              popoverEl.style.removeProperty('left');
-              popoverEl.style.removeProperty('right');
-              popoverEl.style.removeProperty('transform');
-              popoverEl.style.removeProperty('margin');
-              
-              // Then apply centered positioning (CSS !important will take over)
-              popoverEl.style.position = 'fixed';
-              popoverEl.style.top = '50%';
-              popoverEl.style.left = '50%';
-              popoverEl.style.right = 'auto';
-              popoverEl.style.bottom = 'auto';
-              popoverEl.style.transform = 'translate(-50%, -50%)';
-              popoverEl.style.margin = '0';
-              popoverEl.style.maxWidth = '500px';
-              popoverEl.style.width = '90vw';
-            } else {
-              // Mobile: Keep responsive
-              popoverEl.style.maxWidth = '90vw';
-            }
-            
-            popoverEl.style.zIndex = '10000';
-          });
-        }
-      },
-    };
-
-    const driverObj = driver(driverConfig);
-    setDriverInstance(driverObj);
-    driverObj.drive();
-
-    return () => {
-      if (driverObj) {
-        driverObj.destroy();
-      }
-    };
-  }, [tutorialId, completeTutorial, completeStep, onComplete]);
+  const handleSkip = () => {
+    skipTutorial(tutorialId);
+    setIsOpen(false);
+  };
 
   const handleBackToTutorials = () => {
     setShowCompletionModal(false);
@@ -150,34 +70,152 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
     setShowCompletionModal(false);
   };
 
+  if (tutorialSteps.length === 0) return null;
+
   return (
     <>
-      {/* Custom Chat Bubble */}
-      {firstStep?.chatMessage && (
-        <ChatBubble
-          message={firstStep.chatMessage}
-          avatar="🎓"
-          position="bottom-right"
-          delay={0.5}
-        />
-      )}
+      {/* Modern Tutorial Dialog - White Background with Colorful Sections */}
+      <AnimatePresence>
+        {isOpen && firstStep && (
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998]"
+              onClick={handleSkip}
+            />
 
-      {/* Animated Pointer */}
-      {firstStep?.showPointer && firstStep.element && typeof firstStep.element === 'string' && (
-        <AnimatedPointer
-          targetElement={firstStep.element}
-          direction={firstStep.pointerDirection || 'down'}
-          color="#8B5CF6"
-          message="Click here!"
-        />
-      )}
+            {/* Tutorial Dialog - Zoom from Center */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ 
+                type: 'spring', 
+                stiffness: 300, 
+                damping: 25,
+                duration: 0.4 
+              }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                         w-[90vw] max-w-[600px] z-[99999]"
+            >
+              <Card className="bg-white rounded-3xl shadow-2xl border-2 border-purple-200 overflow-hidden">
+                {/* Gradient Header Banner */}
+                <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 p-6 relative">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleSkip}
+                    className="absolute top-3 right-3 text-white hover:bg-white/20 rounded-full"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                  
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+                      <Sparkles className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-extrabold text-white">
+                        {firstStep.popover?.title || 'Let\'s Get Started!'}
+                      </h2>
+                      <p className="text-white/90 text-sm">Interactive Tutorial</p>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Content Section - White Background */}
+                <div className="p-8 space-y-6">
+                  {/* Description Card with Gradient Border */}
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 p-[2px] rounded-2xl">
+                      <div className="bg-white rounded-2xl p-6">
+                        <p className="text-gray-700 text-lg leading-relaxed">
+                          {firstStep.popover?.description || 'Follow this guide to learn the basics.'}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Stats/Features Section */}
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="grid grid-cols-3 gap-4"
+                  >
+                    <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl p-4 text-center border-2 border-purple-200">
+                      <div className="text-3xl mb-1">🎯</div>
+                      <p className="text-xs font-semibold text-purple-900">Quick</p>
+                      <p className="text-xs text-purple-600">2 min</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-pink-100 to-pink-50 rounded-xl p-4 text-center border-2 border-pink-200">
+                      <div className="text-3xl mb-1">⭐</div>
+                      <p className="text-xs font-semibold text-pink-900">Earn</p>
+                      <p className="text-xs text-pink-600">+100 pts</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-red-100 to-red-50 rounded-xl p-4 text-center border-2 border-red-200">
+                      <div className="text-3xl mb-1">🚀</div>
+                      <p className="text-xs font-semibold text-red-900">Level Up</p>
+                      <p className="text-xs text-red-600">Beginner</p>
+                    </div>
+                  </motion.div>
+
+                  {/* Action Buttons */}
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="flex flex-col sm:flex-row gap-3"
+                  >
+                    <Button
+                      onClick={handleComplete}
+                      className="flex-1 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 
+                                hover:from-purple-700 hover:via-pink-700 hover:to-red-700 
+                                text-white font-bold py-6 text-lg rounded-xl shadow-lg 
+                                hover:scale-105 transition-all"
+                    >
+                      <CheckCircle className="mr-2 h-5 w-5" />
+                      Got it!
+                    </Button>
+                    <Button
+                      onClick={handleSkip}
+                      variant="outline"
+                      className="sm:w-auto border-2 border-gray-300 text-gray-700 
+                                hover:bg-gray-100 font-semibold py-6 rounded-xl"
+                    >
+                      Skip Tutorial
+                    </Button>
+                  </motion.div>
+
+                  {/* Help Text */}
+                  <p className="text-center text-sm text-gray-500">
+                    💡 Complete tutorials to earn points and unlock achievements
+                  </p>
+                </div>
+              </Card>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Confetti on Completion */}
       <AnimatePresence>
         {showConfetti && <ConfettiExplosion />}
       </AnimatePresence>
 
-      {/* Completion Modal - Replaces Freezing Purple Popup */}
+      {/* Completion Modal */}
       <AnimatePresence>
         {showCompletionModal && (
           <>
@@ -189,9 +227,9 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
               onClick={handleContinue}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
               transition={{ type: 'spring', damping: 20 }}
               className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl shadow-2xl z-[10002] p-6 md:p-8"
             >
@@ -236,131 +274,6 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
           </>
         )}
       </AnimatePresence>
-
-      {/* Custom Styles - Centered Dialog for Desktop */}
-      <style jsx global>{`
-        .driver-popover.tutorial-popover-custom {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border: 2px solid #8B5CF6;
-          border-radius: 16px;
-          box-shadow: 0 20px 60px rgba(139, 92, 246, 0.4);
-          z-index: 10000 !important;
-        }
-
-        .driver-popover.tutorial-popover-custom .driver-popover-title {
-          color: white;
-          font-size: 20px;
-          font-weight: 800;
-          margin-bottom: 12px;
-        }
-
-        .driver-popover.tutorial-popover-custom .driver-popover-description {
-          color: rgba(255, 255, 255, 0.95);
-          font-size: 15px;
-          line-height: 1.6;
-        }
-
-        .driver-popover.tutorial-popover-custom .driver-popover-footer {
-          margin-top: 16px;
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-          flex-wrap: wrap;
-        }
-
-        .driver-popover.tutorial-popover-custom button {
-          background: white;
-          color: #667eea;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 8px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 14px;
-        }
-
-        .driver-popover.tutorial-popover-custom button:hover {
-          transform: scale(1.05);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .driver-popover.tutorial-popover-custom .driver-popover-close-btn {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-        }
-
-        .driver-active-element {
-          outline: 4px solid #8B5CF6 !important;
-          outline-offset: 4px;
-          border-radius: 8px;
-        }
-
-        .driver-overlay {
-          background: rgba(0, 0, 0, 0.75);
-          backdrop-filter: blur(4px);
-          z-index: 9999 !important;
-        }
-
-        /* CRITICAL: Force center positioning on desktop with animation */
-        @media (min-width: 768px) {
-          .driver-popover.tutorial-popover-custom.tutorial-centered {
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            right: auto !important;
-            bottom: auto !important;
-            transform: translate(-50%, -50%) scale(1) !important;
-            max-width: 500px !important;
-            width: 90vw !important;
-            margin: 0 !important;
-            animation: tutorialZoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-          }
-          
-          .driver-popover.tutorial-popover-custom .driver-popover-title {
-            font-size: 24px;
-          }
-          
-          .driver-popover.tutorial-popover-custom .driver-popover-description {
-            font-size: 16px;
-          }
-          
-          .driver-popover.tutorial-popover-custom button {
-            font-size: 16px;
-            padding: 14px 28px;
-          }
-          
-          .driver-popover.tutorial-popover-custom .driver-popover-footer {
-            margin-top: 20px;
-          }
-        }
-        
-        /* Large desktop - make even more prominent */
-        @media (min-width: 1024px) {
-          .driver-popover.tutorial-popover-custom.tutorial-centered {
-            max-width: 600px !important;
-          }
-        }
-
-        /* Zoom-in animation from center */
-        @keyframes tutorialZoomIn {
-          from {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0.8);
-          }
-          to {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-          }
-        }
-
-        /* Mobile - keep responsive */
-        @media (max-width: 767px) {
-          .driver-popover.tutorial-popover-custom {
-            max-width: 90vw !important;
-          }
-        }
-      `}</style>
     </>
   );
 }

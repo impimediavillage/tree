@@ -269,7 +269,7 @@ export const useProductPoolShipping = () => {
     const dispensaryLat = sellerDispensary.latitude;
     const dispensaryLon = sellerDispensary.longitude;
 
-    let deliveryFee = 50; // Default fallback
+    let deliveryFee = 0; // Will be calculated from dispensary config
     let deliveryTime = 'Same-day or next-day';
 
     if (customerLat && customerLon && dispensaryLat && dispensaryLon) {
@@ -302,10 +302,27 @@ export const useProductPoolShipping = () => {
         deliveryFee = Math.ceil(baseFee / 100) * 100;
       }
     } else {
-      deliveryFee = sellerDispensary.inHouseDeliveryPrice ?? sellerDispensary.inHouseDeliveryFee ?? 50;
-      deliveryTime = sellerDispensary.sameDayDeliveryCutoff
-        ? `Same-day if ordered before ${sellerDispensary.sameDayDeliveryCutoff}`
-        : 'Same-day or next-day';
+      // Fallback - still use proper pricing calculation
+      // Priority 1: Use flat fee if configured
+      if (sellerDispensary.inHouseDeliveryPrice && sellerDispensary.inHouseDeliveryPrice > 0) {
+        deliveryFee = Math.ceil(sellerDispensary.inHouseDeliveryPrice / 100) * 100;
+        deliveryTime = sellerDispensary.sameDayDeliveryCutoff
+          ? `Same-day if ordered before ${sellerDispensary.sameDayDeliveryCutoff}`
+          : 'Same-day delivery';
+      }
+      // Priority 2: Use per km pricing if configured
+      else if (sellerDispensary.pricePerKm && sellerDispensary.pricePerKm > 0) {
+        const estimatedDistance = sellerDispensary.deliveryRadius && sellerDispensary.deliveryRadius !== 'none'
+          ? Math.ceil(parseFloat(sellerDispensary.deliveryRadius) / 2)
+          : 5;
+        const calculatedFee = sellerDispensary.pricePerKm * estimatedDistance;
+        deliveryFee = Math.ceil(calculatedFee / 100) * 100;
+        deliveryTime = `Estimated delivery`;
+      }
+      // Priority 3: Legacy field
+      else if (sellerDispensary.inHouseDeliveryFee) {
+        deliveryFee = Math.ceil(sellerDispensary.inHouseDeliveryFee / 100) * 100;
+      }
     }
 
     return {
