@@ -24,23 +24,28 @@ export function DriverSlideshow() {
   }, []);
 
   return (
-    <div className="relative w-full aspect-video overflow-hidden rounded-t-lg">
+    <div className="relative w-full h-80 overflow-hidden rounded-t-lg bg-gray-900">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 1, ease: 'easeInOut' }}
+          initial={{ opacity: 0, x: 100, scale: 1.05 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: -100, scale: 0.95 }}
+          transition={{ 
+            duration: 1.2, 
+            ease: [0.43, 0.13, 0.23, 0.96] // Custom easing for elegant transition
+          }}
           className="absolute inset-0"
         >
           <Image
             src={driverImages[currentIndex]}
             alt={`Driver opportunity ${currentIndex + 1}`}
             fill
-            className="object-cover"
+            className="object-cover object-center"
             priority={currentIndex === 0}
           />
+          {/* Overlay gradient for better text visibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
         </motion.div>
       </AnimatePresence>
       
