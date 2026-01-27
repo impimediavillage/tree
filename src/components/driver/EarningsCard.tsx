@@ -116,7 +116,7 @@ export default function EarningsCard({
       await createPayoutRequest(
         driverProfile.userId,
         driverProfile.displayName || driverProfile.phoneNumber || 'Driver',
-        driverProfile.dispensaryId,
+        driverProfile.dispensaryId || '', // Provide empty string if undefined
         amount,
         [], // deliveryIds - we'll track this in the service
         bankDetails

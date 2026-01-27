@@ -197,7 +197,7 @@ export default function AvailableDeliveriesCard({
                     </div>
                     <Badge variant="default" className="bg-green-600">
                       <DollarSign className="w-3 h-3 mr-1" />
-                      R{delivery.driverEarnings.toFixed(2)}
+                      R{(delivery.driverEarnings || 0).toFixed(2)}
                     </Badge>
                   </div>
 
@@ -233,11 +233,14 @@ export default function AvailableDeliveriesCard({
                     )}
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      {formatDuration(delivery.estimatedDuration)}
-                    </span>
+                      {delivery.estimatedDuration ? (
+                        typeof delivery.estimatedDuration === 'number' 
+                          ? formatDuration(delivery.estimatedDuration)
+                          : delivery.estimatedDuration
+                      ) : 'N/A'}\n                    </span>
                     <span className="flex items-center gap-1">
                       <Package className="w-4 h-4" />
-                      {delivery.items.length} {delivery.items.length === 1 ? 'item' : 'items'}
+                      {delivery.items?.length || 0} {(delivery.items?.length || 0) === 1 ? 'item' : 'items'}
                     </span>
                   </div>
 

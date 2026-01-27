@@ -28,7 +28,7 @@ const adminUpdateUserCallable = httpsCallable(functions, 'adminUpdateUser');
 const userEditSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email(), 
-  role: z.enum(['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff']),
+  role: z.enum(['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff', 'Driver']),
   status: z.enum(['Active', 'Suspended', 'PendingApproval']),
   credits: z.coerce.number().int().min(0, "Credits cannot be negative."),
   dispensaryId: z.string().optional().nullable(),

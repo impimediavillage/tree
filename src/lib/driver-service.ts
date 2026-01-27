@@ -194,7 +194,7 @@ export async function createDelivery(
       driverEarnings: orderData.shippingCost || 50,
       specialInstructions: orderData.deliveryInstructions || '',
       accessCode: orderData.accessCode || '',
-      platformPayoutStatus: ownershipType === 'public' ? 'pending' : undefined,
+      ...(ownershipType === 'public' && { platformPayoutStatus: 'pending' as const }),
       updatedAt: serverTimestamp() as Timestamp,
     };
 
@@ -295,6 +295,8 @@ export async function getAvailableDeliveries(
         id: doc.id,
         orderId: data.orderId,
         orderNumber: data.orderNumber,
+        dispensaryId: data.dispensaryId,
+        dispensaryName: data.dispensaryName,
         customerName: data.customerName,
         customerPhone: data.customerPhone,
         pickupAddress: {

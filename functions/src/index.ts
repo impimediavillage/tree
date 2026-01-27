@@ -32,6 +32,13 @@ export { recordTreehouseEarning, createPayoutRequest } from './treehouse-earning
 // Export Dispensary Earnings functions
 export { recordDispensaryEarning, createDispensaryPayoutRequest } from './dispensary-earnings';
 
+// Export Vendor Commission functions
+export {
+  recordVendorSale,
+  createVendorPayoutRequest,
+  updateVendorEarningsOnPayoutChange
+} from './vendor-commissions';
+
 // Import email service
 import { sendDispensaryApprovalEmail, sendCrewMemberWelcomeEmail } from './email-service';
 

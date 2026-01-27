@@ -124,70 +124,36 @@ async function calculateDriverFeesOwed(
 }
 
 /**
- * Calculate total pending/approved vendor commissions owed by dispensary
- * This represents commissions owed to Vendor crew members
- * Vendors = DispensaryStaff role with crewMemberType 'Vendor'
+ * Calculate total vendor commissions earned by dispensary from vendor sales
+ * This represents the commission the dispensary earns from vendor sales
+ * (based on the dispensary commission rate set for each vendor)
+ * 
+ * Updated to use vendor_sale_transactions for accurate commission tracking
  */
 async function calculateVendorCommissionsOwed(
   db: admin.firestore.Firestore,
   dispensaryId: string
 ): Promise<number> {
   try {
-    // Query vendor payout requests for this dispensary
-    // Assuming vendor payout requests are stored in 'vendor_payout_requests' collection
-    // If they don't exist yet, this will return 0
-    const vendorPayoutsQuery = db
-      .collection('vendor_payout_requests')
+    // Query vendor sale transactions for this dispensary
+    // Sum up the dispensaryCommission field from all completed transactions
+    const vendorSalesQuery = db
+      .collection('vendor_sale_transactions')
       .where('dispensaryId', '==', dispensaryId)
-      .where('status', 'in', ['pending', 'approved']);
+      .where('status', '==', 'completed');
     
-    const vendorPayoutsSnap = await vendorPayoutsQuery.get();
+    const vendorSalesSnap = await vendorSalesQuery.get();
     
-    let totalVendorCommissions = 0;
+    let totalCommissionsEarned = 0;
     
-    // Verify each payout is from a vendor crew member (DispensaryStaff role)
-    const verificationPromises = vendorPayoutsSnap.docs.map(async (payoutDoc) => {
-      const payoutData = payoutDoc.data();
-      const vendorId = payoutData.vendorId || payoutData.userId;
-      
-      if (!vendorId) {
-        console.warn(`Vendor payout ${payoutDoc.id} has no vendorId/userId`);
-        return 0;
-      }
-      
-      // Verify vendor is dispensary staff member
-      const userDoc = await db.collection('users').doc(vendorId).get();
-      
-      if (!userDoc.exists) {
-        console.warn(`Vendor user ${vendorId} not found`);
-        return 0;
-      }
-      
-      const userData = userDoc.data();
-      const userRole = userData?.role;
-      
-      // Only count payouts for DispensaryStaff vendors
-      if (userRole === 'DispensaryStaff') {
-        // Verify they have Vendor as crewMemberType
-        const crewMemberType = userData?.crewMemberType;
-        
-        if (crewMemberType === 'Vendor') {
-          return payoutData.amount || 0;
-        } else {
-          console.warn(`User ${vendorId} is DispensaryStaff but not a Vendor crew member (type: ${crewMemberType})`);
-          return 0;
-        }
-      } else {
-        console.warn(`Excluding vendor payout for user ${vendorId} with role ${userRole} (not DispensaryStaff)`);
-        return 0;
-      }
+    vendorSalesSnap.docs.forEach((saleDoc) => {
+      const saleData = saleDoc.data();
+      const dispensaryCommission = saleData.dispensaryCommission || 0;
+      totalCommissionsEarned += dispensaryCommission;
     });
     
-    const amounts = await Promise.all(verificationPromises);
-    totalVendorCommissions = amounts.reduce((sum, amount) => sum + amount, 0);
-    
-    console.log(`Total vendor commissions for dispensary ${dispensaryId}: R${totalVendorCommissions}`);
-    return totalVendorCommissions;
+    console.log(`Total vendor commissions earned by dispensary ${dispensaryId}: R${totalCommissionsEarned.toFixed(2)}`);
+    return totalCommissionsEarned;
   } catch (error) {
     console.error('Error calculating vendor commissions:', error);
     // Return 0 if collection doesn't exist yet (feature not implemented)

@@ -1795,7 +1795,10 @@ export default function FinancialHubPage() {
 
           {/* Driver Payouts Panel */}
           {activePanel === 'drivers' && (
-            <PublicDriverPayouts dateRange={getDateRangeValues(dateRange)} />
+            <PublicDriverPayouts dateRange={{ 
+              from: subDays(new Date(), 30), 
+              to: new Date() 
+            }} />
           )}
         </div>
       </div>

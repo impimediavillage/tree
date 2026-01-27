@@ -442,8 +442,9 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     updatedAt: Timestamp.now(),
     paymentStatus: 'pending',
     paymentMethod: 'payfast',
-    // Influencer referral tracking
+  // Influencer referral tracking
     ...(params.referralCode && { referralCode: params.referralCode.toUpperCase() }),
+
     // Treehouse marketplace fields
     ...(params.orderType && { orderType: params.orderType }),
     ...(params.podStatus && { podStatus: params.podStatus }),

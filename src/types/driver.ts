@@ -181,8 +181,6 @@ export interface DriverProfile {
   // Profile dates
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  approvedAt?: Timestamp;
-  approvedBy?: string;
 }
 
 // ============================================================================
@@ -273,6 +271,7 @@ export interface DriverDelivery {
   // Driver assignment
   driverId?: string | null;
   driverName?: string | null;
+  ownershipType?: 'private' | 'public' | 'shared'; // Track driver type
   claimedAt?: Timestamp | null;
   
   // Customer information
@@ -343,6 +342,7 @@ export interface DriverDelivery {
   // Earnings
   driverEarnings: number; // Amount driver gets paid
   platformCommission?: number; // Platform's cut
+  platformPayoutStatus?: 'pending' | 'approved' | 'paid'; // For public drivers
   
   // Special instructions
   specialInstructions?: string;
@@ -619,10 +619,20 @@ export interface AvailableDelivery {
   orderNumber: string;
   dispensaryId: string;
   dispensaryName: string;
+  customerName?: string;
+  customerPhone?: string;
   pickupAddress: any;
   deliveryAddress: any;
   estimatedDistance?: number;
+  distance?: number; // km
   estimatedEarnings?: number;
+  driverEarnings?: number;
+  estimatedDuration?: string;
+  items?: Array<{
+    name: string;
+    quantity: number;
+  }>;
+  specialInstructions?: string;
   createdAt: Timestamp;
 }
 
