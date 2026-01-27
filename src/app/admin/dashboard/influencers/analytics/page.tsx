@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -102,33 +103,40 @@ export default function AdminInfluencerAnalyticsPage() {
   const COLORS = ['#006B3E', '#3D2E17', '#5D4E37', '#8B7355', '#A0826D'];
 
   return (
-    <div className="container py-8 px-4 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 p-6 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-lg border-2 border-yellow-200">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-extrabold text-[#3D2E17] flex items-center gap-2">
-              <Crown className="h-10 w-10 text-yellow-500" />
-              Influencer Program Analytics
-            </h1>
-            <p className="text-lg text-[#5D4E37] font-semibold mt-2">
-              Program-wide performance insights
-            </p>
+    <div className="space-y-6">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 rounded-3xl p-8 shadow-2xl">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl blur-lg opacity-50" />
+              <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+                <Crown className="h-12 w-12 text-yellow-600" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-2">
+                👑 Influencer Program Analytics
+              </h1>
+              <p className="text-white/90 text-lg">
+                Program-wide performance insights and metrics
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48 bg-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7d">Last 7 Days</SelectItem>
-                <SelectItem value="30d">Last 30 Days</SelectItem>
-                <SelectItem value="90d">Last 90 Days</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="7d">📅 Last 7 Days</SelectItem>
+                <SelectItem value="30d">📅 Last 30 Days</SelectItem>
+                <SelectItem value="90d">📅 Last 90 Days</SelectItem>
+                <SelectItem value="all">📊 All Time</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={exportReport} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
+            <Button onClick={exportReport} className="bg-white text-orange-600 hover:bg-orange-50 font-bold shadow-lg">
+              <Download className="h-5 w-5 mr-2" />
               Export
             </Button>
           </div>
@@ -136,91 +144,102 @@ export default function AdminInfluencerAnalyticsPage() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="border-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Total Revenue Generated
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-extrabold text-green-600">
-              R{analyticsData.summary.totalRevenue.toFixed(2)}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                <DollarSign className="h-8 w-8 text-white" />
+              </div>
+              <Badge className="bg-white/20 text-white border-none">💰 Revenue</Badge>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm font-medium text-white/80 mb-2">Total Revenue Generated</p>
+            <div className="text-4xl font-extrabold text-white mb-2">
+              R{analyticsData.summary.totalRevenue.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+            </div>
+            <p className="text-sm text-white/80">
               From {analyticsData.summary.totalOrders} referred orders
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="border-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Total Commissions Paid
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-extrabold text-orange-600">
-              R{analyticsData.summary.totalCommissions.toFixed(2)}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                <Award className="h-8 w-8 text-white" />
+              </div>
+              <Badge className="bg-white/20 text-white border-none">🎁 Paid Out</Badge>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              {((analyticsData.summary.totalCommissions / analyticsData.summary.totalRevenue) * 100).toFixed(1)}% of revenue
+            <p className="text-sm font-medium text-white/80 mb-2">Total Commissions Paid</p>
+            <div className="text-4xl font-extrabold text-white mb-2">
+              R{analyticsData.summary.totalCommissions.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+            </div>
+            <p className="text-sm text-white/80">
+              {analyticsData.summary.totalRevenue > 0 ? ((analyticsData.summary.totalCommissions / analyticsData.summary.totalRevenue) * 100).toFixed(1) : '0.0'}% of revenue
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="border-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Active Influencers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-extrabold text-[#3D2E17]">
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <Badge className="bg-white/20 text-white border-none">👥 Active</Badge>
+            </div>
+            <p className="text-sm font-medium text-white/80 mb-2">Active Influencers</p>
+            <div className="text-4xl font-extrabold text-white mb-2">
               {analyticsData.summary.activeInfluencers}
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              of {analyticsData.summary.totalInfluencers} total
+            <p className="text-sm text-white/80">
+              of {analyticsData.summary.totalInfluencers} total registered
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="border-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Avg Conversion Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-extrabold text-blue-600">
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                <Target className="h-8 w-8 text-white" />
+              </div>
+              <Badge className="bg-white/20 text-white border-none">🎯 Rate</Badge>
+            </div>
+            <p className="text-sm font-medium text-white/80 mb-2">Avg Conversion Rate</p>
+            <div className="text-4xl font-extrabold text-white mb-2">
               {analyticsData.summary.avgConversionRate.toFixed(2)}%
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Across all influencers
+            <p className="text-sm text-white/80">
+              Across all active influencers
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Charts */}
       <Tabs defaultValue="revenue" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4">
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
-          <TabsTrigger value="influencers">Influencers</TabsTrigger>
-          <TabsTrigger value="tiers">Tiers</TabsTrigger>
-          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4 bg-gradient-to-r from-purple-100 to-pink-100 p-1">
+          <TabsTrigger value="revenue" className="data-[state=active]:bg-white data-[state=active]:text-purple-700 font-semibold">📊 Revenue</TabsTrigger>
+          <TabsTrigger value="influencers" className="data-[state=active]:bg-white data-[state=active]:text-purple-700 font-semibold">👥 Influencers</TabsTrigger>
+          <TabsTrigger value="tiers" className="data-[state=active]:bg-white data-[state=active]:text-purple-700 font-semibold">🏆 Tiers</TabsTrigger>
+          <TabsTrigger value="leaderboard" className="data-[state=active]:bg-white data-[state=active]:text-purple-700 font-semibold">🥇 Leaderboard</TabsTrigger>
         </TabsList>
 
         {/* Revenue Over Time */}
         <TabsContent value="revenue">
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle>Revenue & Commission Trends</CardTitle>
-              <CardDescription>Daily revenue generated vs commissions paid</CardDescription>
+          <Card className="border-2 border-green-300 shadow-xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <TrendingUp className="h-6 w-6" />
+                Revenue & Commission Trends
+              </CardTitle>
+              <CardDescription className="text-white/90">Daily revenue generated vs commissions paid</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-96">
@@ -255,10 +274,13 @@ export default function AdminInfluencerAnalyticsPage() {
         {/* Influencer Growth */}
         <TabsContent value="influencers">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-2">
-              <CardHeader>
-                <CardTitle>Influencer Growth</CardTitle>
-                <CardDescription>New influencers over time</CardDescription>
+            <Card className="border-2 border-purple-300 shadow-xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <Users className="h-6 w-6" />
+                  Influencer Growth
+                </CardTitle>
+                <CardDescription className="text-white/90">New influencers over time</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-96">
@@ -288,10 +310,13 @@ export default function AdminInfluencerAnalyticsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2">
-              <CardHeader>
-                <CardTitle>Status Distribution</CardTitle>
-                <CardDescription>Influencer status breakdown</CardDescription>
+            <Card className="border-2 border-blue-300 shadow-xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <Target className="h-6 w-6" />
+                  Status Distribution
+                </CardTitle>
+                <CardDescription className="text-white/90">Influencer status breakdown</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-96">
@@ -322,10 +347,13 @@ export default function AdminInfluencerAnalyticsPage() {
 
         {/* Tier Distribution */}
         <TabsContent value="tiers">
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle>Tier Distribution & Performance</CardTitle>
-              <CardDescription>Influencers by tier and their contribution</CardDescription>
+          <Card className="border-2 border-yellow-300 shadow-xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-yellow-600 to-orange-600 text-white">
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Award className="h-6 w-6" />
+                Tier Distribution & Performance
+              </CardTitle>
+              <CardDescription className="text-white/90">Influencers by tier and their contribution</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-96">
@@ -348,19 +376,22 @@ export default function AdminInfluencerAnalyticsPage() {
 
         {/* Leaderboard */}
         <TabsContent value="leaderboard">
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle>Top Performers</CardTitle>
-              <CardDescription>Highest earning influencers this period</CardDescription>
+          <Card className="border-2 border-yellow-300 shadow-xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 text-white">
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Crown className="h-6 w-6" />
+                Top Performers
+              </CardTitle>
+              <CardDescription className="text-white/90">Highest earning influencers this period</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <div className="space-y-4">
                 {analyticsData.topInfluencers.map((influencer: any, index: number) => (
                   <div 
                     key={influencer.id}
-                    className="flex items-center gap-4 p-4 bg-gradient-to-r from-muted/50 to-transparent rounded-lg border"
+                    className="flex items-center gap-4 p-5 bg-gradient-to-r from-yellow-50 via-orange-50 to-white rounded-xl border-2 border-orange-200 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
                   >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 text-white font-extrabold text-xl">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 text-white font-extrabold text-2xl shadow-lg">
                       {index === 0 && '🥇'}
                       {index === 1 && '🥈'}
                       {index === 2 && '🥉'}
@@ -368,23 +399,23 @@ export default function AdminInfluencerAnalyticsPage() {
                     </div>
                     
                     <div className="flex-1">
-                      <div className="font-bold text-lg">{influencer.displayName}</div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-4">
-                        <span>{influencer.tier.toUpperCase()} Tier</span>
-                        <span>•</span>
-                        <span>{influencer.sales} sales</span>
-                        <span>•</span>
-                        <span>{influencer.conversionRate.toFixed(1)}% conversion</span>
+                      <div className="font-bold text-xl text-orange-900">{influencer.displayName}</div>
+                      <div className="text-sm font-semibold text-gray-600 flex items-center gap-3 mt-1">
+                        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                          {influencer.tier.toUpperCase()} Tier
+                        </Badge>
+                        <span>📦 {influencer.sales} sales</span>
+                        <span>🎯 {influencer.conversionRate.toFixed(1)}%</span>
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <div className="text-2xl font-extrabold text-green-600">
-                        R{influencer.earnings.toFixed(2)}
+                      <div className="text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                        R{influencer.earnings.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <Badge className="bg-orange-100 text-orange-700 border-orange-300 mt-1">
                         {influencer.commissionRate}% commission
-                      </div>
+                      </Badge>
                     </div>
                   </div>
                 ))}
@@ -395,10 +426,13 @@ export default function AdminInfluencerAnalyticsPage() {
       </Tabs>
 
       {/* Additional Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="text-sm">ROI Analysis</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-2 border-blue-300 shadow-xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              📊 ROI Analysis
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -426,9 +460,12 @@ export default function AdminInfluencerAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="text-sm">Payout Summary</CardTitle>
+        <Card className="border-2 border-orange-300 shadow-xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              💰 Payout Summary
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -448,9 +485,12 @@ export default function AdminInfluencerAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="text-sm">Program Health</CardTitle>
+        <Card className="border-2 border-green-300 shadow-xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              ❤️ Program Health
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -479,3 +519,4 @@ export default function AdminInfluencerAnalyticsPage() {
     </div>
   );
 }
+

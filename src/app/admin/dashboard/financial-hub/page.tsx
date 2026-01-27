@@ -7,6 +7,8 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
+  Gift,
+  Star,
   Package,
   Store,
   CreditCard,
@@ -782,7 +784,7 @@ export default function FinancialHubPage() {
                     </div>
                     <div className="flex items-center gap-1 mt-2 text-sm text-blue-700">
                       <PieChart className="h-4 w-4" />
-                      <span>{metrics.profitMargin.toFixed(1)}% margin</span>
+                      <span>{isNaN(metrics.profitMargin) ? '0.0' : metrics.profitMargin.toFixed(1)}% margin</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -986,7 +988,10 @@ export default function FinancialHubPage() {
                     <div className="bg-white p-4 rounded-lg border-2 border-green-200">
                       <p className="text-xs font-semibold text-green-600 mb-1">PLATFORM PROFIT MARGIN</p>
                       <p className="text-2xl font-black text-green-700">
-                        {(((metrics.totalRevenue * 0.25) - (metrics.influencerCommissions * 0.75 || 0)) / (metrics.totalRevenue * 0.25) * 100).toFixed(1)}%
+                        {metrics.totalRevenue > 0 && (metrics.totalRevenue * 0.25) > 0
+                          ? (((metrics.totalRevenue * 0.25) - (metrics.influencerCommissions * 0.75 || 0)) / (metrics.totalRevenue * 0.25) * 100).toFixed(1)
+                          : '0.0'
+                        }%
                       </p>
                       <p className="text-xs text-green-600 mt-1">After base commissions</p>
                     </div>
@@ -1017,7 +1022,7 @@ export default function FinancialHubPage() {
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full"
-                          style={{ width: `${(metrics.treehouseEarnings / metrics.totalRevenue) * 100}%` }}
+                          style={{ width: `${metrics.totalRevenue > 0 ? (metrics.treehouseEarnings / metrics.totalRevenue) * 100 : 0}%` }}
                         />
                       </div>
                     </div>
@@ -1035,7 +1040,7 @@ export default function FinancialHubPage() {
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full"
-                          style={{ width: `${(metrics.dispensaryRevenue / metrics.totalRevenue) * 100}%` }}
+                          style={{ width: `${metrics.totalRevenue > 0 ? (metrics.dispensaryRevenue / metrics.totalRevenue) * 100 : 0}%` }}
                         />
                       </div>
                     </div>
@@ -1145,10 +1150,12 @@ export default function FinancialHubPage() {
                     <div className="text-center p-6 rounded-lg bg-gradient-to-br from-green-50 to-white border-2 border-green-200">
                       <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-3" />
                       <h3 className="font-bold text-2xl text-green-600 mb-1">
-                        {metrics.profitMargin.toFixed(1)}%
+                        {isNaN(metrics.profitMargin) ? '0.0' : metrics.profitMargin.toFixed(1)}%
                       </h3>
                       <p className="text-sm text-[#5D4E37] font-semibold">Profit Margin</p>
-                      <Badge className="mt-2 bg-green-600">Healthy</Badge>
+                      <Badge className="mt-2 bg-green-600">
+                        {metrics.profitMargin > 20 ? 'Healthy' : metrics.profitMargin > 0 ? 'Fair' : 'No Data'}
+                      </Badge>
                     </div>
 
                     <div className="text-center p-6 rounded-lg bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200">
@@ -1163,10 +1170,15 @@ export default function FinancialHubPage() {
                     <div className="text-center p-6 rounded-lg bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200">
                       <Wallet className="h-12 w-12 text-purple-600 mx-auto mb-3" />
                       <h3 className="font-bold text-2xl text-purple-600 mb-1">
-                        {((metrics.completedPayments / (metrics.completedPayments + metrics.pendingPayments)) * 100).toFixed(0)}%
+                        {(metrics.completedPayments + metrics.pendingPayments) > 0
+                          ? ((metrics.completedPayments / (metrics.completedPayments + metrics.pendingPayments)) * 100).toFixed(0)
+                          : '0'
+                        }%
                       </h3>
                       <p className="text-sm text-[#5D4E37] font-semibold">Payment Success Rate</p>
-                      <Badge className="mt-2 bg-purple-600">Excellent</Badge>
+                      <Badge className="mt-2 bg-purple-600">
+                        {(metrics.completedPayments + metrics.pendingPayments) > 0 ? 'Excellent' : 'No Data'}
+                      </Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -1177,95 +1189,222 @@ export default function FinancialHubPage() {
           {/* Treehouse Panel */}
           {activePanel === 'treehouse' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-[#3D2E17] mb-2">Treehouse Transactions</h2>
-                  <p className="text-[#5D4E37]">
-                    {treehouseTransactions.length} transactions • Total: R{metrics.treehouseEarnings.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                  </p>
+              {/* Hero Section */}
+              <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-3xl p-8 shadow-2xl">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-green-400 rounded-2xl blur-lg opacity-50" />
+                      <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+                        <Leaf className="h-12 w-12 text-green-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <h2 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-2">
+                        🌳 Treehouse Creator Hub
+                      </h2>
+                      <p className="text-white/90 text-lg">
+                        {treehouseTransactions.length} transactions • Commission: R{metrics.treehouseEarnings.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => setShowAddTreehouseModal(true)} 
+                    className="bg-white text-green-600 hover:bg-green-50 font-bold shadow-lg"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add Transaction
+                  </Button>
                 </div>
-                <Button onClick={() => setShowAddTreehouseModal(true)} className="bg-[#006B3E] hover:bg-[#005230]">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Transaction
-                </Button>
               </div>
 
-              <div className="flex gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search by creator, product..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <Package className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">🎨 Total</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Total Transactions</p>
+                    <div className="text-4xl font-extrabold text-white">{treehouseTransactions.length}</div>
+                  </div>
+                </div>
+
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <DollarSign className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">💵 Revenue</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Total Sales</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      R{treehouseTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <Activity className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">⚡ 25%</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Platform Commission</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      R{metrics.treehouseEarnings.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <Clock className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">⏳ Pending</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Pending Payouts</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      {treehouseTransactions.filter(t => t.status === 'pending').length}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <Card className="border-2 border-[#006B3E]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Creator</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Order Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Commission (25%)</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {treehouseTransactions
-                      .filter(t =>
-                        searchQuery === '' ||
-                        t.creatorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        t.productName.toLowerCase().includes(searchQuery.toLowerCase())
-                      )
-                      .map(transaction => (
-                        <TableRow key={transaction.id}>
-                          <TableCell className="font-medium">{transaction.creatorName}</TableCell>
-                          <TableCell>{transaction.productName}</TableCell>
-                          <TableCell>{format(transaction.orderDate, 'MMM dd, yyyy')}</TableCell>
-                          <TableCell className="font-semibold">
-                            R{transaction.amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                          </TableCell>
-                          <TableCell className="font-bold text-[#006B3E]">
-                            R{transaction.commission.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              className={
-                                transaction.status === 'paid'
-                                  ? 'bg-green-600'
-                                  : transaction.status === 'pending'
-                                  ? 'bg-yellow-600'
-                                  : 'bg-red-600'
-                              }
-                            >
-                              {transaction.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              {transaction.status === 'pending' && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleUpdateStatus('orders', transaction.id, 'paid')}
-                                >
-                                  Mark Paid
-                                </Button>
-                              )}
-                              <Button size="sm" variant="ghost">
-                                <Edit className="h-4 w-4" />
-                              </Button>
+              {/* Search Bar */}
+              <Card className="border-2 border-green-300 shadow-lg">
+                <CardContent className="p-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      placeholder="🔍 Search by creator name or product..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-12 text-lg h-12"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Transactions Table */}
+              <Card className="border-2 border-green-300 shadow-xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <Leaf className="h-6 w-6" />
+                    Creator Transaction History
+                  </CardTitle>
+                  <CardDescription className="text-white/90">
+                    All Treehouse product sales and creator commissions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-green-50 hover:bg-green-50">
+                        <TableHead className="font-bold text-green-900">🎨 Creator</TableHead>
+                        <TableHead className="font-bold text-green-900">📦 Product</TableHead>
+                        <TableHead className="font-bold text-green-900">📅 Order Date</TableHead>
+                        <TableHead className="font-bold text-green-900">💵 Amount</TableHead>
+                        <TableHead className="font-bold text-green-900">⚡ Commission (25%)</TableHead>
+                        <TableHead className="font-bold text-green-900">📊 Status</TableHead>
+                        <TableHead className="font-bold text-green-900">🔧 Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {treehouseTransactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-12">
+                            <div className="flex flex-col items-center gap-3">
+                              <Leaf className="h-16 w-16 text-gray-300" />
+                              <p className="text-lg font-semibold text-gray-600">No Treehouse transactions yet</p>
+                              <p className="text-sm text-gray-500">Creator sales will appear here</p>
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        treehouseTransactions
+                          .filter(t =>
+                            searchQuery === '' ||
+                            t.creatorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            t.productName.toLowerCase().includes(searchQuery.toLowerCase())
+                          )
+                          .map((transaction, index) => (
+                            <TableRow key={transaction.id} className={`hover:bg-green-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="p-2 bg-green-100 rounded-lg">
+                                    <Users className="h-4 w-4 text-green-600" />
+                                  </div>
+                                  <span className="font-bold text-green-900">{transaction.creatorName}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-semibold text-gray-700">{transaction.productName}</TableCell>
+                              <TableCell className="text-gray-600">{format(transaction.orderDate, 'MMM dd, yyyy')}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="h-4 w-4 text-blue-600" />
+                                  <span className="font-bold text-blue-700 text-lg">
+                                    R{transaction.amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <Activity className="h-4 w-4 text-purple-600" />
+                                  <span className="font-black text-purple-700 text-lg">
+                                    R{transaction.commission.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-purple-600 font-semibold">25% of sale</p>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    transaction.status === 'paid'
+                                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 shadow-lg'
+                                      : transaction.status === 'pending'
+                                      ? 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white border-0 shadow-lg'
+                                      : 'bg-gradient-to-r from-red-500 to-pink-600 text-white border-0 shadow-lg'
+                                  }
+                                >
+                                  {transaction.status === 'paid' ? '✅ Paid' : transaction.status === 'pending' ? '⏳ Pending' : '❌ Disputed'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  {transaction.status === 'pending' && (
+                                    <Button
+                                      size="sm"
+                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                      onClick={() => handleUpdateStatus('orders', transaction.id, 'paid')}
+                                    >
+                                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                                      Mark Paid
+                                    </Button>
+                                  )}
+                                  <Button size="sm" variant="outline" className="border-2 hover:bg-green-50">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
               </Card>
             </div>
           )}
@@ -1273,95 +1412,294 @@ export default function FinancialHubPage() {
           {/* Dispensaries Panel */}
           {activePanel === 'dispensaries' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-[#3D2E17] mb-2">Dispensary Revenues</h2>
-                  <p className="text-[#5D4E37]">
-                    {dispensaryRevenues.length} dispensaries • Total Fees: R{metrics.dispensaryRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                  </p>
+              {/* Hero Section */}
+              <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 rounded-3xl p-8 shadow-2xl">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl blur-lg opacity-50" />
+                      <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+                        <Store className="h-12 w-12 text-blue-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <h2 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-2">
+                        🏪 Dispensary Revenue Hub
+                      </h2>
+                      <p className="text-white/90 text-lg">
+                        {dispensaryRevenues.length} active dispensaries • Platform Commission: R{metrics.dispensaryRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => setShowAddDispensaryModal(true)} 
+                    className="bg-white text-blue-600 hover:bg-blue-50 font-bold shadow-lg"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add Revenue Entry
+                  </Button>
                 </div>
-                <Button onClick={() => setShowAddDispensaryModal(true)} className="bg-[#006B3E] hover:bg-[#005230]">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Revenue
-                </Button>
               </div>
 
-              <Card className="border-2 border-[#006B3E]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Dispensary</TableHead>
-                      <TableHead>Month</TableHead>
-                      <TableHead>Revenue</TableHead>
-                      <TableHead>Orders</TableHead>
-                      <TableHead>Platform Fee (5%)</TableHead>
-                      <TableHead>Net Revenue</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dispensaryRevenues.map(revenue => (
-                      <TableRow key={revenue.id}>
-                        <TableCell className="font-medium">{revenue.dispensaryName}</TableCell>
-                        <TableCell>{format(new Date(revenue.month), 'MMM yyyy')}</TableCell>
-                        <TableCell className="font-semibold">
-                          R{revenue.revenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell>{revenue.orders}</TableCell>
-                        <TableCell className="font-bold text-[#006B3E]">
-                          R{revenue.platformFee.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell className="font-semibold text-blue-600">
-                          R{revenue.netRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              revenue.status === 'paid'
-                                ? 'bg-green-600'
-                                : revenue.status === 'processed'
-                                ? 'bg-blue-600'
-                                : 'bg-yellow-600'
-                            }
-                          >
-                            {revenue.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {revenue.status === 'pending' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  toast({
-                                    title: 'Info',
-                                    description: 'Dispensary revenues are calculated from orders. Mark individual orders as paid to update status.',
-                                  });
-                                }}
-                              >
-                                Process
-                              </Button>
-                            )}
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => {
-                                toast({
-                                  title: 'Info',
-                                  description: 'Revenue data is aggregated from orders. Edit individual orders to modify.',
-                                });
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <Store className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">🏪 Active</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Total Dispensaries</p>
+                    <div className="text-4xl font-extrabold text-white">{dispensaryRevenues.length}</div>
+                  </div>
+                </div>
+
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <ShoppingCart className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">📦 Orders</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Total Orders</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      {dispensaryRevenues.reduce((sum, r) => sum + r.orders, 0)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <DollarSign className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">💰 Platform</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Platform Commission (25%)</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      R{metrics.dispensaryRevenue.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <Wallet className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">🏦 Net</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Dispensary Net Total</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      R{dispensaryRevenues.reduce((sum, r) => sum + r.netRevenue, 0).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Commission Breakdown Card */}
+              <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <PieChart className="h-6 w-6 text-purple-600" />
+                    💡 Commission Structure Explained
+                  </CardTitle>
+                  <CardDescription className="text-base">
+                    How the 25% platform commission is calculated from dispensary sales
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-5 rounded-xl border-2 border-blue-200 shadow-md">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <ShoppingCart className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <h4 className="font-bold text-blue-900">Customer Pays</h4>
+                      </div>
+                      <p className="text-3xl font-black text-blue-600">R100</p>
+                      <p className="text-sm text-blue-700 mt-2">Total order amount</p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-xl border-2 border-purple-200 shadow-md">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                          <Activity className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <h4 className="font-bold text-purple-900">Platform Gets</h4>
+                      </div>
+                      <p className="text-3xl font-black text-purple-600">R25</p>
+                      <p className="text-sm text-purple-700 mt-2">25% commission</p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-xl border-2 border-green-200 shadow-md">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <Store className="h-5 w-5 text-green-600" />
+                        </div>
+                        <h4 className="font-bold text-green-900">Dispensary Gets</h4>
+                      </div>
+                      <p className="text-3xl font-black text-green-600">R75</p>
+                      <p className="text-sm text-green-700 mt-2">75% payout</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-4 bg-amber-100 border-2 border-amber-300 rounded-xl">
+                    <p className="text-sm text-amber-900 font-semibold flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5" />
+                      Note: All values shown below reflect actual order totals and calculated 25% platform commissions
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Dispensary Revenue Table */}
+              <Card className="border-2 border-blue-300 shadow-xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <Building2 className="h-6 w-6" />
+                    Dispensary Revenue Breakdown
+                  </CardTitle>
+                  <CardDescription className="text-white/90">
+                    Detailed monthly revenue and commission tracking per dispensary
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-blue-50 hover:bg-blue-50">
+                        <TableHead className="font-bold text-blue-900">🏪 Dispensary</TableHead>
+                        <TableHead className="font-bold text-blue-900">📅 Month</TableHead>
+                        <TableHead className="font-bold text-blue-900">💵 Total Revenue</TableHead>
+                        <TableHead className="font-bold text-blue-900">📦 Orders</TableHead>
+                        <TableHead className="font-bold text-blue-900">⚡ Platform Fee (25%)</TableHead>
+                        <TableHead className="font-bold text-blue-900">💰 Dispensary Net</TableHead>
+                        <TableHead className="font-bold text-blue-900">📊 Status</TableHead>
+                        <TableHead className="font-bold text-blue-900">🔧 Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {dispensaryRevenues.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-12">
+                            <div className="flex flex-col items-center gap-3">
+                              <Store className="h-16 w-16 text-gray-300" />
+                              <p className="text-lg font-semibold text-gray-600">No dispensary revenue data yet</p>
+                              <p className="text-sm text-gray-500">Revenue data will appear here once orders are delivered</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        dispensaryRevenues.map((revenue, index) => (
+                          <TableRow 
+                            key={revenue.id} 
+                            className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                  <Store className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <span className="font-bold text-blue-900">{revenue.dispensaryName}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-semibold text-gray-700">
+                              {format(new Date(revenue.month), 'MMM yyyy')}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="h-4 w-4 text-green-600" />
+                                <span className="font-bold text-green-700 text-lg">
+                                  R{revenue.revenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className="bg-blue-500 text-white font-bold">
+                                {revenue.orders} orders
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Activity className="h-4 w-4 text-purple-600" />
+                                <span className="font-black text-purple-700 text-lg">
+                                  R{revenue.platformFee.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              <p className="text-xs text-purple-600 font-semibold">
+                                {revenue.revenue > 0 ? ((revenue.platformFee / revenue.revenue) * 100).toFixed(1) : 25}% of revenue
+                              </p>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Wallet className="h-4 w-4 text-emerald-600" />
+                                <span className="font-bold text-emerald-700 text-lg">
+                                  R{revenue.netRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              <p className="text-xs text-emerald-600 font-semibold">
+                                {revenue.revenue > 0 ? ((revenue.netRevenue / revenue.revenue) * 100).toFixed(1) : 75}% payout
+                              </p>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                className={
+                                  revenue.status === 'paid'
+                                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 shadow-lg'
+                                    : revenue.status === 'processed'
+                                    ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white border-0 shadow-lg'
+                                    : 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white border-0 shadow-lg'
+                                }
+                              >
+                                {revenue.status === 'paid' ? '✅ Paid' : revenue.status === 'processed' ? '⚙️ Processed' : '⏳ Pending'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                {revenue.status === 'pending' && (
+                                  <Button
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                    onClick={() => {
+                                      toast({
+                                        title: '💡 Auto-Calculated',
+                                        description: 'Dispensary revenues are calculated from delivered orders. Commission is automatically applied.',
+                                      });
+                                    }}
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                                    Process
+                                  </Button>
+                                )}
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="border-2 hover:bg-blue-50"
+                                  onClick={() => {
+                                    toast({
+                                      title: '📊 Aggregated Data',
+                                      description: 'Revenue data is automatically aggregated from orders. Edit individual orders to modify values.',
+                                    });
+                                  }}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
               </Card>
             </div>
           )}
@@ -1412,92 +1750,162 @@ export default function FinancialHubPage() {
           {/* Credits Panel */}
           {activePanel === 'credits' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-[#3D2E17] mb-2">Credit Transactions</h2>
-                  <p className="text-[#5D4E37]">
-                    {creditTransactions.length} transactions • Total: R{metrics.creditTransactions.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                  </p>
+              {/* Hero Section */}
+              <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-3xl p-8 shadow-2xl">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl blur-lg opacity-50" />
+                      <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+                        <CreditCard className="h-12 w-12 text-purple-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <h2 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-2">
+                        💳 Credit System Hub
+                      </h2>
+                      <p className="text-white/90 text-lg">
+                        {creditTransactions.length} transactions • Total: R{metrics.creditTransactions.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => setShowAddCreditModal(true)} 
+                    className="bg-white text-purple-600 hover:bg-purple-50 font-bold shadow-lg"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add Transaction
+                  </Button>
                 </div>
-                <Button onClick={() => setShowAddCreditModal(true)} className="bg-[#006B3E] hover:bg-[#005230]">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Transaction
-                </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {['purchase', 'usage', 'refund', 'bonus'].map(type => {
+              {/* Transaction Type Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[
+                  { type: 'purchase', icon: ShoppingCart, gradient: 'from-green-500 to-emerald-600', emoji: '🛒', label: 'Purchase' },
+                  { type: 'usage', icon: Activity, gradient: 'from-blue-500 to-cyan-600', emoji: '⚡', label: 'Usage' },
+                  { type: 'refund', icon: TrendingDown, gradient: 'from-red-500 to-pink-600', emoji: '↩️', label: 'Refund' },
+                  { type: 'bonus', icon: Gift, gradient: 'from-yellow-500 to-orange-600', emoji: '🎁', label: 'Bonus' }
+                ].map(({ type, icon: Icon, gradient, emoji, label }) => {
                   const transactions = creditTransactions.filter(t => t.type === type);
                   const total = transactions.reduce((sum, t) => sum + t.amount, 0);
                   return (
-                    <Card key={type} className="border-2 border-[#006B3E]">
-                      <CardContent className="pt-6">
-                        <p className="text-sm text-[#5D4E37] font-semibold mb-1 capitalize">{type}</p>
-                        <p className="text-2xl font-bold text-[#006B3E]">
-                          R{total.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">{transactions.length} transactions</p>
-                      </CardContent>
-                    </Card>
+                    <div key={type} className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl`}>
+                      <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                      <div className="relative">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                            <Icon className="h-8 w-8 text-white" />
+                          </div>
+                          <Badge className="bg-white/20 text-white border-none">{emoji} {label}</Badge>
+                        </div>
+                        <p className="text-sm font-medium text-white/80 mb-2 capitalize">{type}</p>
+                        <div className="text-4xl font-extrabold text-white mb-2">
+                          R{total.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+                        </div>
+                        <p className="text-sm text-white/80">{transactions.length} transactions</p>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
 
-              <Card className="border-2 border-[#006B3E]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Credits</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {creditTransactions.map(transaction => (
-                      <TableRow key={transaction.id}>
-                        <TableCell className="font-medium">{transaction.userName}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              transaction.type === 'purchase'
-                                ? 'bg-green-600'
-                                : transaction.type === 'usage'
-                                ? 'bg-blue-600'
-                                : transaction.type === 'refund'
-                                ? 'bg-red-600'
-                                : 'bg-purple-600'
-                            }
-                          >
-                            {transaction.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          R{transaction.amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell className="font-bold text-[#006B3E]">{transaction.credits}</TableCell>
-                        <TableCell>{format(transaction.date, 'MMM dd, yyyy HH:mm')}</TableCell>
-                        <TableCell className="max-w-xs truncate">{transaction.description}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              transaction.status === 'completed'
-                                ? 'bg-green-600'
-                                : transaction.status === 'pending'
-                                ? 'bg-yellow-600'
-                                : 'bg-red-600'
-                            }
-                          >
-                            {transaction.status}
-                          </Badge>
-                        </TableCell>
+              {/* Transactions Table */}
+              <Card className="border-2 border-purple-300 shadow-xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <CreditCard className="h-6 w-6" />
+                    Credit Transaction History
+                  </CardTitle>
+                  <CardDescription className="text-white/90">
+                    All credit purchases, usage, refunds, and bonuses
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-purple-50 hover:bg-purple-50">
+                        <TableHead className="font-bold text-purple-900">👤 User</TableHead>
+                        <TableHead className="font-bold text-purple-900">🏷️ Type</TableHead>
+                        <TableHead className="font-bold text-purple-900">💵 Amount</TableHead>
+                        <TableHead className="font-bold text-purple-900">⭐ Credits</TableHead>
+                        <TableHead className="font-bold text-purple-900">📅 Date</TableHead>
+                        <TableHead className="font-bold text-purple-900">📝 Description</TableHead>
+                        <TableHead className="font-bold text-purple-900">📊 Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {creditTransactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-12">
+                            <div className="flex flex-col items-center gap-3">
+                              <CreditCard className="h-16 w-16 text-gray-300" />
+                              <p className="text-lg font-semibold text-gray-600">No credit transactions yet</p>
+                              <p className="text-sm text-gray-500">Credit activity will appear here</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        creditTransactions.map((transaction, index) => (
+                          <TableRow key={transaction.id} className={`hover:bg-purple-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-purple-100 rounded-lg">
+                                  <Users className="h-4 w-4 text-purple-600" />
+                                </div>
+                                <span className="font-bold text-purple-900">{transaction.userName}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                className={
+                                  transaction.type === 'purchase'
+                                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 shadow-lg'
+                                    : transaction.type === 'usage'
+                                    ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white border-0 shadow-lg'
+                                    : transaction.type === 'refund'
+                                    ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white border-0 shadow-lg'
+                                    : 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white border-0 shadow-lg'
+                                }
+                              >
+                                {transaction.type === 'purchase' ? '🛒 Purchase' : transaction.type === 'usage' ? '⚡ Usage' : transaction.type === 'refund' ? '↩️ Refund' : '🎁 Bonus'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="h-4 w-4 text-green-600" />
+                                <span className="font-bold text-green-700 text-lg">
+                                  R{transaction.amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 text-yellow-600" />
+                                <span className="font-black text-purple-700 text-lg">{transaction.credits}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-gray-600 font-semibold">{format(transaction.date, 'MMM dd, yyyy HH:mm')}</TableCell>
+                            <TableCell className="max-w-xs truncate text-gray-700">{transaction.description}</TableCell>
+                            <TableCell>
+                              <Badge
+                                className={
+                                  transaction.status === 'completed'
+                                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 shadow-lg'
+                                    : transaction.status === 'pending'
+                                    ? 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white border-0 shadow-lg'
+                                    : 'bg-gradient-to-r from-red-500 to-pink-600 text-white border-0 shadow-lg'
+                                }
+                              >
+                                {transaction.status === 'completed' ? '✅ Completed' : transaction.status === 'pending' ? '⏳ Pending' : '❌ Failed'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
               </Card>
             </div>
           )}
@@ -1505,83 +1913,193 @@ export default function FinancialHubPage() {
           {/* Platform Fees Panel */}
           {activePanel === 'fees' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-[#3D2E17] mb-2">Platform Fees</h2>
-                  <p className="text-[#5D4E37]">
-                    {platformFees.length} fee records • Total: R{metrics.platformFees.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                  </p>
+              {/* Hero Section */}
+              <div className="bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 rounded-3xl p-8 shadow-2xl">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-red-400 rounded-2xl blur-lg opacity-50" />
+                      <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+                        <Receipt className="h-12 w-12 text-orange-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <h2 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-2">
+                        🧾 Platform Fees Hub
+                      </h2>
+                      <p className="text-white/90 text-lg">
+                        {platformFees.length} fee records • Total: R{metrics.platformFees.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => setShowAddFeeModal(true)} 
+                    className="bg-white text-orange-600 hover:bg-orange-50 font-bold shadow-lg"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add Fee Record
+                  </Button>
                 </div>
-                <Button onClick={() => setShowAddFeeModal(true)} className="bg-[#006B3E] hover:bg-[#005230]">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Fee
-                </Button>
               </div>
 
-              <Card className="border-2 border-[#006B3E]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Source</TableHead>
-                      <TableHead>Month</TableHead>
-                      <TableHead>Base Amount</TableHead>
-                      <TableHead>Fee %</TableHead>
-                      <TableHead>Fee Amount</TableHead>
-                      <TableHead>Collected</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {platformFees.map(fee => (
-                      <TableRow key={fee.id}>
-                        <TableCell>
-                          <Badge
-                            className={
-                              fee.source === 'treehouse'
-                                ? 'bg-green-600'
-                                : fee.source === 'dispensary'
-                                ? 'bg-blue-600'
-                                : 'bg-orange-600'
-                            }
-                          >
-                            {fee.source}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{format(new Date(fee.month), 'MMM yyyy')}</TableCell>
-                        <TableCell className="font-semibold">
-                          R{fee.baseAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell>{fee.feePercentage}%</TableCell>
-                        <TableCell className="font-bold text-[#006B3E]">
-                          R{fee.feeAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell>
-                          {fee.collected ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <Clock className="h-5 w-5 text-yellow-600" />
-                          )}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{fee.notes}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="ghost">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => handleDeleteFee(fee.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <Leaf className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">🌳 Treehouse</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Treehouse Fees</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      R{platformFees.filter(f => f.source === 'treehouse').reduce((sum, f) => sum + f.feeAmount, 0).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <Store className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">🏪 Dispensary</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Dispensary Fees</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      R{platformFees.filter(f => f.source === 'dispensary').reduce((sum, f) => sum + f.feeAmount, 0).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+                        <Truck className="h-8 w-8 text-white" />
+                      </div>
+                      <Badge className="bg-white/20 text-white border-none">🚚 Shipping</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-white/80 mb-2">Shipping Fees</p>
+                    <div className="text-4xl font-extrabold text-white">
+                      R{platformFees.filter(f => f.source === 'shipping').reduce((sum, f) => sum + f.feeAmount, 0).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fees Table */}
+              <Card className="border-2 border-orange-300 shadow-xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <Receipt className="h-6 w-6" />
+                    Platform Fee Records
+                  </CardTitle>
+                  <CardDescription className="text-white/90">
+                    All platform fees collected from various sources
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-orange-50 hover:bg-orange-50">
+                        <TableHead className="font-bold text-orange-900">🏷️ Source</TableHead>
+                        <TableHead className="font-bold text-orange-900">📅 Month</TableHead>
+                        <TableHead className="font-bold text-orange-900">💵 Base Amount</TableHead>
+                        <TableHead className="font-bold text-orange-900">📊 Fee %</TableHead>
+                        <TableHead className="font-bold text-orange-900">⚡ Fee Amount</TableHead>
+                        <TableHead className="font-bold text-orange-900">✅ Collected</TableHead>
+                        <TableHead className="font-bold text-orange-900">📝 Notes</TableHead>
+                        <TableHead className="font-bold text-orange-900">🔧 Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {platformFees.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-12">
+                            <div className="flex flex-col items-center gap-3">
+                              <Receipt className="h-16 w-16 text-gray-300" />
+                              <p className="text-lg font-semibold text-gray-600">No platform fee records yet</p>
+                              <p className="text-sm text-gray-500">Fee records will appear here</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        platformFees.map((fee, index) => (
+                          <TableRow key={fee.id} className={`hover:bg-orange-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                            <TableCell>
+                              <Badge
+                                className={
+                                  fee.source === 'treehouse'
+                                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 shadow-lg'
+                                    : fee.source === 'dispensary'
+                                    ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white border-0 shadow-lg'
+                                    : 'bg-gradient-to-r from-orange-500 to-red-600 text-white border-0 shadow-lg'
+                                }
+                              >
+                                {fee.source === 'treehouse' ? '🌳 Treehouse' : fee.source === 'dispensary' ? '🏪 Dispensary' : '🚚 Shipping'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-semibold text-gray-700">{format(new Date(fee.month), 'MMM yyyy')}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="h-4 w-4 text-blue-600" />
+                                <span className="font-bold text-blue-700 text-lg">
+                                  R{fee.baseAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className="bg-purple-500 text-white font-bold">{fee.feePercentage}%</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Activity className="h-4 w-4 text-green-600" />
+                                <span className="font-black text-green-700 text-lg">
+                                  R{fee.feeAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {fee.collected ? (
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                  <Badge className="bg-green-500 text-white">✅ Collected</Badge>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-5 w-5 text-yellow-600" />
+                                  <Badge className="bg-yellow-500 text-white">⏳ Pending</Badge>
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate text-gray-700">{fee.notes || 'N/A'}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="outline" className="border-2 hover:bg-orange-50">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="border-2 border-red-300 hover:bg-red-50 text-red-600"
+                                  onClick={() => handleDeleteFee(fee.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
               </Card>
             </div>
           )}

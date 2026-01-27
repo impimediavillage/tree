@@ -319,20 +319,27 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
-        <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black flex items-center gap-2 sm:gap-3 text-[#3D2E17]">
-            <UsersIcon className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 text-[#006B3E] flex-shrink-0" />
-            <span className="break-words">Manage Users</span>
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg font-black text-[#3D2E17]/80 mt-2">
-            View, edit, and manage user accounts and roles.
-          </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-3xl shadow-2xl">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl blur-lg opacity-50" />
+            <div className="relative bg-white rounded-2xl p-4 shadow-lg">
+              <UsersIcon className="h-10 w-10 sm:h-12 sm:w-12 text-purple-600" />
+            </div>
+          </div>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white flex items-center gap-2">
+              👥 Manage Users
+            </h1>
+            <p className="text-white/90 text-base sm:text-lg mt-1">
+              View, edit, and manage user accounts and roles.
+            </p>
+          </div>
         </div>
         <AddUserDialog onUserAdded={fetchUsersAndWellnessProfiles} dispensaries={wellnessProfiles} />
       </div>
 
-      <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-muted/50 border-border/50 shadow-lg">
+      <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-6 border-2 border-purple-200 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 shadow-lg">
         <Input
             placeholder="Search by name or email..."
             value={searchTerm}

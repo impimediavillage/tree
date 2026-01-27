@@ -18,6 +18,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { AdvisorCard } from '@/components/advisors/AdvisorCard';
 import { TripleSEntry } from '@/components/features/TripleSEntry';
 import { AdBanner } from '@/components/advertising/AdBanner';
+import { DriverSlideshow } from '@/components/home/DriverSlideshow';
 
 export default function HolisticAiHubPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -99,6 +100,153 @@ export default function HolisticAiHubPage() {
         </div>
       ) : !currentUser ? (
         <>
+        {/* Top 3-Card Grid Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Left Card: Main Header */}
+          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+            <div className="text-center">
+              <h1 className="text-4xl font-extrabold text-foreground tracking-tight mb-4">
+                The Wellness Tree
+              </h1>
+              <p className="text-lg font-semibold text-[#3D2E17]">
+                Your natural wellness hub. Shop natural products, and connect with a network of health stores, herbal apothecaries, and wellness practitioners, Naturally...
+              </p>
+            </div>
+            <div className="mt-8 space-y-4">
+              <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white font-semibold shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 w-full">
+                <Link href="#advisors-section">
+                  <ArrowDown className="mr-2 h-5 w-5" />
+                  Explore AI Advisors
+                </Link>
+              </Button>
+              <Button asChild size="lg" className="bg-[#3D2E17] hover:bg-[#006B3E] active:bg-[#2D1E0F] text-white font-semibold shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 w-full">
+                <Link href="/browse-dispensary-types">
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Browse Stores
+                </Link>
+              </Button>
+            </div>
+          </Card>
+
+          {/* Middle Card: Wellness Marketplace */}
+          <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow flex flex-col">
+            <div className="relative aspect-video w-full overflow-hidden">
+              <Image
+                src="/images/healers/healers.jpg"
+                alt="Wellness Healers"
+                fill
+                className="object-cover object-top"
+                style={{ objectFit: 'cover', objectPosition: 'top' }}
+                priority
+              />
+            </div>
+            <div className="p-6 text-center flex-1 flex flex-col justify-between">
+              <div>
+                <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+                  Wellness Marketplace
+                </h2>
+                <p className="text-lg font-semibold text-[#3D2E17] mt-2">
+                  Connect with authentic wellness stores. From CBDs to traditional medicine, natural health permaculture, and fungi, find everything you need.
+                </p>
+              </div>
+              <div className="mt-6 space-y-4">
+                <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
+                  <Link href="/browse-dispensary-types">Browse Stores</Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Right Card: Driver Signup */}
+          <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow flex flex-col">
+            <DriverSlideshow />
+            <div className="p-6 text-center flex-1 flex flex-col justify-between">
+              <div>
+                <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+                  Drive & Earn
+                </h2>
+                <p className="text-lg font-semibold text-[#3D2E17] mt-2">
+                  Sign up as a driver and earn. Private dashboard, notifications, and licensed drivers required.
+                </p>
+              </div>
+              <div className="mt-6">
+                <Button asChild size="lg" className="bg-[#3D2E17] hover:bg-[#006B3E] active:bg-[#2D1E0F] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
+                  <Link href="/driver-signup">
+                    <Truck className="mr-2 h-5 w-5" />
+                    Become a Driver
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Bottom 3-Card Grid Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* First Card: Treehouse */}
+          <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow flex flex-col">
+            <div className="relative aspect-video w-full overflow-hidden">
+              <Image
+                src="/images/treehouse/th2.jpg"
+                alt="Treehouse Store"
+                fill
+                className="object-cover object-top"
+                style={{ objectFit: 'cover', objectPosition: 'top' }}
+                priority
+              />
+            </div>
+            <div className="p-6 text-center flex-1 flex flex-col justify-between">
+              <div>
+                <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+                  Treehouse Collective Store
+                </h2>
+                <p className="text-lg font-semibold text-[#3D2E17] mt-2">
+                  Discover unique creator-designed apparel. Shop from talented creators and support independent brands.
+                </p>
+              </div>
+              <div className="mt-6">
+                <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
+                  <Link href="/treehouse">Enter Treehouse Store</Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Second Card: Join Our Growing Ecosystem */}
+          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+            <div className="text-center">
+              <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+                Join Our Growing Ecosystem
+              </h2>
+              <p className="text-lg font-semibold text-[#3D2E17] mt-2">
+                Create a store or canna club for FREE. No subscriptions, Full order tracking, Driver management, Social hub, Rich analytics, Events Calendar and more...
+              </p>
+            </div>
+            <div className="mt-8 space-y-4 text-center">
+              <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
+                <Link href="/dispensary-signup">Create store</Link>
+              </Button>
+            </div>
+          </Card>
+
+          {/* Third Card: Become a Leaf User */}
+          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+            <div className="text-center">
+              <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+                Become a Leaf user?
+              </h2>
+              <p className="text-lg font-semibold text-[#3D2E17] mt-2">
+                Get instant access now. FREE P.O.D store, an engaging influencer program to earn cash, and 10 free credits to use our LM's. Order tracking and driver tracking with PUDO, COURIER GUY, and store managed driver teams.
+              </p>
+            </div>
+            <div className="mt-8 space-y-4 text-center">
+              <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
+                <Link href="/auth/signup">Create Free leaf account</Link>
+              </Button>
+            </div>
+          </Card>
+        </div>
+
         <PageHeader 
             title="The Wellness Tree"
             description={<p>Your natural wellness hub. 

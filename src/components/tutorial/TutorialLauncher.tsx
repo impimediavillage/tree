@@ -247,42 +247,42 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1000px] h-[90vh] bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 rounded-3xl shadow-2xl z-[9999] overflow-hidden"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1024px] h-[90vh] bg-white rounded-3xl shadow-2xl z-[9999] overflow-hidden"
           >
             {/* Animated Background Pattern */}
-            <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 opacity-5">
               <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl animate-pulse" />
-              <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl animate-pulse delay-1000" />
-              <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500 rounded-full filter blur-3xl animate-pulse delay-500" />
+              <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-500 rounded-full filter blur-3xl animate-pulse delay-1000" />
+              <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl animate-pulse delay-500" />
             </div>
 
             {/* Close Button */}
             <button
               onClick={closeLauncher}
-              className="absolute top-6 right-6 z-10 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all hover:scale-110 backdrop-blur-md border border-white/20 shadow-lg"
+              className="absolute top-6 right-6 z-10 p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-all hover:scale-110 shadow-lg"
             >
-              <X className="h-6 w-6 text-white" />
+              <X className="h-6 w-6 text-gray-700" />
             </button>
 
             {/* Content Container */}
             <div className="relative h-full overflow-y-auto">
               {/* Header */}
-              <div className="p-8 pb-6">
+              <div className="p-8 pb-6 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-t-3xl">
                 <motion.div
                   initial={{ y: -20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 }}
                   className="text-center mb-8"
                 >
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400/20 rounded-full mb-4">
-                    <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
-                    <span className="text-yellow-300 font-bold text-sm">INTERACTIVE LEARNING</span>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-4">
+                    <Sparkles className="h-5 w-5 text-white animate-pulse" />
+                    <span className="text-white font-bold text-sm">INTERACTIVE LEARNING</span>
                   </div>
                   
-                  <h1 className="text-5xl font-black text-white mb-4 bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
+                  <h1 className="text-5xl font-black text-white mb-4">
                     🎮 {userType === 'leaf' ? 'Wellness Explorer Academy' : 'Tutorial Academy'}
                   </h1>
-                  <p className="text-xl text-purple-200 max-w-2xl mx-auto">
+                  <p className="text-xl text-white/90 max-w-2xl mx-auto">
                     {userType === 'leaf' 
                       ? 'Master shopping, AI advisors, and exclusive club benefits!' 
                       : 'Master your dispensary dashboard with fun, interactive tutorials!'}
@@ -296,40 +296,40 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                   transition={{ delay: 0.2 }}
                   className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
                 >
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/30 hover:border-white/50 transition-all hover:scale-105 shadow-lg">
+                  <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 border border-purple-200 hover:border-purple-400 transition-all hover:scale-105 shadow-lg">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 bg-yellow-500 rounded-xl">
-                        <Star className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-black text-white">{totalPoints}</p>
-                        <p className="text-sm text-purple-200">Total Points</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-green-500 rounded-xl">
+                      <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-md">
                         <CheckCircle className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <p className="text-2xl font-black text-white">
+                        <p className="text-2xl font-black text-gray-900">
                           {completedCount}/{TUTORIALS.length}
                         </p>
-                        <p className="text-sm text-purple-200">Completed</p>
+                        <p className="text-sm text-gray-600 font-medium">Completed</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+                  <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 border border-purple-200 hover:border-purple-400 transition-all hover:scale-105 shadow-lg">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 bg-purple-500 rounded-xl">
+                      <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl shadow-md">
                         <Trophy className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <p className="text-2xl font-black text-white">{achievements.length}</p>
-                        <p className="text-sm text-purple-200">Achievements</p>
+                        <p className="text-2xl font-black text-gray-900">{totalPoints}</p>
+                        <p className="text-sm text-gray-600 font-medium">Total Points</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 border border-purple-200 hover:border-purple-400 transition-all hover:scale-105 shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-md">
+                        <Star className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-gray-900">{achievements.length}</p>
+                        <p className="text-sm text-gray-600 font-medium">Achievements</p>
                       </div>
                     </div>
                   </div>
@@ -340,13 +340,13 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20"
+                  className="bg-white/90 backdrop-blur-md rounded-2xl p-5 border border-purple-200 shadow-lg"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-white font-semibold">Overall Progress</span>
-                    <span className="text-white font-bold">{Math.round(progressPercent)}%</span>
+                    <span className="text-gray-700 font-semibold">Overall Progress</span>
+                    <span className="text-purple-600 font-black">{Math.round(progressPercent)}%</span>
                   </div>
-                  <Progress value={progressPercent} className="h-3 bg-white/20" />
+                  <Progress value={progressPercent} className="h-3 bg-purple-200" />
                 </motion.div>
               </div>
 
@@ -362,8 +362,8 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                       onClick={() => setSelectedCategory(category)}
                       className={`px-6 py-2 rounded-full font-semibold whitespace-nowrap transition-all ${
                         selectedCategory === category
-                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg scale-105'
-                          : 'bg-white/10 text-purple-200 hover:bg-white/20'
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-105'
+                          : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-300 hover:bg-purple-50'
                       }`}
                     >
                       {category}
@@ -390,14 +390,14 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                           isTutorialLocked ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border-2 border-white/20 hover:border-white/40 transition-all hover:scale-105 hover:shadow-2xl hover:bg-white/15">
+                        <div className="bg-white backdrop-blur-md rounded-2xl p-6 border-2 border-gray-200 hover:border-purple-400 transition-all hover:scale-105 hover:shadow-2xl">
                           {/* Icon & Status */}
                           <div className="flex items-start justify-between mb-4">
-                            <div className={`p-4 rounded-xl ${
+                            <div className={`p-4 rounded-xl shadow-lg ${
                               isCompleted
                                 ? 'bg-green-500'
                                 : isTutorialLocked
-                                ? 'bg-gray-500'
+                                ? 'bg-gray-400'
                                 : 'bg-gradient-to-br from-pink-500 to-purple-500'
                             }`}>
                               {isTutorialLocked ? (
@@ -405,28 +405,28 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                               ) : isCompleted ? (
                                 <CheckCircle className="h-6 w-6 text-white" />
                               ) : (
-                                tutorial.icon
+                                <div className="text-white">{tutorial.icon}</div>
                               )}
                             </div>
                             <Badge
-                              className={`${DIFFICULTY_COLORS[tutorial.difficulty]} text-white border-0`}
+                              className={`${DIFFICULTY_COLORS[tutorial.difficulty]} text-white border-0 shadow-md`}
                             >
                               {tutorial.difficulty}
                             </Badge>
                           </div>
 
                           {/* Content */}
-                          <h3 className="text-xl font-bold text-white mb-2">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">
                             {tutorial.title}
                           </h3>
-                          <p className="text-purple-200 text-sm mb-4 line-clamp-2">
+                          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                             {tutorial.description}
                           </p>
 
                           {/* Meta Info */}
                           <div className="flex items-center justify-between text-sm mb-4">
-                            <span className="text-purple-300">⏱️ {tutorial.duration}</span>
-                            <span className="text-yellow-300 font-bold">
+                            <span className="text-gray-600">⏱️ {tutorial.duration}</span>
+                            <span className="text-yellow-600 font-bold">
                               ⭐ {tutorial.points} pts
                             </span>
                           </div>
@@ -436,9 +436,9 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                             <div className="mb-4">
                               <Progress
                                 value={(progress.completedSteps.length / 10) * 100}
-                                className="h-2 bg-white/20"
+                                className="h-2 bg-purple-200"
                               />
-                              <p className="text-xs text-purple-300 mt-1">
+                              <p className="text-xs text-gray-600 mt-1">
                                 Step {progress.currentStep + 1}/10
                               </p>
                             </div>
@@ -448,12 +448,12 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                           <Button
                             onClick={() => handleStartTutorial(tutorial.id)}
                             disabled={isTutorialLocked}
-                            className={`w-full ${
+                            className={`w-full shadow-lg ${
                               isCompleted
                                 ? 'bg-green-600 hover:bg-green-700'
                                 : isTutorialLocked
-                                ? 'bg-gray-600 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
                             } text-white font-bold`}
                           >
                             {isTutorialLocked ? (
@@ -502,8 +502,8 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.7 }}
                   >
-                    <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                      <Trophy className="h-6 w-6 text-yellow-400" />
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Trophy className="h-6 w-6 text-yellow-500" />
                       Your Achievements
                     </h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -513,13 +513,13 @@ export function TutorialLauncher({ userType = 'dispensary' }: TutorialLauncherPr
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ delay: 0.8 + index * 0.1, type: 'spring' }}
-                          className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-yellow-400/50 text-center"
+                          className="bg-white backdrop-blur-md rounded-xl p-4 border-2 border-yellow-400 text-center shadow-lg"
                         >
                           <div className="text-4xl mb-2">{achievement.icon}</div>
-                          <p className="text-white font-bold text-sm mb-1">
+                          <p className="text-gray-900 font-bold text-sm mb-1">
                             {achievement.title}
                           </p>
-                          <p className="text-purple-300 text-xs">
+                          <p className="text-gray-600 text-xs">
                             {achievement.description}
                           </p>
                         </motion.div>

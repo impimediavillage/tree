@@ -331,6 +331,11 @@ service cloud.firestore {
     }
 
     // ===== INFLUENCER SYSTEM =====
+    match /influencers/{influencerId} {
+      allow read: if isRole('Super Admin');
+      allow write: if false; // Created/updated by backend
+    }
+
     match /influencerProfiles/{profileId} {
       allow read: if true;
       allow create, update: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
@@ -339,8 +344,8 @@ service cloud.firestore {
 
     match /referralClicks/{clickId} {
       allow create: if true;
-      allow read: if isAuthenticated() && 
-                    (request.auth.uid == resource.data.influencerId || isRole('Super Admin'));
+      allow read: if isRole('Super Admin');
+      allow list: if isRole('Super Admin');
     }
 
     match /influencerCommissions/{commissionId} {
@@ -601,6 +606,23 @@ service cloud.firestore {
                     (isAuthenticated() && request.auth.uid == resource.data.creatorUid);
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.creatorUid;
+    }
+
+    // ===== FINANCIAL HUB COLLECTIONS =====
+    match /creditTransactions/{transactionId} {
+      allow read: if isRole('Super Admin') || 
+                    (isAuthenticated() && request.auth.uid == resource.data.userId);
+      allow create, update, delete: if isRole('Super Admin');
+    }
+
+    match /platformFees/{feeId} {
+      allow read, write: if isRole('Super Admin');
+    }
+
+    match /influencerCommissions/{commissionId} {
+      allow read: if isRole('Super Admin') || 
+                    (isAuthenticated() && request.auth.uid == resource.data.influencerId);
+      allow write: if false; // Created by Cloud Functions
     }
 
     // ===== SUBCOLLECTIONS =====

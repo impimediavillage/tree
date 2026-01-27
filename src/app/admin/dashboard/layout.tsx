@@ -352,7 +352,7 @@ export default function AdminDashboardLayout({
           </header>
           
           {/* Desktop Top Ribbon - Full Width */}
-          <div className="hidden md:flex items-center justify-between w-full border-b bg-background/95 backdrop-blur-sm px-6 py-3 sticky top-0 z-40">
+          <div className="hidden md:flex items-center justify-between border-b bg-background/95 backdrop-blur-sm px-6 py-4 sticky top-0 z-40 shadow-sm">
             <h1 
               className="text-xl font-bold text-foreground"
               style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
@@ -402,8 +402,10 @@ export default function AdminDashboardLayout({
               </DropdownMenu>
             </div>
           </div>
-          <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto"> 
-            {children}
+          <div className="flex-1 overflow-y-auto"> 
+            <div className="container max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+              {children}
+            </div>
           </div>
         </main>
       </div>
