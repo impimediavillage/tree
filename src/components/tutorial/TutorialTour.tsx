@@ -57,7 +57,7 @@ export function TutorialTour({ tutorialId, steps, onComplete }: TutorialTourProp
   };
 
   const handleSkip = () => {
-    skipTutorial(tutorialId);
+    skipTutorial();
     setIsOpen(false);
   };
 
