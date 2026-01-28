@@ -103,42 +103,58 @@ export default function HolisticAiHubPage() {
         {/* Top 3-Card Grid Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Left Card: Main Header */}
-          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
-            <div className="text-center">
-              <h1 className="text-4xl font-extrabold text-foreground tracking-tight mb-4">
-                The Wellness Tree
-              </h1>
-              <p className="text-lg font-semibold text-[#3D2E17]">
-                Your natural wellness hub. Shop natural products, and connect with a network of health stores, herbal apothecaries, and wellness practitioners, Naturally...
-              </p>
+          <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col">
+            <div className="relative w-full h-80 overflow-hidden">
+              <video
+                className="w-full h-full object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+              >
+                <source src="/images/promo/wellness-ad.mp4" type="video/mp4" />
+              </video>
             </div>
-            <div className="mt-8 space-y-4">
-              <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white font-semibold shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 w-full">
-                <Link href="#advisors-section">
-                  <ArrowDown className="mr-2 h-5 w-5" />
-                  Explore AI Advisors
-                </Link>
-              </Button>
-              <Button asChild size="lg" className="bg-[#3D2E17] hover:bg-[#006B3E] active:bg-[#2D1E0F] text-white font-semibold shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 w-full">
-                <Link href="/browse-dispensary-types">
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Browse Stores
-                </Link>
-              </Button>
+            <div className="p-8 text-center flex-1 flex flex-col justify-between">
+              <div>
+                <h1 className="text-4xl font-extrabold text-foreground tracking-tight mb-4">
+                  The Wellness Tree
+                </h1>
+                <p className="text-lg font-semibold text-[#3D2E17]">
+                  Your natural wellness hub. Shop natural products, and connect with a network of health stores, herbal apothecaries, and wellness practitioners, Naturally...
+                </p>
+              </div>
+              <div className="mt-8 space-y-4">
+                <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white font-semibold shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 w-full">
+                  <Link href="#advisors-section">
+                    <ArrowDown className="mr-2 h-5 w-5" />
+                    Explore AI Advisors
+                  </Link>
+                </Button>
+                <Button asChild size="lg" className="bg-[#3D2E17] hover:bg-[#006B3E] active:bg-[#2D1E0F] text-white font-semibold shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 w-full">
+                  <Link href="/browse-dispensary-types">
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Browse Stores
+                  </Link>
+                </Button>
+              </div>
             </div>
           </Card>
 
           {/* Middle Card: Wellness Marketplace */}
           <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow flex flex-col">
-            <div className="relative aspect-video w-full overflow-hidden">
-              <Image
-                src="/images/healers/healers.jpg"
-                alt="Wellness Healers"
-                fill
-                className="object-cover object-top"
-                style={{ objectFit: 'cover', objectPosition: 'top' }}
-                priority
-              />
+            <div className="relative w-full h-80 overflow-hidden">
+              <video
+                className="w-full h-full object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+              >
+                <source src="/images/promo/wellness-vid.mp4" type="video/mp4" />
+              </video>
             </div>
             <div className="p-6 text-center flex-1 flex flex-col justify-between">
               <div>
@@ -146,7 +162,7 @@ export default function HolisticAiHubPage() {
                   Wellness Marketplace
                 </h2>
                 <p className="text-lg font-semibold text-[#3D2E17] mt-2">
-                  Connect with authentic wellness stores. From CBDs to traditional medicine, natural health permaculture, and fungi, find everything you need.
+                  Connect with our growing community - CBD stores - traditional medicine, natural health, permaculture, fungi, find everything you need.
                 </p>
               </div>
               <div className="mt-6 space-y-4">
@@ -159,14 +175,25 @@ export default function HolisticAiHubPage() {
 
           {/* Right Card: Driver Signup */}
           <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow flex flex-col">
-            <DriverSlideshow />
+            <div className="relative w-full h-80 overflow-hidden">
+              <video
+                className="w-full h-full object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+              >
+                <source src="/images/promo/driver-ad.mp4" type="video/mp4" />
+              </video>
+            </div>
             <div className="p-6 text-center flex-1 flex flex-col justify-between">
               <div>
                 <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
                   Drive & Earn
                 </h2>
                 <p className="text-lg font-semibold text-[#3D2E17] mt-2">
-                  Sign up as a driver and earn. Private dashboard, notifications, and licensed drivers required.
+                  Sign up as a driver and earn. Payouts weekly to S.A bank accounts. Your own vehicle, and licensed drivers required.
                 </p>
               </div>
               <div className="mt-6">
@@ -236,7 +263,8 @@ export default function HolisticAiHubPage() {
                 Become a Leaf user?
               </h2>
               <p className="text-lg font-semibold text-[#3D2E17] mt-2">
-                Get instant access now. FREE P.O.D store, an engaging influencer program to earn cash, and 10 free credits to use our LM's. Order tracking and driver tracking with PUDO, COURIER GUY, and store managed driver teams.
+                Get instant access now. FREE P.O.D store and access to the Creator Lab. FREE access to our influencer program. EARN cash with weekly payouts and commission tracking. 10 free credits to use our LM's. Access to all AI advisors. 
+
               </p>
             </div>
             <div className="mt-8 space-y-4 text-center">

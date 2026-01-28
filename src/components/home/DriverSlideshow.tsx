@@ -24,16 +24,17 @@ export function DriverSlideshow() {
   }, []);
 
   return (
-    <div className="relative w-full h-80 overflow-hidden rounded-t-lg bg-gray-900">
-      <AnimatePresence mode="wait">
+    <div className="relative w-full h-80 overflow-hidden rounded-t-lg bg-muted">
+      <AnimatePresence initial={false}>
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0, x: 100, scale: 1.05 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: -100, scale: 0.95 }}
+          initial={{ opacity: 0, x: '100%' }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: '-100%' }}
           transition={{ 
-            duration: 1.2, 
-            ease: [0.43, 0.13, 0.23, 0.96] // Custom easing for elegant transition
+            duration: 1,
+            ease: [0.4, 0, 0.2, 1],
+            opacity: { duration: 0.8 }
           }}
           className="absolute inset-0"
         >
