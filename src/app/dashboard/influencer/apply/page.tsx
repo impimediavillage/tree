@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { Loader2, Sparkles, TrendingUp, Users, DollarSign, AlertTriangle } from 'lucide-react';
 
 export default function InfluencerApplicationPage() {
   const { currentUser } = useAuth();
@@ -28,6 +29,24 @@ export default function InfluencerApplicationPage() {
     facebook: '',
     agreedToTerms: false
   });
+
+  // Load saved form data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('influencerApplicationForm');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        setFormData(data);
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('influencerApplicationForm', JSON.stringify(formData));
+  }, [formData]);
 
   const wellnessNiches = [
     'Cannabinoid Products',
@@ -291,9 +310,23 @@ export default function InfluencerApplicationPage() {
                 className="border-2 border-[#006B3E]"
               />
               <label htmlFor="terms" className="text-sm font-bold text-[#3D2E17] cursor-pointer">
-                I agree to the Influencer Program Terms and Conditions *
+                I have read and agree to the{' '}
+                <Link 
+                  href="/dashboard/influencer/terms" 
+                  className="text-[#006B3E] underline hover:text-[#3D2E17] transition-colors font-black"
+                  target="_blank"
+                >
+                  Influencer Program Terms & Conditions
+                </Link>, including commission structure, payouts, and content guidelines. *
               </label>
             </div>
+
+            {!formData.agreedToTerms && (
+              <p className="text-xs text-red-600 font-semibold flex items-center gap-2 bg-red-50 p-3 rounded-lg">
+                <AlertTriangle className="h-4 w-4" />
+                You must accept the terms and conditions to submit your application
+              </p>
+            )}
 
             {/* Submit Button */}
             <div className="flex gap-4">
@@ -307,11 +340,11 @@ export default function InfluencerApplicationPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={loading}
-                className="flex-1 bg-[#006B3E] hover:bg-[#005830]"
+                disabled={loading || !formData.agreedToTerms}
+                className="flex-1 bg-[#006B3E] hover:bg-[#005830] disabled:opacity-50"
               >
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {loading ? 'Submitting...' : 'Submit Application'}
+                {loading ? 'Submitting...' : !formData.agreedToTerms ? 'Accept Terms to Continue' : 'Submit Application'}
               </Button>
             </div>
           </form>

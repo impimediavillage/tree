@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Truck, Upload, X, Loader2, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
@@ -73,6 +74,9 @@ export default function DriverSignupPage() {
   const [idPreview, setIdPreview] = useState<string | null>(null);
   const [vehiclePreview, setVehiclePreview] = useState<string | null>(null);
   
+  // Terms acceptance
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  
   const licenseInputRef = useRef<HTMLInputElement>(null);
   const idInputRef = useRef<HTMLInputElement>(null);
   const vehicleInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +99,7 @@ export default function DriverSignupPage() {
         if (data.city) setCity(data.city);
         if (data.province) setProvince(data.province);
         if (data.deliveryRadius) setDeliveryRadius(data.deliveryRadius);
+        if (data.acceptedTerms) setAcceptedTerms(data.acceptedTerms);
       } catch (error) {
         console.error('Error loading saved form data:', error);
       }
@@ -115,9 +120,10 @@ export default function DriverSignupPage() {
       city,
       province,
       deliveryRadius,
+      acceptedTerms,
     };
     localStorage.setItem('driverSignupForm', JSON.stringify(formData));
-  }, [displayName, email, phoneNumber, dialCode, vehicleType, vehicleRegistration, vehicleColor, vehicleDescription, city, province, deliveryRadius]);
+  }, [displayName, email, phoneNumber, dialCode, vehicleType, vehicleRegistration, vehicleColor, vehicleDescription, city, province, deliveryRadius, acceptedTerms]);
 
   // Initialize Google Places Autocomplete for city
   useEffect(() => {
@@ -695,17 +701,55 @@ export default function DriverSignupPage() {
                 </div>
               </div>
 
+              {/* Terms and Conditions */}
+              <div className="bg-[#006B3E]/10 rounded-lg p-6 border-2 border-[#006B3E]/30">
+                <div className="flex items-start gap-3">
+                  <Checkbox 
+                    id="terms" 
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <Label 
+                      htmlFor="terms" 
+                      className="text-sm font-bold text-[#3D2E17] cursor-pointer leading-relaxed"
+                    >
+                      I have read and agree to the{' '}
+                      <Link 
+                        href="/driver-terms" 
+                        className="text-[#006B3E] underline hover:text-[#3D2E17] font-black"
+                        target="_blank"
+                      >
+                        Driver Terms & Conditions
+                      </Link>
+                      , including policies on payments, conduct, ratings, and account termination.
+                    </Label>
+                    {!acceptedTerms && (
+                      <p className="text-xs text-red-600 mt-2 font-semibold">
+                        ⚠️ You must accept the terms and conditions to submit your application
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Submit Button */}
               <div className="pt-6">
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#006B3E] hover:bg-[#3D2E17] text-white text-lg py-6 font-bold shadow-lg hover:scale-105 transition-all"
+                  disabled={isSubmitting || !acceptedTerms}
+                  className="w-full bg-[#006B3E] hover:bg-[#3D2E17] text-white text-lg py-6 font-bold shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Submitting Application...
+                    </>
+                  ) : !acceptedTerms ? (
+                    <>
+                      <AlertCircle className="mr-2 h-5 w-5" />
+                      Accept Terms to Continue
                     </>
                   ) : (
                     <>
