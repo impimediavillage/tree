@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Brain, Loader2, Sparkles, Leaf, Heart, Flower, Sun, Moon, Star, Zap, Wind, Droplet, Flame, TreePine, Sprout, Activity, Atom, Dna, Microscope, Beaker, Pill, Stethoscope, Eye, Smile, Users, UserCheck, Waves, Mountain, Globe, Compass, ShieldCheck, HandHelping, ArrowRight, Coins, ShoppingCart, Truck, DollarSign, Gift, ArrowDown, Settings, Briefcase, Palette, Store, Rocket, Calendar, Share2, Tv, Package } from 'lucide-react';
+import { Brain, Loader2, Sparkles, Leaf, Heart, Flower, Sun, Moon, Star, Zap, Wind, Droplet, Flame, TreePine, Sprout, Activity, Atom, Dna, Microscope, Beaker, Pill, Stethoscope, Eye, Smile, Users, UserCheck, Waves, Mountain, Globe, Compass, ShieldCheck, HandHelping, ArrowRight, Coins, ShoppingCart, Truck, DollarSign, Gift, ArrowDown, Settings, Briefcase, Palette, Store, Rocket, Calendar, Share2, Tv, Package, Facebook, Instagram, Twitter, Youtube, Linkedin, MessageCircle } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -154,26 +154,37 @@ export default function HolisticAiHubPage() {
              </div>
             <div className="p-8 text-center flex-1 flex flex-col justify-between">
               <div>
-                <h1 className="text-4xl font-extrabold text-foreground tracking-tight mb-4">
-                  The Wellness Tree
+                <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-4">
+                  Shop natural products.
                 </h1>
-                <p className="text-lg font-semibold text-[#3D2E17]">
-                  Your natural wellness hub. Shop natural products, and connect with a network of health stores, herbal apothecaries, and wellness practitioners, Naturally...
+                <p className="text-lg font-semibold text-[#3D2E17] mb-6">
+                  Connect with a network of health stores, herbal apothecaries, and wellness practitioners, Naturally...
                 </p>
-              </div>
-              <div className="mt-8 space-y-4">
-                <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white font-semibold shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 w-full">
-                  <Link href="#advisors-section">
-                    <ArrowDown className="mr-2 h-5 w-5" />
-                    Explore AI Advisors
-                  </Link>
-                </Button>
-                <Button asChild size="lg" className="bg-[#3D2E17] hover:bg-[#006B3E] active:bg-[#2D1E0F] text-white font-semibold shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 w-full">
-                  <Link href="/browse-dispensary-types">
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Browse Stores
-                  </Link>
-                </Button>
+                
+                {/* Social Media Icons */}
+                <div className="flex justify-center items-center gap-4 py-6 px-4 bg-gradient-to-r from-[#006B3E]/5 via-[#3D2E17]/5 to-[#006B3E]/5 rounded-lg border border-[#006B3E]/10">
+                  <a href="#" className="text-[#3D2E17] hover:text-[#006B3E] transition-all duration-300 hover:scale-110" aria-label="TikTok">
+                    <Tv className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="text-[#3D2E17] hover:text-[#006B3E] transition-all duration-300 hover:scale-110" aria-label="YouTube">
+                    <Youtube className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="text-[#3D2E17] hover:text-[#006B3E] transition-all duration-300 hover:scale-110" aria-label="LinkedIn">
+                    <Linkedin className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="text-[#3D2E17] hover:text-[#006B3E] transition-all duration-300 hover:scale-110" aria-label="Twitter">
+                    <Twitter className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="text-[#3D2E17] hover:text-[#006B3E] transition-all duration-300 hover:scale-110" aria-label="Instagram">
+                    <Instagram className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="text-[#3D2E17] hover:text-[#006B3E] transition-all duration-300 hover:scale-110" aria-label="Facebook">
+                    <Facebook className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="text-[#3D2E17] hover:text-[#006B3E] transition-all duration-300 hover:scale-110" aria-label="WhatsApp">
+                    <MessageCircle className="h-6 w-6" />
+                  </a>
+                </div>
               </div>
             </div>
           </Card>
