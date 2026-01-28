@@ -112,10 +112,8 @@ export default function HolisticAiHubPage() {
                 muted
                 playsInline
                 preload="metadata"
-              >
-                <source src="/images/promo/wellness-ad.mp4" type="video/mp4" />
-              </video>
-            </div>
+                src="/images/promo/wellness-ad.mp4" />
+             </div>
             <div className="p-8 text-center flex-1 flex flex-col justify-between">
               <div>
                 <h1 className="text-4xl font-extrabold text-foreground tracking-tight mb-4">
@@ -152,10 +150,8 @@ export default function HolisticAiHubPage() {
                 muted
                 playsInline
                 preload="metadata"
-              >
-                <source src="/images/promo/wellness-vid.mp4" type="video/mp4" />
-              </video>
-            </div>
+                src="/images/promo/wellness-vid.mp4" />
+             </div>
             <div className="p-6 text-center flex-1 flex flex-col justify-between">
               <div>
                 <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
@@ -183,10 +179,8 @@ export default function HolisticAiHubPage() {
                 muted
                 playsInline
                 preload="metadata"
-              >
-                <source src="/images/promo/driver-ad.mp4" type="video/mp4" />
-              </video>
-            </div>
+                src="/images/promo/driver-vid.mp4" />
+             </div>
             <div className="p-6 text-center flex-1 flex flex-col justify-between">
               <div>
                 <h2 className="text-3xl font-extrabold text-foreground tracking-tight">

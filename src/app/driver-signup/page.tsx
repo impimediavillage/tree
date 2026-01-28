@@ -277,10 +277,25 @@ export default function DriverSignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
-      <div className="container max-w-4xl mx-auto">
+    <div className="min-h-screen relative py-12 px-4">
+      {/* Animated Tree Video Background */}
+      <div className="fixed inset-0 -z-10">
+        <video
+          className="w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src="/images/treevid.mp4" type="video/mp4" />
+        </video>
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/30" />
+      </div>
+
+      <div className="container max-w-4xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 bg-white/90 backdrop-blur-sm rounded-lg p-6 shadow-lg">
           <Link href="/" className="inline-block mb-6">
             <Image
               src="/images/tree.png"
@@ -290,19 +305,19 @@ export default function DriverSignupPage() {
               className="mx-auto"
             />
           </Link>
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-2 flex items-center justify-center gap-3">
+          <h1 className="text-4xl font-black text-[#3D2E17] mb-2 flex items-center justify-center gap-3">
             <Truck className="h-10 w-10 text-[#006B3E]" />
             Become a Driver
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg font-bold text-[#3D2E17]/80">
             Join our delivery network and start earning today!
           </p>
         </div>
 
-        <Card className="shadow-xl border-2 border-[#006B3E]/20">
+        <Card className="shadow-xl border-2 border-[#006B3E]/30 bg-white/95 backdrop-blur-md">
           <CardHeader className="bg-gradient-to-r from-[#006B3E] to-[#3D2E17] text-white rounded-t-lg">
-            <CardTitle className="text-2xl">Driver Application Form</CardTitle>
-            <CardDescription className="text-white/90">
+            <CardTitle className="text-2xl font-black">Driver Application Form</CardTitle>
+            <CardDescription className="text-white/95 font-semibold">
               Fill in your details and upload required documents
             </CardDescription>
           </CardHeader>
@@ -310,7 +325,7 @@ export default function DriverSignupPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Personal Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Personal Information</h3>
+                <h3 className="text-lg font-black text-[#3D2E17] border-b-2 border-[#006B3E] pb-2">Personal Information</h3>
                 
                 <div>
                   <Label htmlFor="displayName">Full Name *</Label>
@@ -376,7 +391,7 @@ export default function DriverSignupPage() {
 
               {/* Vehicle Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Vehicle Information</h3>
+                <h3 className="text-lg font-black text-[#3D2E17] border-b-2 border-[#006B3E] pb-2">Vehicle Information</h3>
                 
                 <div>
                   <Label htmlFor="vehicleType">Vehicle Type *</Label>
@@ -430,7 +445,7 @@ export default function DriverSignupPage() {
 
               {/* Location */}
               <div className="space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Service Area</h3>
+                <h3 className="text-lg font-black text-[#3D2E17] border-b-2 border-[#006B3E] pb-2">Service Area</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -471,13 +486,13 @@ export default function DriverSignupPage() {
                     min={1}
                     max={100}
                   />
-                  <p className="text-sm text-gray-500 mt-1">Maximum distance you're willing to deliver (1-100 km)</p>
+                  <p className="text-sm text-[#3D2E17]/70 mt-1 font-medium">Maximum distance you're willing to deliver (1-100 km)</p>
                 </div>
               </div>
 
               {/* Document Uploads */}
               <div className="space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Required Documents</h3>
+                <h3 className="text-lg font-black text-[#3D2E17] border-b-2 border-[#006B3E] pb-2">Required Documents</h3>
                 
                 {/* Driver's License */}
                 <div>
@@ -499,11 +514,11 @@ export default function DriverSignupPage() {
                     ) : (
                       <div
                         onClick={() => licenseInputRef.current?.click()}
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#006B3E] transition-colors"
+                        className="border-2 border-dashed border-[#006B3E]/40 rounded-lg p-8 text-center cursor-pointer hover:border-[#006B3E] hover:bg-[#006B3E]/5 transition-all"
                       >
-                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Click to upload driver's license</p>
-                        <p className="text-xs text-gray-400 mt-1">Max 5MB, image files only</p>
+                        <Upload className="h-12 w-12 text-[#006B3E] mx-auto mb-2" />
+                        <p className="text-sm text-[#3D2E17] font-semibold">Click to upload driver's license</p>
+                        <p className="text-xs text-[#3D2E17]/60 mt-1 font-medium">Max 5MB, image files only</p>
                       </div>
                     )}
                     <input
@@ -536,11 +551,11 @@ export default function DriverSignupPage() {
                     ) : (
                       <div
                         onClick={() => idInputRef.current?.click()}
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#006B3E] transition-colors"
+                        className="border-2 border-dashed border-[#006B3E]/40 rounded-lg p-8 text-center cursor-pointer hover:border-[#006B3E] hover:bg-[#006B3E]/5 transition-all"
                       >
-                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Click to upload ID document</p>
-                        <p className="text-xs text-gray-400 mt-1">Max 5MB, image files only</p>
+                        <Upload className="h-12 w-12 text-[#006B3E] mx-auto mb-2" />
+                        <p className="text-sm text-[#3D2E17] font-semibold">Click to upload ID document</p>
+                        <p className="text-xs text-[#3D2E17]/60 mt-1 font-medium">Max 5MB, image files only</p>
                       </div>
                     )}
                     <input
@@ -573,11 +588,11 @@ export default function DriverSignupPage() {
                     ) : (
                       <div
                         onClick={() => vehicleInputRef.current?.click()}
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#006B3E] transition-colors"
+                        className="border-2 border-dashed border-[#006B3E]/40 rounded-lg p-8 text-center cursor-pointer hover:border-[#006B3E] hover:bg-[#006B3E]/5 transition-all"
                       >
-                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Click to upload vehicle photo</p>
-                        <p className="text-xs text-gray-400 mt-1">Max 5MB, image files only</p>
+                        <Upload className="h-12 w-12 text-[#006B3E] mx-auto mb-2" />
+                        <p className="text-sm text-[#3D2E17] font-semibold">Click to upload vehicle photo</p>
+                        <p className="text-xs text-[#3D2E17]/60 mt-1 font-medium">Max 5MB, image files only</p>
                       </div>
                     )}
                     <input
@@ -610,8 +625,8 @@ export default function DriverSignupPage() {
                     </>
                   )}
                 </Button>
-                <p className="text-sm text-gray-500 text-center mt-4">
-                  Already have an account? <Link href="/auth/login" className="text-[#006B3E] font-semibold hover:underline">Login here</Link>
+                <p className="text-sm text-[#3D2E17]/70 text-center mt-4 font-medium">
+                  Already have an account? <Link href="/auth/login" className="text-[#006B3E] font-bold hover:underline">Login here</Link>
                 </p>
               </div>
             </form>
