@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Truck, Upload, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Truck, Upload, X, Loader2, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { auth, db, storage } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -75,6 +76,80 @@ export default function DriverSignupPage() {
   const licenseInputRef = useRef<HTMLInputElement>(null);
   const idInputRef = useRef<HTMLInputElement>(null);
   const vehicleInputRef = useRef<HTMLInputElement>(null);
+  const cityInputRef = useRef<HTMLInputElement>(null);
+
+  // Load saved form data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('driverSignupForm');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        if (data.displayName) setDisplayName(data.displayName);
+        if (data.email) setEmail(data.email);
+        if (data.phoneNumber) setPhoneNumber(data.phoneNumber);
+        if (data.dialCode) setDialCode(data.dialCode);
+        if (data.vehicleType) setVehicleType(data.vehicleType);
+        if (data.vehicleRegistration) setVehicleRegistration(data.vehicleRegistration);
+        if (data.vehicleColor) setVehicleColor(data.vehicleColor);
+        if (data.vehicleDescription) setVehicleDescription(data.vehicleDescription);
+        if (data.city) setCity(data.city);
+        if (data.province) setProvince(data.province);
+        if (data.deliveryRadius) setDeliveryRadius(data.deliveryRadius);
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const formData = {
+      displayName,
+      email,
+      phoneNumber,
+      dialCode,
+      vehicleType,
+      vehicleRegistration,
+      vehicleColor,
+      vehicleDescription,
+      city,
+      province,
+      deliveryRadius,
+    };
+    localStorage.setItem('driverSignupForm', JSON.stringify(formData));
+  }, [displayName, email, phoneNumber, dialCode, vehicleType, vehicleRegistration, vehicleColor, vehicleDescription, city, province, deliveryRadius]);
+
+  // Initialize Google Places Autocomplete for city
+  useEffect(() => {
+    if (typeof google === 'undefined' || !google.maps || !cityInputRef.current) return;
+
+    const autocomplete = new google.maps.places.Autocomplete(cityInputRef.current, {
+      componentRestrictions: { country: 'za' },
+      fields: ['address_components', 'geometry', 'name'],
+      types: ['(cities)'],
+    });
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (!place.address_components) return;
+
+      let cityName = '';
+      let provinceName = '';
+
+      place.address_components.forEach((component) => {
+        const types = component.types;
+        if (types.includes('locality') || types.includes('administrative_area_level_2')) {
+          cityName = component.long_name;
+        }
+        if (types.includes('administrative_area_level_1')) {
+          provinceName = component.long_name;
+        }
+      });
+
+      if (cityName) setCity(cityName);
+      if (provinceName) setProvince(provinceName);
+    });
+  }, []);
 
   const handleFileSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -295,7 +370,14 @@ export default function DriverSignupPage() {
 
       <div className="container max-w-4xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-8 bg-white/90 backdrop-blur-sm rounded-lg p-6 shadow-lg">
+        <div className="text-center mb-8 bg-white/95 backdrop-blur-md rounded-lg p-6 shadow-lg relative">
+          <Link 
+            href="/" 
+            className="absolute left-4 top-6 flex items-center gap-2 text-[#3D2E17] hover:text-[#006B3E] transition-colors font-bold"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="hidden sm:inline">Back to Home</span>
+          </Link>
           <Link href="/" className="inline-block mb-6">
             <Image
               src="/images/tree.png"
@@ -315,9 +397,9 @@ export default function DriverSignupPage() {
         </div>
 
         <Card className="shadow-xl border-2 border-[#006B3E]/30 bg-white/95 backdrop-blur-md">
-          <CardHeader className="bg-gradient-to-r from-[#006B3E] to-[#3D2E17] text-white rounded-t-lg">
-            <CardTitle className="text-2xl font-black">Driver Application Form</CardTitle>
-            <CardDescription className="text-white/95 font-semibold">
+          <CardHeader className="bg-white/95 backdrop-blur-md border-b-2 border-[#006B3E]/20">
+            <CardTitle className="text-2xl font-black text-[#3D2E17]">Driver Application Form</CardTitle>
+            <CardDescription className="text-[#3D2E17]/80 font-semibold">
               Fill in your details and upload required documents
             </CardDescription>
           </CardHeader>
@@ -451,12 +533,14 @@ export default function DriverSignupPage() {
                   <div>
                     <Label htmlFor="city">City *</Label>
                     <Input
+                      ref={cityInputRef}
                       id="city"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="Johannesburg"
+                      placeholder="Start typing city name..."
                       required
                     />
+                    <p className="text-xs text-[#3D2E17]/60 mt-1 font-medium">Province will auto-populate</p>
                   </div>
 
                   <div>
@@ -477,16 +561,21 @@ export default function DriverSignupPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="deliveryRadius">Delivery Radius (km)</Label>
-                  <Input
+                  <Label htmlFor="deliveryRadius">Delivery Radius: {deliveryRadius} km</Label>
+                  <Slider
                     id="deliveryRadius"
-                    type="number"
-                    value={deliveryRadius}
-                    onChange={(e) => setDeliveryRadius(Number(e.target.value))}
                     min={1}
                     max={100}
+                    step={1}
+                    value={[deliveryRadius]}
+                    onValueChange={(value) => setDeliveryRadius(value[0])}
+                    className="mt-2"
                   />
-                  <p className="text-sm text-[#3D2E17]/70 mt-1 font-medium">Maximum distance you're willing to deliver (1-100 km)</p>
+                  <div className="flex justify-between text-xs text-[#3D2E17]/60 mt-1 font-medium">
+                    <span>1 km</span>
+                    <span>100 km</span>
+                  </div>
+                  <p className="text-sm text-[#3D2E17]/70 mt-2 font-medium">Maximum distance you're willing to deliver</p>
                 </div>
               </div>
 
