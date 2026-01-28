@@ -8,7 +8,7 @@ import { Brain, Loader2, Sparkles, Leaf, Heart, Flower, Sun, Moon, Star, Zap, Wi
 import * as LucideIcons from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import type { User, AIAdvisor } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +49,42 @@ export default function HolisticAiHubPage() {
   useEffect(() => {
     fetchAdvisors();
   }, [fetchAdvisors]);
+
+  // Lazy load videos with Intersection Observer
+  useEffect(() => {
+    const videoElements = document.querySelectorAll('video[data-lazy-load]');
+    
+    const videoObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) {
+            // Load and play video when it enters viewport
+            if (!video.src && video.dataset.src) {
+              video.src = video.dataset.src;
+              video.load();
+            }
+            video.play().catch(() => {
+              // Autoplay failed, user interaction needed
+            });
+          } else {
+            // Pause video when out of viewport to save resources
+            video.pause();
+          }
+        });
+      },
+      {
+        rootMargin: '50px', // Start loading 50px before entering viewport
+        threshold: 0.25, // Trigger when 25% visible
+      }
+    );
+
+    videoElements.forEach((video) => videoObserver.observe(video));
+
+    return () => {
+      videoElements.forEach((video) => videoObserver.unobserve(video));
+    };
+  }, [authLoading, currentUser]);
 
   const wellnessBenefits = [
     { text: "E-store with product listings, shopping cart, and integrated payments with Payfast.", icon: ShoppingCart },
@@ -107,12 +143,14 @@ export default function HolisticAiHubPage() {
             <div className="relative w-full h-80 overflow-hidden">
               <video
                 className="w-full h-full object-cover"
-                autoPlay
                 loop
                 muted
                 playsInline
-                preload="metadata"
-                src="/images/promo/wellness-ad.mp4" />
+                preload="none"
+                poster="/images/promo/wellness-thumb.jpg"
+                data-lazy-load="true"
+                data-src="/images/promo/wellness-ad.mp4"
+              />
              </div>
             <div className="p-8 text-center flex-1 flex flex-col justify-between">
               <div>
@@ -145,12 +183,14 @@ export default function HolisticAiHubPage() {
             <div className="relative w-full h-80 overflow-hidden">
               <video
                 className="w-full h-full object-cover"
-                autoPlay
                 loop
                 muted
                 playsInline
-                preload="metadata"
-                src="/images/promo/wellness-vid.mp4" />
+                preload="none"
+                poster="/images/promo/healers.jpg"
+                data-lazy-load="true"
+                data-src="/images/promo/wellness-vid.mp4"
+              />
              </div>
             <div className="p-6 text-center flex-1 flex flex-col justify-between">
               <div>
@@ -174,12 +214,14 @@ export default function HolisticAiHubPage() {
             <div className="relative w-full h-80 overflow-hidden">
               <video
                 className="w-full h-full object-cover"
-                autoPlay
                 loop
                 muted
                 playsInline
-                preload="metadata"
-                src="/images/promo/driver-vid.mp4" />
+                preload="none"
+                poster="/images/promo/driver-ads.jpg"
+                data-lazy-load="true"
+                data-src="/images/promo/driver-vid.mp4"
+              />
              </div>
             <div className="p-6 text-center flex-1 flex flex-col justify-between">
               <div>
