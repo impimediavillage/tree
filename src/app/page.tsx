@@ -229,7 +229,7 @@ export default function HolisticAiHubPage() {
                 muted
                 playsInline
                 preload="none"
-                poster="/images/promo/driver-ads.jpg"
+                poster="/images/promo/dr1.jpg"
                 data-lazy-load="true"
                 data-src="/images/promo/driver-vid.mp4"
               />
